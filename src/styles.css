@@ -679,28 +679,80 @@ tbody tr:hover td {
   grid-template-columns: 232px minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
+  transition: grid-template-columns 220ms ease, gap 220ms ease;
 }
 
 .market-layout--filters-collapsed {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 0 minmax(0, 1fr);
+  gap: 0;
 }
 
 .filter-sidebar-wrap {
   position: sticky;
   top: 1rem;
   align-self: start;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 200ms ease, transform 220ms ease, visibility 0s linear 0s;
 }
 
 .filter-sidebar-wrap--closed {
-  display: none;
+  opacity: 0;
+  transform: translateX(-0.5rem);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 200ms ease, transform 220ms ease, visibility 0s linear 220ms;
 }
 
 .filter-sidebar {
   position: static;
   display: grid;
-  gap: 0;
+  gap: 0.9375rem;
   max-height: calc(100vh - 2rem);
   overflow: auto;
+}
+
+.filter-sidebar-heading {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.filter-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.filter-group + .filter-group {
+  border-top: 1px solid var(--line);
+  padding-top: 0.875rem;
+}
+
+.filter-group-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.filter-sidebar .check-row {
+  gap: 0.625rem;
+  min-height: 2rem;
+  border-radius: var(--radius-sm);
+  padding: 0.28125rem 0.3125rem;
+}
+
+.filter-sidebar .check-row:hover {
+  background: var(--surface-soft);
+}
+
+.filter-sidebar .check-row input[type='checkbox'] {
+  margin-top: 0.0625rem;
 }
 
 /* ─────────────────────────────
@@ -768,7 +820,7 @@ tbody tr:hover td {
 
 .filter-check-list {
   display: grid;
-  gap: 0.1875rem;
+  gap: 0.3125rem;
 }
 
 .filter-count {
@@ -776,6 +828,9 @@ tbody tr:hover td {
   font-weight: 600;
   color: var(--muted-light);
   font-feature-settings: 'tnum';
+  min-width: 1.25rem;
+  text-align: right;
+  padding-left: 0.5rem;
 }
 
 /* ─────────────────────────────
@@ -1405,6 +1460,16 @@ tr:last-child td {
   .filter-sidebar-wrap,
   .cta-panel {
     position: static;
+  }
+
+  .filter-sidebar-wrap {
+    max-height: 120rem;
+    transition: max-height 240ms ease, opacity 200ms ease, transform 220ms ease, visibility 0s linear 0s;
+  }
+
+  .filter-sidebar-wrap--closed {
+    max-height: 0;
+    transition: max-height 240ms ease, opacity 200ms ease, transform 220ms ease, visibility 0s linear 240ms;
   }
 
   .filter-sidebar {
