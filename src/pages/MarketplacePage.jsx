@@ -5,26 +5,9 @@ import StatusPill from '../components/StatusPill';
 
 const ALL_CATEGORIES = ['SaaS', 'Ecommerce', 'Media', 'Agency', 'Marketplace'];
 
-function FilterSection({ title, children, defaultOpen = true }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="filter-section">
-      <button className="filter-section-header" onClick={() => setOpen((o) => !o)}>
-        <span>{title}</span>
-        <svg
-          className={`filter-chevron${open ? '' : ' collapsed'}`}
-          width="11" height="11" viewBox="0 0 12 12" fill="none"
-        >
-          <path d="M2 4.5L6 8.5L10 4.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {open && <div className="filter-section-body">{children}</div>}
-    </div>
-  );
-}
-
 export default function MarketplacePage() {
   const { listings } = useMarket();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [search, setSearch] = useState('');
   const [categories, setCategories] = useState(new Set());
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -60,56 +43,71 @@ export default function MarketplacePage() {
 
   return (
     <section>
-      <div className="market-layout">
-        <aside className="card filter-sidebar">
-          <FilterSection title="Search">
+      <div className={`market-layout${sidebarOpen ? '' : ' market-layout--filters-collapsed'}`}>
+        <div className={`filter-sidebar-wrap${sidebarOpen ? '' : ' filter-sidebar-wrap--closed'}`}>
+          <aside className="card filter-sidebar">
+            <p className="filter-sidebar-heading">Filters</p>
+
             <input
-              placeholder="Keyword, category, tag…"
+              placeholder="Search keyword or tag…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-          </FilterSection>
 
-          <FilterSection title="Category">
-            <div className="filter-check-list">
-              {ALL_CATEGORIES.map((cat) => (
-                <label key={cat} className="check-row">
-                  <input
-                    type="checkbox"
-                    checked={categories.has(cat)}
-                    onChange={() => toggleCategory(cat)}
-                  />
-                  <span style={{ flex: 1 }}>{cat}</span>
-                  <span className="filter-count">{categoryCounts[cat]}</span>
-                </label>
-              ))}
+            <div className="filter-group">
+              <p className="filter-group-label">Category</p>
+              <div className="filter-check-list">
+                {ALL_CATEGORIES.map((cat) => (
+                  <label key={cat} className="check-row">
+                    <input
+                      type="checkbox"
+                      checked={categories.has(cat)}
+                      onChange={() => toggleCategory(cat)}
+                    />
+                    <span style={{ flex: 1 }}>{cat}</span>
+                    <span className="filter-count">{categoryCounts[cat]}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </FilterSection>
 
-          <FilterSection title="Options">
-            <label className="check-row">
-              <input
-                type="checkbox"
-                checked={verifiedOnly}
-                onChange={(e) => setVerifiedOnly(e.target.checked)}
-              />
-              Operator-verified only
-            </label>
-          </FilterSection>
-        </aside>
+            <div className="filter-group">
+              <p className="filter-group-label">Options</p>
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={verifiedOnly}
+                  onChange={(e) => setVerifiedOnly(e.target.checked)}
+                />
+                Operator-verified only
+              </label>
+            </div>
+          </aside>
+        </div>
 
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <p style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+            <button className="ghost filter-toggle-btn" onClick={() => setSidebarOpen((o) => !o)}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <rect x="1" y="2.5" width="12" height="1.25" rx="0.625" fill="currentColor" />
+                <rect x="1" y="6.375" width="8" height="1.25" rx="0.625" fill="currentColor" />
+                <rect x="1" y="10.25" width="5" height="1.25" rx="0.625" fill="currentColor" />
+              </svg>
+              {sidebarOpen ? 'Hide filters' : 'Show filters'}
+              {hasActiveFilters && <span className="filter-toggle-dot" />}
+            </button>
+
+            <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
               {filtered.length} {filtered.length === 1 ? 'listing' : 'listings'}
-            </p>
+            </span>
+
             {hasActiveFilters && (
               <button
                 className="ghost"
-                style={{ fontSize: '0.6875rem', padding: '0.125rem 0.5rem' }}
+                style={{ fontSize: '0.6875rem', padding: '0.1875rem 0.5rem', marginLeft: 'auto' }}
                 onClick={() => { setSearch(''); setCategories(new Set()); setVerifiedOnly(false); }}
               >
-                Clear all
+                Clear filters
               </button>
             )}
           </div>

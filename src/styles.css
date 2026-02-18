@@ -681,11 +681,26 @@ tbody tr:hover td {
   align-items: start;
 }
 
-.filter-sidebar {
+.market-layout--filters-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.filter-sidebar-wrap {
   position: sticky;
   top: 1rem;
+  align-self: start;
+}
+
+.filter-sidebar-wrap--closed {
+  display: none;
+}
+
+.filter-sidebar {
+  position: static;
   display: grid;
   gap: 0;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
 }
 
 /* ─────────────────────────────
@@ -1387,8 +1402,14 @@ tr:last-child td {
   }
 
   .filter-sidebar,
+  .filter-sidebar-wrap,
   .cta-panel {
     position: static;
+  }
+
+  .filter-sidebar {
+    max-height: none;
+    overflow: visible;
   }
 
   .listings-grid {
