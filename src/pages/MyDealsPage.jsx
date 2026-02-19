@@ -78,7 +78,7 @@ export default function MyDealsPage() {
                     {esc.amountUSDC.toLocaleString()} USDC
                   </span>
                   <StatusPill status={esc.status} />
-                  <Link to="/escrow" className="ghost small-link">Open</Link>
+                  <Link to="/app/escrow" className="ghost small-link">Open</Link>
                 </div>
               ))
             )}
@@ -135,7 +135,7 @@ export default function MyDealsPage() {
                   {esc.amountUSDC.toLocaleString()} USDC
                 </span>
                 <StatusPill status={esc.status} />
-                <Link to="/escrow" className="ghost small-link">Open</Link>
+                <Link to="/app/escrow" className="ghost small-link">Open</Link>
               </div>
             ))
           )}

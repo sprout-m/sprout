@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import EscrowRoomPage from './pages/EscrowRoomPage';
+import LandingPage from './pages/LandingPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import MessagesPage from './pages/MessagesPage';
@@ -14,7 +15,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/app" element={<Layout />}>
           <Route index element={<MarketplacePage />} />
           <Route path="listing/:listingId" element={<ListingDetailPage />} />
           <Route path="my-deals" element={<MyDealsPage />} />
@@ -24,7 +26,7 @@ export default function App() {
           <Route path="escrow" element={<EscrowRoomPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="profile" element={<ProfilePage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/app" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

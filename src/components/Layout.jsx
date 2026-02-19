@@ -4,34 +4,34 @@ import { useMarket } from '../context/MarketContext';
 
 const roleRoutes = {
   buyer: [
-    { to: '/', label: 'Marketplace' },
-    { to: '/my-deals', label: 'My Deals' },
-    { to: '/escrow', label: 'Escrow Room' },
-    { to: '/messages', label: 'Messages' },
-    { to: '/profile', label: 'Profile' }
+    { to: '/app', label: 'Marketplace' },
+    { to: '/app/my-deals', label: 'My Deals' },
+    { to: '/app/escrow', label: 'Escrow Room' },
+    { to: '/app/messages', label: 'Messages' },
+    { to: '/app/profile', label: 'Profile' }
   ],
   seller: [
-    { to: '/seller/listings', label: 'Listings' },
-    { to: '/seller/requests', label: 'Access Requests' },
-    { to: '/seller/offers', label: 'Offers' },
-    { to: '/escrow', label: 'Escrow Room' },
-    { to: '/messages', label: 'Messages' },
-    { to: '/profile', label: 'Profile' }
+    { to: '/app/seller/listings', label: 'Listings' },
+    { to: '/app/seller/requests', label: 'Access Requests' },
+    { to: '/app/seller/offers', label: 'Offers' },
+    { to: '/app/escrow', label: 'Escrow Room' },
+    { to: '/app/messages', label: 'Messages' },
+    { to: '/app/profile', label: 'Profile' }
   ],
   operator: [
-    { to: '/', label: 'Marketplace' },
-    { to: '/seller/listings', label: 'Listings' },
-    { to: '/seller/requests', label: 'Access Requests' },
-    { to: '/seller/offers', label: 'Offers' },
-    { to: '/escrow', label: 'Escrow' },
-    { to: '/profile', label: 'Profile' }
+    { to: '/app', label: 'Marketplace' },
+    { to: '/app/seller/listings', label: 'Listings' },
+    { to: '/app/seller/requests', label: 'Access Requests' },
+    { to: '/app/seller/offers', label: 'Offers' },
+    { to: '/app/escrow', label: 'Escrow' },
+    { to: '/app/profile', label: 'Profile' }
   ]
 };
 
 const roleLanding = {
-  buyer: '/',
-  seller: '/seller/listings',
-  operator: '/'
+  buyer: '/app',
+  seller: '/app/seller/listings',
+  operator: '/app'
 };
 
 export default function Layout() {
@@ -41,7 +41,7 @@ export default function Layout() {
   const routes = useMemo(() => roleRoutes[activeUser.role] || roleRoutes.buyer, [activeUser.role]);
 
   useEffect(() => {
-    if (location.pathname.startsWith('/listing/')) return;
+    if (location.pathname.startsWith('/app/listing/')) return;
     const allowed = routes.some((route) => location.pathname === route.to || location.pathname.startsWith(`${route.to}/`));
     if (!allowed) navigate(roleLanding[activeUser.role], { replace: true });
   }, [activeUser.role, location.pathname, navigate, routes]);
@@ -51,7 +51,7 @@ export default function Layout() {
       <header className="topbar">
         <div className="header-inner">
           <div className="brand">
-            <Link to="/">
+            <Link to="/app">
               <img
                 src="/logo.png"
                 alt="Meridian Marketplace"
