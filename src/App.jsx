@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import EscrowRoomPage from './pages/EscrowRoomPage';
 import LandingPage from './pages/LandingPage';
+import OnboardingPage from './pages/OnboardingPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import MessagesPage from './pages/MessagesPage';
@@ -16,6 +17,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/app" element={<Layout />}>
           <Route index element={<MarketplacePage />} />
           <Route path="listing/:listingId" element={<ListingDetailPage />} />
