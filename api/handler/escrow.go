@@ -74,9 +74,9 @@ func (h *Handler) MyEscrows(c *gin.Context) {
 		FROM escrows e
 		JOIN offers o ON o.id = e.offer_id
 		JOIN listings l ON l.id = o.listing_id
-		WHERE o.buyer_id = $1 OR l.seller_id = $1
+		WHERE o.buyer_id = $1 OR l.seller_id = $1 OR $2 = 'operator'
 		ORDER BY e.created_at DESC
-	`, claims.UserID)
+	`, claims.UserID, claims.Role)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "query failed")
 		return

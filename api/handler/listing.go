@@ -47,6 +47,42 @@ func (h *Handler) ListListings(c *gin.Context) {
 	ok(c, listings)
 }
 
+// MyListings returns all listings owned by the authenticated seller, in any status.
+func (h *Handler) MyListings(c *gin.Context) {
+	claims := middleware.GetClaims(c)
+
+	rows, err := h.db.Query(context.Background(), `
+		SELECT id, seller_id, anonymized_name, category, industry_tags,
+		       location, asking_range, revenue_range, profit_range, age,
+		       teaser_description, status, verified, nda_required, escrow_type,
+		       created_at, updated_at
+		FROM listings
+		WHERE seller_id = $1
+		ORDER BY created_at DESC
+	`, claims.UserID)
+	if err != nil {
+		fail(c, http.StatusInternalServerError, "query failed")
+		return
+	}
+	defer rows.Close()
+
+	listings := make([]model.Listing, 0)
+	for rows.Next() {
+		var l model.Listing
+		if err := rows.Scan(
+			&l.ID, &l.SellerID, &l.AnonymizedName, &l.Category, &l.IndustryTags,
+			&l.Location, &l.AskingRange, &l.RevenueRange, &l.ProfitRange, &l.Age,
+			&l.TeaserDescription, &l.Status, &l.Verified, &l.NDARequired, &l.EscrowType,
+			&l.CreatedAt, &l.UpdatedAt,
+		); err != nil {
+			continue
+		}
+		listings = append(listings, l)
+	}
+
+	ok(c, listings)
+}
+
 // GetListing returns full listing detail. Private fields are gated by access level.
 func (h *Handler) GetListing(c *gin.Context) {
 	id, ok2 := parseUUID(c, "id")
