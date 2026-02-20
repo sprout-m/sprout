@@ -33,6 +33,49 @@ const previewCards = [
   },
 ];
 
+const hederaStats = [
+  { val: '3–5s', label: 'Transaction finality' },
+  { val: '<$0.001', label: 'Per transaction fee' },
+  { val: '10,000+', label: 'TPS capacity' },
+  { val: 'aBFT', label: 'Consensus security' },
+];
+
+const hederaServices = [
+  {
+    title: 'Hedera Token Service (HTS)',
+    desc: 'Native token transfers with 3–5 second finality and fees under $0.001. No Solidity contracts, no gas auctions — deterministic, predictable settlement every time.',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6 7h8M6 13h8M6 10h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Hedera Consensus Service (HCS)',
+    desc: 'Every LOI action, NDA approval, and closing milestone committed as an immutable, ordered message — a tamper-proof audit trail from first contact to signed close.',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <path d="M4 5h12M4 9h9M4 13h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="16" cy="14" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M15 14l.75.75 1.5-1.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    title: 'HashScan Explorer',
+    desc: "Every transaction ID and HCS topic is publicly verifiable on HashScan — Hedera's native block explorer. Share a link and any party can independently confirm the record.",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <path d="M8.5 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M11 4h5v5M16 4l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+];
+
+const councilMembers = ['Google', 'IBM', 'Boeing', 'LG Electronics', 'Deutsche Telekom', 'Dell Technologies'];
+
 const features = [
   {
     title: 'Operator-Vetted Listings',
@@ -56,22 +99,22 @@ const features = [
     ),
   },
   {
-    title: 'On-Chain Escrow',
-    desc: 'USDC smart-contract escrow with milestone-based release. No wire risk. Full auditability from deposit to close.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M10 3 L10 7 M10 7 C7 7 4.5 9 4.5 12C4.5 15 7 17 10 17C13 17 15.5 15 15.5 12C15.5 9 13 7 10 7Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M8 12l1.5 1.5L12 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
     title: 'Structured Offer Process',
     desc: 'LOIs, counteroffers, and deal terms managed end-to-end. A clean, timestamped audit trail for both parties through to signing.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
         <path d="M6 7h8M6 10h6M6 13h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Hedera-Native Settlement',
+    desc: 'Closing flows execute through HTS with deterministic finality in seconds. No Solidity, no intermediaries, no settlement risk.',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M10 3 L10 7 M10 7 C7 7 4.5 9 4.5 12C4.5 15 7 17 10 17C13 17 15.5 15 15.5 12C15.5 9 13 7 10 7Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M8 12l1.5 1.5L12 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -92,11 +135,11 @@ const steps = [
   },
   {
     title: 'Submit and negotiate an offer',
-    desc: 'Make a formal LOI, receive counteroffers, and agree on final terms. Everything logged and timestamped.',
+    desc: 'Make a formal LOI, receive counteroffers, and agree on final terms. Everything logged on HCS and timestamped.',
   },
   {
-    title: 'Close via on-chain escrow',
-    desc: 'Funds move to smart-contract escrow and are released upon milestone confirmation from both parties.',
+    title: 'Close with Hedera-native settlement',
+    desc: 'Token transfers execute through HTS with 3–5 second finality. Key milestones are committed to HCS and can be verified on HashScan.',
   },
 ];
 
@@ -142,9 +185,18 @@ export default function LandingPage() {
             alt="Meridian"
             style={{ height: '44px', filter: 'brightness(0) invert(1)' }}
           />
-          <Link to="/onboarding" className="lp-btn-primary lp-btn-sm">
-            Enter Marketplace →
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span className="lp-nav-hedera-badge">
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
+                <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M6 7h8M6 13h8M6 10h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              Built on Hedera
+            </span>
+            <Link to="/onboarding" className="lp-btn-primary lp-btn-sm">
+              Enter Marketplace →
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -161,7 +213,8 @@ export default function LandingPage() {
             </h1>
             <p className="lp-hero-sub">
               Meridian connects vetted buyers with verified sellers through structured due diligence,
-              NDA-gated documents, and on-chain escrow.
+              NDA-gated documents, and Hedera-native settlement — delivering 3–5 second finality at
+              a fraction of a cent per transaction.
             </p>
             <div className="lp-hero-actions">
               <Link to="/onboarding" className="lp-btn-primary">Browse Listings →</Link>
@@ -205,8 +258,71 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features ── */}
+      {/* ── Hedera Tech Strip ── */}
+      <div className="lp-hedera-strip">
+        <div className="lp-container lp-hedera-strip-inner">
+          <div className="lp-hedera-wordmark">
+            <span className="lp-hedera-powered-label">Settlement by</span>
+            <span className="lp-hedera-wordmark-text">Hedera</span>
+          </div>
+          <div className="lp-hedera-strip-stats">
+            {hederaStats.map(({ val, label }) => (
+              <div key={label} className="lp-hedera-strip-stat">
+                <strong>{val}</strong>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+          <a
+            href="https://hedera.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lp-hedera-learn-link"
+          >
+            About Hedera →
+          </a>
+        </div>
+      </div>
+
+      {/* ── Hedera Services Section ── */}
       <section className="lp-section">
+        <div className="lp-container">
+          <div className="lp-section-header">
+            <div>
+              <p className="lp-section-label">Hedera Foundation</p>
+              <h2 className="lp-section-h2">Why Hedera for M&amp;A?</h2>
+            </div>
+            <p className="lp-section-desc">
+              Built on Hedera SDKs and native services — not Solidity, not Ethereum.
+              Every step is fast, ordered, and independently verifiable.
+            </p>
+          </div>
+
+          <div className="card-grid three">
+            {hederaServices.map((s) => (
+              <article key={s.title} className="card lp-hedera-card">
+                <div className="lp-hedera-card-icon">{s.icon}</div>
+                <h3>{s.title}</h3>
+                <p style={{ color: 'var(--muted)' }}>{s.desc}</p>
+              </article>
+            ))}
+          </div>
+
+          {/* Governing Council trust strip */}
+          <div className="lp-council-strip">
+            <p className="lp-council-label">Hedera Governing Council includes</p>
+            <div className="lp-council-names">
+              {councilMembers.map((m) => (
+                <span key={m}>{m}</span>
+              ))}
+              <span className="lp-council-more">+ 23 others</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Platform Features Section ── */}
+      <section className="lp-section lp-section--white">
         <div className="lp-container">
           <div className="lp-section-header">
             <div>
@@ -230,13 +346,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section className="lp-section lp-section--white" id="how-it-works">
+      <section className="lp-section" id="how-it-works">
         <div className="lp-container lp-hiw-grid">
           <div className="lp-hiw-left">
             <p className="lp-section-label">Process</p>
             <h2 className="lp-section-h2">From browse<br />to close</h2>
             <p className="lp-hiw-sub">
-              A structured, end-to-end process designed to protect both buyers and sellers at every step.
+              A structured, end-to-end process designed to protect both buyers and sellers at every step —
+              with Hedera providing the settlement and audit infrastructure.
             </p>
             <Link to="/onboarding" className="lp-btn-dark">Browse Listings →</Link>
           </div>
@@ -263,7 +380,7 @@ export default function LandingPage() {
         <div className="lp-container lp-final-cta-inner">
           <p className="lp-eyebrow" style={{ marginBottom: '1rem' }}>Get started</p>
           <h2>Ready to find your next acquisition?</h2>
-          <p>Browse current listings — anonymized, operator-verified, and ready for serious buyers.</p>
+          <p>Browse current listings — anonymized, operator-verified, and settled on Hedera.</p>
           <div className="lp-final-cta-actions">
             <Link to="/onboarding" className="lp-btn-primary lp-btn-lg">Browse Listings →</Link>
             <a href="#how-it-works" className="lp-btn-outline">Learn how it works</a>
@@ -280,6 +397,18 @@ export default function LandingPage() {
             style={{ height: '34px', filter: 'brightness(0) invert(1)', opacity: 0.4 }}
           />
           <p>© 2025 Meridian Marketplace. Structured M&amp;A for online businesses.</p>
+          <a
+            href="https://hedera.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lp-footer-hedera"
+          >
+            <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M6 7h8M6 13h8M6 10h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            Powered by Hedera
+          </a>
         </div>
       </footer>
     </div>

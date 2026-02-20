@@ -2466,7 +2466,7 @@ tr:last-child td {
 
 .lp-feature-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -2479,21 +2479,29 @@ tr:last-child td {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1.625rem;
+  padding: 2rem 2rem;
   border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   position: relative;
 }
 
-.lp-feature-card:last-child {
+/* right column: no border-right */
+.lp-feature-card:nth-child(2n) {
   border-right: none;
+}
+
+/* bottom row (cards 3 & 4): no border-bottom */
+.lp-feature-card:nth-child(3),
+.lp-feature-card:nth-child(4) {
+  border-bottom: none;
 }
 
 .lp-feature-card::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 1.625rem;
-  right: 1.625rem;
+  left: 2rem;
+  right: 2rem;
   height: 2px;
   background: var(--accent);
   border-radius: 0 0 2px 2px;
@@ -2760,21 +2768,204 @@ tr:last-child td {
   font-size: 0.875rem;
 }
 
+/* ── Nav Hedera Badge ── */
+.lp-nav-hedera-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.625rem;
+  letter-spacing: 0.03em;
+}
+
+/* ── Hedera Tech Strip ── */
+.lp-hedera-strip {
+  background: #08111e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.75rem 0;
+}
+
+.lp-hedera-strip-inner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.lp-hedera-wordmark {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-right: 2.5rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  margin-right: 2.5rem;
+  flex-shrink: 0;
+}
+
+.lp-hedera-powered-label {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0;
+}
+
+.lp-hedera-wordmark-text {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.lp-hedera-strip-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  flex: 1;
+}
+
+.lp-hedera-strip-stat {
+  padding: 0 2rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.lp-hedera-strip-stat:first-child {
+  padding-left: 0;
+}
+
+.lp-hedera-strip-stat:last-child {
+  border-right: none;
+}
+
+.lp-hedera-strip-stat strong {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 0.3125rem;
+  font-feature-settings: 'tnum';
+}
+
+.lp-hedera-strip-stat span {
+  display: block;
+  font-size: 0.5625rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.lp-hedera-learn-link {
+  flex-shrink: 0;
+  margin-left: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.12s;
+}
+
+.lp-hedera-learn-link:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Hedera Service Cards ── */
+.card-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1.25rem;
+}
+
+.lp-hedera-card {
+  border-top: 2px solid var(--accent) !important;
+}
+
+.lp-hedera-card-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--primary-border);
+  background: var(--primary-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 0.125rem;
+}
+
+/* ── Council Strip ── */
+.lp-council-strip {
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.lp-council-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.lp-council-names {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.lp-council-names span {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 0.1875rem 0.5625rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  white-space: nowrap;
+}
+
+.lp-council-more {
+  font-weight: 500 !important;
+  color: var(--muted) !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  font-style: italic;
+}
+
+/* ── Footer Hedera link ── */
+.lp-footer-hedera {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.28);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: color 0.12s;
+  flex-shrink: 0;
+}
+
+.lp-footer-hedera:hover {
+  color: rgba(255, 255, 255, 0.55);
+}
+
 /* ── Landing responsive ── */
 @media (max-width: 1024px) {
-  .lp-feature-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .lp-feature-card:nth-child(2) {
-    border-right: none;
-  }
-
-  .lp-feature-card:nth-child(1),
-  .lp-feature-card:nth-child(2) {
-    border-bottom: 1px solid var(--line);
-  }
-
   .lp-hiw-grid {
     grid-template-columns: 1fr;
     gap: 2.5rem;
@@ -2836,13 +3027,21 @@ tr:last-child td {
     border-bottom: 1px solid var(--line);
   }
 
+  .lp-feature-card:nth-child(2n) {
+    border-right: none;
+  }
+
+  .lp-feature-card:nth-child(3),
+  .lp-feature-card:nth-child(4) {
+    border-bottom: 1px solid var(--line);
+  }
+
   .lp-feature-card:last-child {
     border-bottom: none;
   }
 
-  .lp-feature-card:nth-child(1),
-  .lp-feature-card:nth-child(2) {
-    border-bottom: 1px solid var(--line);
+  .card-grid.three {
+    grid-template-columns: 1fr;
   }
 
   .lp-final-cta-actions {
@@ -2857,6 +3056,46 @@ tr:last-child td {
 
   .lp-container {
     padding: 0 1.25rem;
+  }
+
+  .lp-hedera-strip-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .lp-hedera-wordmark {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-right: 0;
+    padding-bottom: 1.25rem;
+    margin-right: 0;
+    width: 100%;
+  }
+
+  .lp-hedera-strip-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem 0;
+    width: 100%;
+  }
+
+  .lp-hedera-strip-stat {
+    padding: 0 1rem 0 0;
+    border-right: none;
+  }
+
+  .lp-hedera-learn-link {
+    margin-left: 0;
+  }
+
+  .lp-council-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .lp-nav-hedera-badge {
+    display: none;
   }
 }
 
