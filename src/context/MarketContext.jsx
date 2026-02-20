@@ -52,27 +52,29 @@ export function MarketProvider({ children }) {
   }
 
   async function loadUserData(u) {
-    // Everyone loads public listings and their own threads + escrows
-    const [allListings, myEscrows, myThreads] = await Promise.all([
-      listingsApi.list().catch(() => []),
+    const [myEscrows, myThreads] = await Promise.all([
       escrowsApi.mine().catch(() => []),
       threadsApi.list().catch(() => []),
     ]);
-    setListings(allListings);
     setEscrows(myEscrows);
     setMessageThreads(myThreads);
 
-    if (u.role === 'buyer' || u.role === 'operator') {
-      const [myAccess, myOffers] = await Promise.all([
+    if (u.role === 'buyer') {
+      const [publicListings, myAccess, myOffers] = await Promise.all([
+        listingsApi.list().catch(() => []),
         accessApi.mine().catch(() => []),
         offersApi.mine().catch(() => []),
       ]);
+      setListings(publicListings);
       setAccessRequests(myAccess);
       setOffers(myOffers);
     }
 
-    if (u.role === 'seller' || u.role === 'operator') {
-      const myListings = allListings.filter((l) => l.sellerId === u.id);
+    if (u.role === 'seller') {
+      // Use the authenticated /listings/mine endpoint so draft listings are included.
+      const myListings = await listingsApi.mine().catch(() => []);
+      setListings(myListings);
+
       if (myListings.length) {
         const [accessNested, offersNested] = await Promise.all([
           Promise.all(myListings.map((l) => accessApi.forListing(l.id).catch(() => []))),
@@ -81,6 +83,17 @@ export function MarketProvider({ children }) {
         setAccessRequests(accessNested.flat());
         setOffers(offersNested.flat());
       }
+    }
+
+    if (u.role === 'operator') {
+      const [publicListings, myAccess, myOffers] = await Promise.all([
+        listingsApi.list().catch(() => []),
+        accessApi.mine().catch(() => []),
+        offersApi.mine().catch(() => []),
+      ]);
+      setListings(publicListings);
+      setAccessRequests(myAccess);
+      setOffers(myOffers);
     }
   }
 
@@ -113,6 +126,7 @@ export function MarketProvider({ children }) {
   // ── Listing actions ───────────────────────────────────────────────────────
   async function createListing(data) {
     const l = await listingsApi.create(data);
+    // Add immediately so the UI updates before any async reload.
     setListings((prev) => [l, ...prev]);
     return l;
   }

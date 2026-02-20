@@ -146,6 +146,7 @@ export const auth = {
 
 export const listingsApi = {
   list: () => apiFetch('/api/v1/listings').then((l) => l.map(normalizeListing)),
+  mine: () => apiFetch('/api/v1/seller/listings').then((l) => l.map(normalizeListing)),
   get: (id) => apiFetch(`/api/v1/listings/${id}`).then(normalizeListing),
   create: (data) =>
     apiFetch('/api/v1/listings', { method: 'POST', body: JSON.stringify(data) }).then(normalizeListing),
