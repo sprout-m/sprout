@@ -52,27 +52,29 @@ export function MarketProvider({ children }) {
   }
 
   async function loadUserData(u) {
-    // Everyone loads public listings and their own threads + escrows
-    const [allListings, myEscrows, myThreads] = await Promise.all([
-      listingsApi.list().catch(() => []),
+    const [myEscrows, myThreads] = await Promise.all([
       escrowsApi.mine().catch(() => []),
       threadsApi.list().catch(() => []),
     ]);
-    setListings(allListings);
     setEscrows(myEscrows);
     setMessageThreads(myThreads);
 
-    if (u.role === 'buyer' || u.role === 'operator') {
-      const [myAccess, myOffers] = await Promise.all([
+    if (u.role === 'buyer') {
+      const [publicListings, myAccess, myOffers] = await Promise.all([
+        listingsApi.list().catch(() => []),
         accessApi.mine().catch(() => []),
         offersApi.mine().catch(() => []),
       ]);
+      setListings(publicListings);
       setAccessRequests(myAccess);
       setOffers(myOffers);
     }
 
-    if (u.role === 'seller' || u.role === 'operator') {
-      const myListings = allListings.filter((l) => l.sellerId === u.id);
+    if (u.role === 'seller') {
+      // Use the authenticated /listings/mine endpoint so draft listings are included.
+      const myListings = await listingsApi.mine().catch(() => []);
+      setListings(myListings);
+
       if (myListings.length) {
         const [accessNested, offersNested] = await Promise.all([
           Promise.all(myListings.map((l) => accessApi.forListing(l.id).catch(() => []))),
@@ -81,6 +83,17 @@ export function MarketProvider({ children }) {
         setAccessRequests(accessNested.flat());
         setOffers(offersNested.flat());
       }
+    }
+
+    if (u.role === 'operator') {
+      const [publicListings, myAccess, myOffers] = await Promise.all([
+        listingsApi.list().catch(() => []),
+        accessApi.mine().catch(() => []),
+        offersApi.mine().catch(() => []),
+      ]);
+      setListings(publicListings);
+      setAccessRequests(myAccess);
+      setOffers(myOffers);
     }
   }
 
@@ -117,12 +130,18 @@ export function MarketProvider({ children }) {
     return l;
   }
 
+  async function updateListing(id, data) {
+    const l = await listingsApi.update(id, data);
+    setListings((prev) => prev.map((item) => (item.id === id ? l : item)));
+    return l;
+  }
+
   // ── Access request actions ────────────────────────────────────────────────
   async function requestAccess({ listingId, ndaSigned, proofMethod, proofAmountUSDC }) {
     const ar = await accessApi.request(listingId, {
       nda_signed: ndaSigned,
       proof_method: proofMethod,
-      proof_amount_usdc: proofAmountUSDC,
+      proof_amount_usdc: Number(proofAmountUSDC),
     });
     setAccessRequests((prev) => [ar, ...prev]);
     return ar;
@@ -142,7 +161,7 @@ export function MarketProvider({ children }) {
   // ── Offer actions ─────────────────────────────────────────────────────────
   async function submitOffer({ listingId, amountUSDC, terms, notes }) {
     const o = await offersApi.submit(listingId, {
-      amount_usdc: amountUSDC,
+      amount_usdc: Number(amountUSDC),
       terms,
       notes,
     });
@@ -251,6 +270,7 @@ export function MarketProvider({ children }) {
     userCache,
     // Actions
     createListing,
+    updateListing,
     requestAccess,
     decideAccess,
     submitOffer,

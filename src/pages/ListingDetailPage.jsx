@@ -9,8 +9,9 @@ const unlockedTabs = ['Overview', 'Financials', 'Documents', 'Offers', 'Activity
 
 export default function ListingDetailPage() {
   const { listingId } = useParams();
-  const { listings, accessRequests, activeUser, requestAccess, submitOffer } = useMarket();
+  const { listings, accessRequests, offers, activeUser, requestAccess, submitOffer } = useMarket();
   const listing = listings.find((l) => l.id === listingId);
+  const myOffer = offers.find((o) => o.listingId === listingId);
 
   const request = accessRequests.find((r) => r.listingId === listingId && r.buyerId === activeUser.id);
   const unlocked = request?.sellerDecision === 'approved';
@@ -24,6 +25,8 @@ export default function ListingDetailPage() {
   const [diligencePeriod, setDiligencePeriod] = useState(14);
   const [closeWindow, setCloseWindow] = useState('30 days');
   const [offerNotes, setOfferNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [offerError, setOfferError] = useState('');
 
   const timeline = useMemo(
     () => ['Request Access + NDA', 'Proof of Funds', 'Seller Approval', 'Submit Offer', 'USDC Escrow + Transfer'],
@@ -176,67 +179,99 @@ export default function ListingDetailPage() {
             )}
 
             {activeTab === 'Offers' && unlocked && (
-              <form
-                className="offer-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  submitOffer({
-                    listingId,
-                    amountUSDC: offerAmount,
-                    terms: { dealType, diligencePeriod: `${diligencePeriod} days`, closeWindow },
-                    notes: offerNotes
-                  });
-                  setOfferNotes('');
-                }}
-              >
-                <h4>Make an Offer</h4>
-                <div className="form-field">
-                  <label className="form-label">Offer Amount (USDC)</label>
-                  <input
-                    type="number"
-                    required
-                    min="1000"
-                    value={offerAmount}
-                    onChange={(e) => setOfferAmount(e.target.value)}
-                    placeholder="e.g. 950000"
-                  />
+              myOffer ? (
+                <div className="callout" style={{ display: 'grid', gap: '0.5rem' }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>Offer submitted</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                    <span>Amount</span>
+                    <strong>{myOffer.amountUSDC?.toLocaleString()} USDC</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                    <span>Status</span>
+                    <strong style={{ textTransform: 'capitalize' }}>{myOffer.status}</strong>
+                  </div>
+                  {myOffer.terms?.dealType && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                      <span>Deal type</span>
+                      <strong style={{ textTransform: 'capitalize' }}>{myOffer.terms.dealType}</strong>
+                    </div>
+                  )}
                 </div>
-                <div className="form-field">
-                  <label className="form-label">Deal Type</label>
-                  <select value={dealType} onChange={(e) => setDealType(e.target.value)}>
-                    <option value="asset sale">Asset sale</option>
-                    <option value="equity sale">Equity sale</option>
-                  </select>
-                </div>
-                <div className="card-grid two">
+              ) : (
+                <form
+                  className="offer-form"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setOfferError('');
+                    setSubmitting(true);
+                    try {
+                      await submitOffer({
+                        listingId,
+                        amountUSDC: offerAmount,
+                        terms: { dealType, diligencePeriod: `${diligencePeriod} days`, closeWindow },
+                        notes: offerNotes,
+                      });
+                    } catch (err) {
+                      setOfferError(err.message || 'Failed to submit offer');
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                >
+                  <h4>Make an Offer</h4>
                   <div className="form-field">
-                    <label className="form-label">Diligence Period (days)</label>
+                    <label className="form-label">Offer Amount (USDC)</label>
                     <input
                       type="number"
-                      value={diligencePeriod}
-                      onChange={(e) => setDiligencePeriod(e.target.value)}
+                      required
+                      min="1000"
+                      value={offerAmount}
+                      onChange={(e) => setOfferAmount(e.target.value)}
+                      placeholder="e.g. 950000"
                     />
                   </div>
                   <div className="form-field">
-                    <label className="form-label">Close Window</label>
-                    <input value={closeWindow} onChange={(e) => setCloseWindow(e.target.value)} />
+                    <label className="form-label">Deal Type</label>
+                    <select value={dealType} onChange={(e) => setDealType(e.target.value)}>
+                      <option value="asset sale">Asset sale</option>
+                      <option value="equity sale">Equity sale</option>
+                    </select>
                   </div>
-                </div>
-                <div className="form-field">
-                  <label className="form-label">Notes to Seller</label>
-                  <textarea
-                    value={offerNotes}
-                    onChange={(e) => setOfferNotes(e.target.value)}
-                    placeholder="Optional — any context for the seller"
-                    rows={3}
-                  />
-                </div>
-                <label className="check-row">
-                  <input type="checkbox" required />
-                  I can fund escrow within 24 hours.
-                </label>
-                <button type="submit">Submit Offer</button>
-              </form>
+                  <div className="card-grid two">
+                    <div className="form-field">
+                      <label className="form-label">Diligence Period (days)</label>
+                      <input
+                        type="number"
+                        value={diligencePeriod}
+                        onChange={(e) => setDiligencePeriod(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label className="form-label">Close Window</label>
+                      <input value={closeWindow} onChange={(e) => setCloseWindow(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Notes to Seller</label>
+                    <textarea
+                      value={offerNotes}
+                      onChange={(e) => setOfferNotes(e.target.value)}
+                      placeholder="Optional — any context for the seller"
+                      rows={3}
+                    />
+                  </div>
+                  <label className="check-row">
+                    <input type="checkbox" required />
+                    I can fund escrow within 24 hours.
+                  </label>
+                  {offerError && (
+                    <p style={{ color: 'var(--danger, #e55)', fontSize: '0.8125rem' }}>{offerError}</p>
+                  )}
+                  <button type="submit" disabled={submitting}>
+                    {submitting ? 'Submitting…' : 'Submit Offer'}
+                  </button>
+                </form>
+              )
             )}
 
             {activeTab === 'Activity' && unlocked && (
