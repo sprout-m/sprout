@@ -44,9 +44,8 @@ func Load() (*Config, error) {
 	if cfg.HederaOperatorKey == "" {
 		return nil, errors.New("HEDERA_OPERATOR_PRIVATE_KEY is required")
 	}
-	if cfg.HederaPlatformPublicKey == "" {
-		return nil, errors.New("HEDERA_PLATFORM_PUBLIC_KEY is required")
-	}
+	// HEDERA_PLATFORM_PUBLIC_KEY is no longer used — the platform key is derived
+	// directly from HEDERA_OPERATOR_PRIVATE_KEY at runtime to guarantee they match.
 
 	return cfg, nil
 }

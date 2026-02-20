@@ -87,6 +87,23 @@ func GetTokenBalance(network, accountID, tokenID string) (int64, error) {
 	return 0, nil // account has no balance for this token
 }
 
+// IsTokenAssociated returns true if the account has an explicit association with
+// the given HTS token (regardless of balance). An unassociated account cannot
+// receive token transfers and will cause TOKEN_NOT_ASSOCIATED_TO_ACCOUNT.
+func IsTokenAssociated(network, accountID, tokenID string) (bool, error) {
+	url := fmt.Sprintf("%s/accounts/%s/tokens?token.id=%s", mirrorNodeBase(network), accountID, tokenID)
+	var resp tokenBalancesResponse
+	if err := mirrorGet(url, &resp); err != nil {
+		return false, fmt.Errorf("check token association for %s/%s: %w", accountID, tokenID, err)
+	}
+	for _, t := range resp.Tokens {
+		if t.TokenID == tokenID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func GetUSDCBalance(network, accountID, usdcTokenID string) (float64, error) {
 	raw, err := GetTokenBalance(network, accountID, usdcTokenID)
 	if err != nil {
@@ -156,9 +173,11 @@ type ScheduleInfo struct {
 	Executed       string `json:"executed_timestamp"` // empty if not yet executed
 	Deleted        string `json:"deleted_timestamp"`  // empty if not deleted
 	ExpirationTime string `json:"expiration_time"`
-	Signatories    []struct {
+	// Mirror node uses "signatures", not "signatories".
+	Signatories []struct {
 		PublicKeyPrefix string `json:"public_key_prefix"`
-	} `json:"signatories"`
+		Type            string `json:"type"`
+	} `json:"signatures"`
 }
 
 func GetSchedule(network, scheduleID string) (*ScheduleInfo, error) {
@@ -168,4 +187,57 @@ func GetSchedule(network, scheduleID string) (*ScheduleInfo, error) {
 		return nil, fmt.Errorf("get schedule %s: %w", scheduleID, err)
 	}
 	return &info, nil
+}
+
+type scheduledTxResponse struct {
+	Transactions []struct {
+		Result string `json:"result"`
+		Name   string `json:"name"`
+	} `json:"transactions"`
+}
+
+// GetScheduledTransactionResult fetches the result code of the inner transaction
+// that was executed when the given schedule's threshold was met.
+//
+// executedTimestamp is the value from ScheduleInfo.Executed (e.g. "1234567890.123456789").
+// The testnet mirror node does not support a scheduled=true filter, so we query all
+// transactions at-or-after the executed_timestamp and pick the first CRYPTOTRANSFER.
+//
+// Returns the result string (e.g. "SUCCESS", "INSUFFICIENT_TOKEN_BALANCE") or "" if not found.
+func GetScheduledTransactionResult(network, executedTimestamp string) (string, error) {
+	url := fmt.Sprintf("%s/transactions?timestamp=gte:%s&limit=10&order=asc",
+		mirrorNodeBase(network), executedTimestamp)
+	var resp scheduledTxResponse
+	if err := mirrorGet(url, &resp); err != nil {
+		return "", fmt.Errorf("inner tx query (ts>=%s): %w", executedTimestamp, err)
+	}
+	for _, tx := range resp.Transactions {
+		if tx.Name == "CRYPTOTRANSFER" {
+			return tx.Result, nil
+		}
+	}
+	return "", nil
+}
+
+// GetRecentAccountTransactions returns the most recent transaction results for an
+// account, newest first. Used to diagnose scheduled release failures.
+// Note: the testnet mirror node account transactions endpoint does not support
+// transactiontype filtering; all types are returned and filtered by the caller.
+func GetRecentAccountTransactions(network, accountID string, limit int) ([]struct{ Result, Name string }, error) {
+	url := fmt.Sprintf("%s/accounts/%s/transactions?order=desc&limit=%d",
+		mirrorNodeBase(network), accountID, limit)
+	var resp struct {
+		Transactions []struct {
+			Result string `json:"result"`
+			Name   string `json:"name"`
+		} `json:"transactions"`
+	}
+	if err := mirrorGet(url, &resp); err != nil {
+		return nil, fmt.Errorf("account tx query for %s: %w", accountID, err)
+	}
+	out := make([]struct{ Result, Name string }, len(resp.Transactions))
+	for i, t := range resp.Transactions {
+		out[i] = struct{ Result, Name string }{t.Result, t.Name}
+	}
+	return out, nil
 }

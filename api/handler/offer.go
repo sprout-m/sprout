@@ -172,7 +172,7 @@ func (h *Handler) UpdateOfferStatus(c *gin.Context) {
 		}
 
 		go func() {
-			if err := h.initEscrow(o.ID, o.ListingID, o.BuyerID, amountUSDC); err != nil {
+			if err := h.initEscrow(o.ID); err != nil {
 				log.Printf("initEscrow background: %v", err)
 			}
 		}()

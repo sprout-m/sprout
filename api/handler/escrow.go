@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -14,41 +15,38 @@ import (
 	meridianhedera "github.com/meridian-mkt/hedera"
 )
 
-// initEscrow is called in a goroutine when an offer is accepted.
-// It creates the on-chain escrow account and HCS topic, then writes both
-// IDs back to the escrows row.
-func (h *Handler) initEscrow(offerID, listingID, buyerID uuid.UUID, amountUSDC float64) error {
+// initEscrow is called (often in a goroutine) when an offer is accepted or when
+// ProvisionEscrow retries setup. It looks up the stored Hedera public keys for
+// both the buyer and seller from the users table, then creates the 2-of-3
+// threshold escrow account on-chain.
+//
+// Using the stored hedera_public_key (set at LinkWallet time) instead of
+// re-fetching from the mirror node guarantees that the key baked into the
+// escrow's threshold list is exactly the key HashPack will present when signing.
+func (h *Handler) initEscrow(offerID uuid.UUID) error {
 	ctx := context.Background()
 	tag := fmt.Sprintf("initEscrow(offer=%s)", offerID)
 
-	var buyerHederaID, sellerHederaID string
-	if err := h.db.QueryRow(ctx, `
-		SELECT COALESCE(u.hedera_account_id,'') FROM users u
-		JOIN offers o ON o.buyer_id = u.id
+	// Fetch buyer and seller Hedera public keys from the users table.
+	// These are populated when each user links their wallet via /auth/link-wallet.
+	var buyerPubKey, sellerPubKey string
+	err := h.db.QueryRow(ctx, `
+		SELECT COALESCE(buyer.hedera_public_key,''), COALESCE(seller.hedera_public_key,'')
+		FROM offers o
+		JOIN listings l ON l.id = o.listing_id
+		JOIN users buyer  ON buyer.id  = o.buyer_id
+		JOIN users seller ON seller.id = l.seller_id
 		WHERE o.id = $1
-	`, offerID).Scan(&buyerHederaID); err != nil || buyerHederaID == "" {
-		log.Printf("%s: buyer has no linked Hedera wallet", tag)
-		return fmt.Errorf("buyer has not linked a Hedera wallet")
-	}
-
-	if err := h.db.QueryRow(ctx, `
-		SELECT COALESCE(u.hedera_account_id,'') FROM users u
-		JOIN listings l ON l.seller_id = u.id
-		WHERE l.id = $1
-	`, listingID).Scan(&sellerHederaID); err != nil || sellerHederaID == "" {
-		log.Printf("%s: seller has no linked Hedera wallet", tag)
-		return fmt.Errorf("seller has not linked a Hedera wallet")
-	}
-
-	buyerPubKey, err := h.hedera.GetAccountPublicKey(buyerHederaID)
+	`, offerID).Scan(&buyerPubKey, &sellerPubKey)
 	if err != nil {
-		log.Printf("%s: GetAccountPublicKey(buyer): %v", tag, err)
-		return fmt.Errorf("could not fetch buyer public key: %w", err)
+		log.Printf("%s: fetch user keys: %v", tag, err)
+		return fmt.Errorf("could not load user keys: %w", err)
 	}
-	sellerPubKey, err := h.hedera.GetAccountPublicKey(sellerHederaID)
-	if err != nil {
-		log.Printf("%s: GetAccountPublicKey(seller): %v", tag, err)
-		return fmt.Errorf("could not fetch seller public key: %w", err)
+	if buyerPubKey == "" {
+		return fmt.Errorf("buyer has not linked a Hedera wallet — escrow cannot be provisioned")
+	}
+	if sellerPubKey == "" {
+		return fmt.Errorf("seller has not linked a Hedera wallet — escrow cannot be provisioned")
 	}
 
 	result, err := h.hedera.CreateEscrow(offerID.String(), buyerPubKey, sellerPubKey)
@@ -78,30 +76,30 @@ func (h *Handler) ProvisionEscrow(c *gin.Context) {
 		return
 	}
 
-	var offerID, listingID, buyerID uuid.UUID
-	var amountUSDC float64
+	var offerID uuid.UUID
 	var hederaAccountID string
 
 	err := h.db.QueryRow(context.Background(), `
-		SELECT e.offer_id, o.listing_id, o.buyer_id, e.amount_usdc,
-		       COALESCE(e.hedera_account_id,'')
+		SELECT e.offer_id, COALESCE(e.hedera_account_id,'')
 		FROM escrows e
 		JOIN offers o   ON o.id = e.offer_id
 		JOIN listings l ON l.id = o.listing_id
 		WHERE e.id = $1 AND (o.buyer_id = $2 OR l.seller_id = $2 OR $3 = 'operator')
 	`, escrowID, claims.UserID, claims.Role).
-		Scan(&offerID, &listingID, &buyerID, &amountUSDC, &hederaAccountID)
+		Scan(&offerID, &hederaAccountID)
 	if err != nil {
 		fail(c, http.StatusNotFound, "escrow not found")
 		return
 	}
 
-	if hederaAccountID != "" {
+	// Allow force-reprovision (e.g. after fixing the platform key mismatch) by
+	// passing ?force=true.  Without the flag, skip if already provisioned.
+	if hederaAccountID != "" && c.Query("force") != "true" {
 		ok(c, gin.H{"hedera_account_id": hederaAccountID, "already_provisioned": true})
 		return
 	}
 
-	if err := h.initEscrow(offerID, listingID, buyerID, amountUSDC); err != nil {
+	if err := h.initEscrow(offerID); err != nil {
 		fail(c, http.StatusConflict, err.Error())
 		return
 	}
@@ -239,12 +237,14 @@ func (h *Handler) ConfirmDeposit(c *gin.Context) {
 	ok(c, e)
 }
 
-// ScheduleRelease — operator creates the on-chain scheduled release.
-// Returns the ScheduleID which must be co-signed by the buyer via their wallet.
+// ScheduleRelease — buyer or operator schedules an on-chain USDC release to the seller.
+// The platform's signature (1-of-3) is attached automatically when the schedule is created.
+// The buyer must then co-sign via CompleteRelease to execute the transfer on-chain.
+// Operators can call this to initiate release; they follow up with CompleteRelease (force mode).
 func (h *Handler) ScheduleRelease(c *gin.Context) {
 	claims := middleware.GetClaims(c)
-	if claims.Role != "operator" {
-		fail(c, http.StatusForbidden, "operator only")
+	if claims.Role != "operator" && claims.Role != "buyer" {
+		fail(c, http.StatusForbidden, "buyer or operator only")
 		return
 	}
 
@@ -254,6 +254,7 @@ func (h *Handler) ScheduleRelease(c *gin.Context) {
 	}
 
 	// Load escrow + seller Hedera account.
+	// Buyers can only initiate release for their own escrow.
 	var e model.Escrow
 	var sellerHederaID string
 	err := h.db.QueryRow(context.Background(), `
@@ -263,8 +264,8 @@ func (h *Handler) ScheduleRelease(c *gin.Context) {
 		JOIN offers o ON o.id = e.offer_id
 		JOIN listings l ON l.id = o.listing_id
 		JOIN users u ON u.id = l.seller_id
-		WHERE e.id = $1
-	`, escrowID).Scan(&e.ID, &e.OfferID, &e.HederaAccountID, &e.HCSTopicID,
+		WHERE e.id = $1 AND (o.buyer_id = $2 OR $3 = 'operator')
+	`, escrowID, claims.UserID, claims.Role).Scan(&e.ID, &e.OfferID, &e.HederaAccountID, &e.HCSTopicID,
 		&e.AmountUSDC, &e.Status, &sellerHederaID)
 	if err != nil {
 		fail(c, http.StatusNotFound, "escrow not found")
@@ -277,6 +278,38 @@ func (h *Handler) ScheduleRelease(c *gin.Context) {
 	if e.HederaAccountID == "" || sellerHederaID == "" {
 		fail(c, http.StatusConflict, "escrow account or seller wallet not set up")
 		return
+	}
+
+	if h.hedera != nil {
+		// Verify the seller's account is associated with USDC before scheduling.
+		// If not, the scheduled transfer will silently fail on-chain (TOKEN_NOT_ASSOCIATED_TO_ACCOUNT)
+		// even though the schedule shows as executed.
+		associated, err := h.hedera.IsUSDCAssociated(sellerHederaID)
+		if err != nil {
+			fail(c, http.StatusInternalServerError, "could not verify seller USDC association: "+err.Error())
+			return
+		}
+		if !associated {
+			fail(c, http.StatusConflict, "seller's Hedera account is not associated with USDC — the seller must associate their wallet with the USDC token before funds can be released")
+			return
+		}
+
+		// Verify the escrow account actually holds the USDC. This catches the case
+		// where the escrow was force-reprovisioned (new account) but the buyer
+		// deposited to the old account — the inner scheduled transfer would fail
+		// silently with INSUFFICIENT_TOKEN_BALANCE otherwise.
+		hasFunds, actualUSDC, err := h.hedera.CheckProofOfFunds(e.HederaAccountID, e.AmountUSDC)
+		if err != nil {
+			fail(c, http.StatusInternalServerError, "could not verify escrow balance: "+err.Error())
+			return
+		}
+		if !hasFunds {
+			fail(c, http.StatusConflict, fmt.Sprintf(
+				"escrow account has insufficient USDC (has %.2f, needs %.2f) — the buyer may need to re-deposit to the current escrow account",
+				actualUSDC, e.AmountUSDC,
+			))
+			return
+		}
 	}
 
 	scheduleID, err := h.hedera.ScheduleRelease(e.HederaAccountID, sellerHederaID, e.AmountUSDC, e.OfferID.String())
@@ -296,6 +329,120 @@ func (h *Handler) ScheduleRelease(c *gin.Context) {
 	}
 
 	ok(c, gin.H{"schedule_id": scheduleID, "status": "releaseScheduled"})
+}
+
+// CompleteRelease — finalises the escrow after funds have been released on-chain.
+//
+// Buyer path: called after the buyer has co-signed the Hedera Scheduled Transaction
+// via their wallet. The backend confirms the schedule executed on the mirror node
+// before marking the escrow as completed.
+//
+// Operator (force) path: skips the on-chain check and marks completed immediately.
+// Used for admin overrides where the operator handles the USDC transfer out-of-band.
+func (h *Handler) CompleteRelease(c *gin.Context) {
+	claims := middleware.GetClaims(c)
+	escrowID, ok2 := parseUUID(c, "id")
+	if !ok2 {
+		return
+	}
+
+	var e model.Escrow
+	err := h.db.QueryRow(context.Background(), `
+		SELECT e.id, e.offer_id, COALESCE(e.hedera_account_id,''), COALESCE(e.hcs_topic_id,''),
+		       COALESCE(e.schedule_id,''), COALESCE(e.buyer_deposit_tx,''), COALESCE(e.seller_transfer_tx,''),
+		       e.amount_usdc, e.status, e.created_at, e.updated_at
+		FROM escrows e
+		JOIN offers o ON o.id = e.offer_id
+		JOIN listings l ON l.id = o.listing_id
+		WHERE e.id = $1 AND (o.buyer_id = $2 OR $3 = 'operator')
+	`, escrowID, claims.UserID, claims.Role).
+		Scan(&e.ID, &e.OfferID, &e.HederaAccountID, &e.HCSTopicID,
+			&e.ScheduleID, &e.BuyerDepositTx, &e.SellerTransferTx,
+			&e.AmountUSDC, &e.Status, &e.CreatedAt, &e.UpdatedAt)
+	if err != nil {
+		fail(c, http.StatusNotFound, "escrow not found or not authorised")
+		return
+	}
+	if e.Status != "releaseScheduled" {
+		fail(c, http.StatusConflict, "escrow is not awaiting release confirmation (status: "+e.Status+")")
+		return
+	}
+
+	// Buyer path: verify the Hedera Scheduled Transaction has executed on-chain.
+	// The mirror node can lag 10–30 s behind consensus on testnet; retry up to ~60 s.
+	if claims.Role != "operator" && e.ScheduleID != "" && h.hedera != nil {
+		const maxAttempts = 12
+		const retryDelay = 5 * time.Second
+		var info *meridianhedera.ScheduleInfo
+		for i := 0; i < maxAttempts; i++ {
+			var err error
+			info, err = h.hedera.GetScheduleStatus(e.ScheduleID)
+			if err != nil {
+				fail(c, http.StatusInternalServerError, "could not verify schedule status: "+err.Error())
+				return
+			}
+			if info.Executed != "" {
+				break
+			}
+			if i < maxAttempts-1 {
+				time.Sleep(retryDelay)
+			}
+		}
+		if info == nil || info.Executed == "" {
+			log.Printf("CompleteRelease: schedule %s not executed after %d attempts; signatories: %+v",
+				e.ScheduleID, maxAttempts, info.Signatories)
+			fail(c, http.StatusConflict, "scheduled transaction has not executed yet — sign it via your wallet first")
+			return
+		}
+
+		// Brief pause: the mirror node may index executed_timestamp before it
+		// reflects the updated token balance. Give it a few seconds to catch up.
+		time.Sleep(5 * time.Second)
+
+		// The schedule executed (threshold met), but the inner TransferTransaction
+		// can still fail silently (e.g. INSUFFICIENT_TOKEN_BALANCE). Verify the
+		// USDC actually left the escrow account before declaring success.
+		if e.HederaAccountID != "" {
+			stillHasFunds, _, balErr := h.hedera.CheckProofOfFunds(e.HederaAccountID, e.AmountUSDC)
+			if balErr == nil && stillHasFunds {
+				// Fetch the exact on-chain error code so we know what to fix.
+				innerResult, innerErr := h.hedera.GetScheduledTransactionResult(info.Executed)
+				if innerErr != nil {
+					log.Printf("CompleteRelease: inner tx query error: %v", innerErr)
+				}
+
+				recentTxs, recentErr := h.hedera.GetRecentAccountTransactions(e.HederaAccountID, 10)
+				if recentErr != nil {
+					log.Printf("CompleteRelease: account tx query error: %v", recentErr)
+				}
+
+				log.Printf("CompleteRelease: schedule %s (executed_timestamp=%s) — escrow %s still holds %.2f USDC — inner tx result: %q — recent escrow txs: %+v — schedule sigs: %+v",
+					e.ScheduleID, info.Executed, e.HederaAccountID, e.AmountUSDC, innerResult, recentTxs, info.Signatories)
+
+				msg := "the scheduled transaction executed but the USDC transfer failed on-chain"
+				if innerResult != "" {
+					msg += " (" + innerResult + ")"
+				}
+				fail(c, http.StatusConflict, msg)
+				return
+			}
+		}
+	}
+
+	if _, err := h.db.Exec(context.Background(), `
+		UPDATE escrows SET status = 'completed', updated_at = NOW() WHERE id = $1
+	`, escrowID); err != nil {
+		fail(c, http.StatusInternalServerError, "update failed")
+		return
+	}
+
+	if e.HCSTopicID != "" {
+		go h.hedera.LogEvent(e.HCSTopicID, meridianhedera.EventDealClosed, e.OfferID.String(),
+			map[string]string{"schedule_id": e.ScheduleID})
+	}
+
+	e.Status = "completed"
+	ok(c, e)
 }
 
 // OpenDispute — buyer or seller flags a dispute on a funded escrow.

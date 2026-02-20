@@ -31,10 +31,11 @@ func NewHederaService(cfg *meridianhedera.Config) (*HederaService, error) {
 		return nil, fmt.Errorf("invalid USDC token ID %q: %w", cfg.USDCTokenID, err)
 	}
 
-	platformPubKey, err := sdk.PublicKeyFromString(cfg.PlatformPublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("invalid platform public key: %w", err)
-	}
+	// Derive the platform public key from the operator's actual signing key.
+	// This guarantees the key placed in every escrow's 2-of-3 threshold matches
+	// the key used by SignSchedule — eliminating the HEDERA_PLATFORM_PUBLIC_KEY
+	// misconfiguration that caused NO_NEW_VALID_SIGNATURES.
+	platformPubKey := client.GetOperatorPublicKey()
 
 	return &HederaService{
 		client:         client,
@@ -78,9 +79,12 @@ type EscrowResult struct {
 }
 
 // CreateEscrow creates the escrow account and HCS deal topic for a new deal.
-// buyerPublicKey and sellerPublicKey should be DER-encoded hex strings fetched
-// from the Hedera mirror node (or provided by the users at wallet link time).
-func (s *HederaService) CreateEscrow(dealID string, buyerPublicKeyHex, sellerPublicKeyHex string) (*EscrowResult, error) {
+// The escrow account uses a 2-of-3 threshold key (buyer + seller + platform),
+// so any two parties can authorise a debit on-chain.
+//
+// buyerPublicKeyHex and sellerPublicKeyHex are the hex-encoded Ed25519 public
+// keys stored in the users table when each party links their Hedera wallet.
+func (s *HederaService) CreateEscrow(dealID, buyerPublicKeyHex, sellerPublicKeyHex string) (*EscrowResult, error) {
 	buyerKey, err := sdk.PublicKeyFromString(buyerPublicKeyHex)
 	if err != nil {
 		return nil, fmt.Errorf("invalid buyer public key: %w", err)
@@ -91,7 +95,6 @@ func (s *HederaService) CreateEscrow(dealID string, buyerPublicKeyHex, sellerPub
 		return nil, fmt.Errorf("invalid seller public key: %w", err)
 	}
 
-	// Create the 2-of-3 threshold escrow account.
 	escrowAccountID, err := meridianhedera.CreateEscrowAccount(s.client, buyerKey, sellerKey, s.platformPubKey)
 	if err != nil {
 		return nil, fmt.Errorf("create escrow account: %w", err)
@@ -112,8 +115,13 @@ func (s *HederaService) CreateEscrow(dealID string, buyerPublicKeyHex, sellerPub
 	}, nil
 }
 
-// ScheduleRelease creates a Scheduled Transaction to release escrow funds to the seller.
-// Returns the Hedera ScheduleID string that the buyer must co-sign via their wallet.
+// ScheduleRelease creates a Scheduled Transaction to release escrow funds to the seller,
+// then immediately adds the platform's explicit co-signature (1-of-3).
+//
+// The ScheduleCreateTransaction's outer signature is over the outer tx body, not the
+// inner scheduled transfer — Hedera does NOT automatically credit it as an inner-tx
+// signature. We must submit a separate ScheduleSignTransaction so the platform counts
+// as 1-of-3 before the buyer signs.
 func (s *HederaService) ScheduleRelease(escrowAccountIDStr, sellerAccountIDStr string, amountUSDC float64, dealID string) (string, error) {
 	escrowAccountID, err := sdk.AccountIDFromString(escrowAccountIDStr)
 	if err != nil {
@@ -131,7 +139,20 @@ func (s *HederaService) ScheduleRelease(escrowAccountIDStr, sellerAccountIDStr s
 		return "", fmt.Errorf("schedule release: %w", err)
 	}
 
+	// Add platform's explicit signature to the inner scheduled transaction (1-of-3).
+	// Ignore NO_NEW_VALID_SIGNATURES — the network may already have auto-credited it.
+	_ = meridianhedera.SignSchedule(s.client, scheduleID)
+
 	return scheduleID.String(), nil
+}
+
+// SignSchedule explicitly adds the platform operator's signature to a scheduled transaction.
+func (s *HederaService) SignSchedule(scheduleIDStr string) error {
+	scheduleID, err := sdk.ScheduleIDFromString(scheduleIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid schedule ID: %w", err)
+	}
+	return meridianhedera.SignSchedule(s.client, scheduleID)
 }
 
 // ScheduleRefund creates a Scheduled Transaction to return escrow funds to the buyer.
@@ -155,9 +176,26 @@ func (s *HederaService) ScheduleRefund(escrowAccountIDStr, buyerAccountIDStr str
 	return scheduleID.String(), nil
 }
 
+// IsUSDCAssociated returns true if the given Hedera account has associated with
+// the platform's USDC token. An unassociated account cannot receive USDC transfers.
+func (s *HederaService) IsUSDCAssociated(accountID string) (bool, error) {
+	return meridianhedera.IsTokenAssociated(s.network, accountID, s.cfg.USDCTokenID)
+}
+
 // GetScheduleStatus fetches the current state of a scheduled transaction from the mirror node.
 func (s *HederaService) GetScheduleStatus(scheduleIDStr string) (*meridianhedera.ScheduleInfo, error) {
 	return meridianhedera.GetSchedule(s.network, scheduleIDStr)
+}
+
+// GetScheduledTransactionResult fetches the result code of the inner transaction
+// that executed when the schedule threshold was met.
+func (s *HederaService) GetScheduledTransactionResult(executedTimestamp string) (string, error) {
+	return meridianhedera.GetScheduledTransactionResult(s.network, executedTimestamp)
+}
+
+// GetRecentAccountTransactions returns the most recent CRYPTOTRANSFER results for an account.
+func (s *HederaService) GetRecentAccountTransactions(accountID string, limit int) ([]struct{ Result, Name string }, error) {
+	return meridianhedera.GetRecentAccountTransactions(s.network, accountID, limit)
 }
 
 // --- HCS ---

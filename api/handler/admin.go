@@ -280,7 +280,7 @@ func (h *Handler) AdminResolveDispute(c *gin.Context) {
 		return
 	}
 
-	newStatus := "released"
+	newStatus := "completed"
 	if req.Resolution == "refund" {
 		newStatus = "refunded"
 	}

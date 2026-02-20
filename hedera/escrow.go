@@ -3,6 +3,7 @@ package hedera
 import (
 	"fmt"
 	"math"
+	"time"
 
 	hedera "github.com/hashgraph/hedera-sdk-go/v2"
 )
@@ -15,37 +16,21 @@ func usdcToUnits(amount float64) int64 {
 	return int64(math.Round(amount * math.Pow10(usdcDecimals)))
 }
 
-// BuildEscrowKeyList creates a 2-of-3 threshold KeyList for an escrow account.
+// CreateEscrowAccount creates a new Hedera account with a 2-of-3 threshold key
+// controlled by the buyer, seller, and platform operator. Any two of the three
+// parties can authorise a debit — typically platform + buyer (release) or
+// platform + seller (refund dispute resolution).
 //
-// Any two of the three parties (buyer, seller, platform) must sign a
-// transaction that debits the escrow account. Normal close: platform + buyer.
-// Dispute resolution: platform + seller (refund) or platform + buyer (release).
-func BuildEscrowKeyList(buyerKey, sellerKey, platformKey hedera.PublicKey) *hedera.KeyList {
-	keyList := hedera.NewKeyList()
-	keyList.SetThreshold(2)
-	keyList.Add(buyerKey)
-	keyList.Add(sellerKey)
-	keyList.Add(platformKey)
-	return keyList
-}
-
-// CreateEscrowAccount creates a new Hedera account protected by a 2-of-3
-// threshold key and returns its AccountID.
-//
-// The account is configured to auto-associate one HTS token so it can receive
-// USDC without a separate association transaction. The platform operator pays
-// the account creation fee.
-func CreateEscrowAccount(
-	client *hedera.Client,
-	buyerPublicKey, sellerPublicKey, platformPublicKey hedera.PublicKey,
-) (hedera.AccountID, error) {
-	keyList := BuildEscrowKeyList(buyerPublicKey, sellerPublicKey, platformPublicKey)
+// The account auto-associates with one HTS token (USDC) so the buyer can
+// deposit without a separate TokenAssociateTransaction.
+func CreateEscrowAccount(client *hedera.Client, buyerKey, sellerKey, platformKey hedera.PublicKey) (hedera.AccountID, error) {
+	thresholdKey := hedera.NewKeyList().
+		SetThreshold(2).
+		AddAllPublicKeys([]hedera.PublicKey{buyerKey, sellerKey, platformKey})
 
 	txResponse, err := hedera.NewAccountCreateTransaction().
-		SetKey(keyList).
+		SetKey(thresholdKey).
 		SetInitialBalance(hedera.ZeroHbar).
-		// Allow automatic association with one HTS token (USDC).
-		// This avoids an extra TokenAssociateTransaction before the buyer deposits.
 		SetMaxAutomaticTokenAssociations(1).
 		Execute(client)
 	if err != nil {
@@ -108,9 +93,23 @@ func ScheduleRelease(
 	units := usdcToUnits(amountUSDC)
 
 	// Build the inner transfer transaction that will be scheduled.
+	// Include a nanosecond timestamp in the inner tx memo to ensure uniqueness
+	// across retry attempts. Without this, Hedera deduplicates schedules by
+	// inner-tx body — a previously-failed release would hand back the old
+	// executed schedule ID, causing CompleteRelease to see an already-set
+	// executed_timestamp while USDC remains stuck in escrow.
+	// Keep the memo short: Hedera enforces a 100-byte limit.
+	innerMemo := fmt.Sprintf("release:%d", time.Now().UnixNano())
+
 	scheduledTx, err := hedera.NewTransferTransaction().
 		AddTokenTransfer(usdcTokenID, escrowAccountID, -units).
 		AddTokenTransfer(usdcTokenID, sellerAccountID, units).
+		SetTransactionMemo(innerMemo).
+		// Cap must cover the actual fee at execution time; 2 HBAR is well above
+		// the typical ~0.001 HBAR token-transfer fee. Without an explicit cap the
+		// SDK default can be lower than the network requires, producing
+		// INSUFFICIENT_TX_FEE even when the payer has plenty of HBAR.
+		SetMaxTransactionFee(hedera.NewHbar(2)).
 		Schedule()
 	if err != nil {
 		return hedera.ScheduleID{}, fmt.Errorf("build scheduled release: %w", err)
@@ -152,6 +151,7 @@ func ScheduleRefund(
 	scheduledTx, err := hedera.NewTransferTransaction().
 		AddTokenTransfer(usdcTokenID, escrowAccountID, -units).
 		AddTokenTransfer(usdcTokenID, buyerAccountID, units).
+		SetMaxTransactionFee(hedera.NewHbar(2)).
 		Schedule()
 	if err != nil {
 		return hedera.ScheduleID{}, fmt.Errorf("build scheduled refund: %w", err)

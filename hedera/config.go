@@ -28,9 +28,7 @@ func LoadConfig() (*Config, error) {
 	if cfg.OperatorPrivateKey == "" {
 		return nil, errors.New("HEDERA_OPERATOR_PRIVATE_KEY is required")
 	}
-	if cfg.PlatformPublicKey == "" {
-		return nil, errors.New("HEDERA_PLATFORM_PUBLIC_KEY is required")
-	}
+	// HEDERA_PLATFORM_PUBLIC_KEY is no longer required — derived from OperatorPrivateKey at runtime.
 	if cfg.USDCTokenID == "" {
 		return nil, errors.New("HEDERA_USDC_TOKEN_ID is required")
 	}
