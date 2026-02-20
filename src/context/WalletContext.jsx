@@ -87,7 +87,7 @@ export function WalletProvider({ children }) {
     setConnecting(true);
     try {
       await ensureInit();
-      await getConnector().openModal();
+      await getConnector().openModal(undefined, true);
       sync();
       // Return the account ID directly from the connector so callers don't
       // have to wait for React state to flush before using it.
