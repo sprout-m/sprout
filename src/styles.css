@@ -2275,14 +2275,13 @@ tr:last-child td {
 }
 
 .lp-preview-frame {
-  background: var(--primary);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 24px 64px rgba(14, 33, 64, 0.22),
-    0 8px 24px rgba(14, 33, 64, 0.12);
+    0 4px 24px rgba(0, 0, 0, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .lp-preview-frame-bar {
@@ -2290,8 +2289,8 @@ tr:last-child td {
   align-items: center;
   gap: 0.625rem;
   padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .lp-preview-dots {
@@ -2303,12 +2302,12 @@ tr:last-child td {
   width: 0.4375rem;
   height: 0.4375rem;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--line-strong);
 }
 
 .lp-preview-url {
   font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--muted-light);
   font-weight: 500;
   font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
 }
@@ -2329,14 +2328,14 @@ tr:last-child td {
   left: 0;
   right: 0;
   height: 130px;
-  background: linear-gradient(to bottom, transparent, var(--primary));
+  background: linear-gradient(to bottom, transparent, var(--bg));
   pointer-events: none;
 }
 
-/* Preview cards — dark glass variant of listing cards */
+/* Preview cards — match actual dashboard listing cards */
 .lp-preview-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 0.875rem;
   display: flex;
@@ -2351,25 +2350,25 @@ tr:last-child td {
 }
 
 .lp-preview-card .cat-label {
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--muted);
 }
 
 .lp-preview-card .tag {
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--line-strong);
+  color: var(--muted);
+  background: var(--surface-soft);
 }
 
 .lp-preview-card-title {
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--text);
 }
 
 .lp-preview-card-teaser {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--muted);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -2378,16 +2377,16 @@ tr:last-child td {
 }
 
 .lp-preview-card .listing-metrics {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.07);
+  background: var(--surface-soft);
+  border-color: var(--line);
 }
 
 .lp-preview-card .metric span {
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--muted-light);
 }
 
 .lp-preview-card .metric strong {
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--text);
 }
 
 .lp-preview-card-footer {
@@ -2402,22 +2401,22 @@ tr:last-child td {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--muted);
   margin-bottom: 0.125rem;
 }
 
 .lp-preview-ask-val {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text);
   letter-spacing: -0.02em;
   font-feature-settings: 'tnum';
 }
 
 .lp-preview-card .status-pill {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--line-strong);
+  color: var(--muted);
+  background: var(--surface-soft);
 }
 
 /* ── Features ── */
