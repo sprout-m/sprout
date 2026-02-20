@@ -106,7 +106,7 @@ export default function ListingDetailPage() {
           <div className="tab-panel">
             {activeTab === 'Overview' && (
               <div style={{ display: 'grid', gap: '1rem' }}>
-                <div className="listing-metrics">
+                <div className="listing-metrics" style={{ gridTemplateColumns: 'repeat(4, auto)', justifyContent: 'start', gap: '0 2.5rem' }}>
                   <div className="metric">
                     <span>Asking</span>
                     <strong>{listing.askingRange}</strong>
