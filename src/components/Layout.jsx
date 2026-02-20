@@ -65,9 +65,9 @@ export default function Layout() {
           <div className="brand">
             <Link to="/app">
               <img
-                src="/logo.png"
+                src="/LOGO.png"
                 alt="Meridian Marketplace"
-                style={{ height: '52px', width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' }}
+                style={{ height: '40px', width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' }}
               />
             </Link>
           </div>

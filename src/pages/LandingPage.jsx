@@ -181,9 +181,9 @@ export default function LandingPage() {
       <header className="lp-nav">
         <div className="lp-container lp-nav-inner">
           <img
-            src="/logo.png"
+            src="/LOGO.png"
             alt="Meridian"
-            style={{ height: '44px', filter: 'brightness(0) invert(1)' }}
+            style={{ height: '38px', filter: 'brightness(0) invert(1)' }}
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span className="lp-nav-hedera-badge">
@@ -392,9 +392,9 @@ export default function LandingPage() {
       <footer className="lp-footer">
         <div className="lp-container lp-footer-inner">
           <img
-            src="/logo.png"
+            src="/LOGO.png"
             alt="Meridian"
-            style={{ height: '34px', filter: 'brightness(0) invert(1)', opacity: 0.4 }}
+            style={{ height: '28px', filter: 'brightness(0) invert(1)', opacity: 0.4 }}
           />
           <p>© 2025 Meridian Marketplace. Structured M&amp;A for online businesses.</p>
           <a

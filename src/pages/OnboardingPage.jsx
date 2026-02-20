@@ -252,9 +252,9 @@ export default function OnboardingPage() {
         <div className="ob-header-inner">
           <Link to="/">
             <img
-              src="/logo.png"
+              src="/LOGO.png"
               alt="Meridian"
-              style={{ height: '42px', filter: 'brightness(0) invert(1)' }}
+              style={{ height: '36px', filter: 'brightness(0) invert(1)' }}
             />
           </Link>
           <Link to="/" className="ob-exit-link">Exit</Link>

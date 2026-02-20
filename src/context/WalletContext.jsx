@@ -30,7 +30,7 @@ function getConnector() {
         name:        'Meridian Marketplace',
         description: 'Business acquisition marketplace with USDC escrow on Hedera',
         url:         window.location.origin,
-        icons:       [`${window.location.origin}/logo.png`],
+        icons:       [`${window.location.origin}/LOGO.png`],
       },
       ledgerId,
       WC_PROJECT,
