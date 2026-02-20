@@ -391,6 +391,10 @@ export default function EscrowRoomPage() {
                 <span>Transfer Tx</span>
                 <code>{escrow.sellerTransferTx || '—'}</code>
               </div>
+              <div className="tx-item">
+                <span>Release Tx</span>
+                <code>{escrow.scheduleId || '—'}</code>
+              </div>
             </div>
           </article>
         );
