@@ -165,13 +165,6 @@ export default function CreateListingPage() {
 
       {/* ── Header ── */}
       <div style={{ marginBottom: '0.25rem' }}>
-        <button
-          className="ghost"
-          style={{ fontSize: '0.8125rem', padding: '0.25rem 0', marginBottom: '1rem' }}
-          onClick={() => navigate('/app/seller/listings')}
-        >
-          ← Back to Listings
-        </button>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>New Listing</h2>
         <p style={{ fontSize: '0.875rem', color: 'var(--muted)', marginTop: '0.2rem' }}>
           Step {step + 1} of {STEPS.length} — {STEPS[step]}

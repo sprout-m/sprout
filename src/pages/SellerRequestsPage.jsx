@@ -3,6 +3,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
 
+const ACCESS_LEVEL_OPTIONS = [
+  { value: 'Level 1', label: 'Level 1 - Overview + Financials' },
+  { value: 'Level 2', label: 'Level 2 - Overview + Financials + Documents' },
+  { value: 'Shortlist', label: 'Shortlist - Full access (includes Offers + Activity)' },
+];
+
 function RequestCard({ request, level, onLevelChange, onApprove, onReject, onMessage }) {
   const isPending = request.sellerDecision === 'pending';
   const isApproved = request.sellerDecision === 'approved';
@@ -40,9 +46,9 @@ function RequestCard({ request, level, onLevelChange, onApprove, onReject, onMes
             <>
               <span className="req-action-label">Grant level</span>
               <select value={level} onChange={(e) => onLevelChange(e.target.value)}>
-                <option>Level 1</option>
-                <option>Level 2</option>
-                <option>Shortlist</option>
+                {ACCESS_LEVEL_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
               <button onClick={onApprove}>Approve</button>
               <button className="ghost" onClick={onReject}>Reject</button>
