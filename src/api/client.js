@@ -202,6 +202,7 @@ export const escrowsApi = {
       body: JSON.stringify({ transaction_id: txId }),
     }).then(normalizeEscrow),
   scheduleRelease: (id) => apiFetch(`/api/v1/escrows/${id}/release`, { method: 'POST' }),
+  completeRelease: (id) => apiFetch(`/api/v1/escrows/${id}/complete-release`, { method: 'POST' }).then(normalizeEscrow),
   transferNFT: (id) => apiFetch(`/api/v1/escrows/${id}/transfer-nft`, { method: 'POST' }),
   openDispute: (id) => apiFetch(`/api/v1/escrows/${id}/dispute`, { method: 'POST' }),
   getEvents: (id) => apiFetch(`/api/v1/escrows/${id}/events`),

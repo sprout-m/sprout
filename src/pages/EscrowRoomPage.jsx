@@ -11,16 +11,21 @@ const steps = [
 ];
 
 export default function EscrowRoomPage() {
-  const { escrows, offers, listings, user, provisionEscrow, confirmDeposit, transferNFT, openDispute } = useMarket();
-  const { isConnected, accountId: walletAccountId, connecting, connect, transferUSDC, ensureTokenAssociated } = useWallet();
+  const { escrows, offers, listings, user, provisionEscrow, confirmDeposit, transferNFT, openDispute, initiateRelease, completeRelease } = useMarket();
+  const { isConnected, accountId: walletAccountId, connecting, connect, transferUSDC, ensureTokenAssociated, signSchedule } = useWallet();
   const NFT_COLLECTION = import.meta.env.VITE_HEDERA_NFT_COLLECTION_ID || '';
+  const USDC_TOKEN     = import.meta.env.VITE_HEDERA_USDC_TOKEN_ID     || '';
   const navigate = useNavigate();
-  const [depositingId,  setDepositingId]  = useState(null);
-  const [depositError,  setDepositError]  = useState('');
+  const [depositingId,   setDepositingId]   = useState(null);
+  const [depositError,   setDepositError]   = useState('');
   const [transferringId, setTransferringId] = useState(null);
-  const [transferError, setTransferError] = useState('');
+  const [transferError,  setTransferError]  = useState('');
   const [provisioningId, setProvisioningId] = useState(null);
   const [provisionError, setProvisionError] = useState('');
+  const [releasingId,    setReleasingId]    = useState(null);
+  const [releaseError,   setReleaseError]   = useState('');
+  const [associatingId,  setAssociatingId]  = useState(null);
+  const [associateError, setAssociateError] = useState('');
 
   const getOffer = (id) => offers.find((o) => o.offerId === id);
   const getListing = (listingId) => listings.find((l) => l.id === listingId);
@@ -60,8 +65,9 @@ export default function EscrowRoomPage() {
 
         const stepDone = [deposited, nftTransferred, released];
 
-        const isBuyer = user?.id === offer.buyerId;
-        const isSeller = user?.id === getListing(offer.listingId)?.sellerId;
+        const isBuyer    = user?.id === offer.buyerId;
+        const isSeller   = user?.id === getListing(offer.listingId)?.sellerId;
+        const isOperator = user?.role === 'operator';
 
         return (
           <article key={escrow.escrowId} className="card" style={{ marginBottom: '0.75rem' }}>
@@ -163,6 +169,40 @@ export default function EscrowRoomPage() {
                     )}
                   </>
                 )}
+                {isSeller && USDC_TOKEN && (
+                  <>
+                    <button
+                      className="ghost"
+                      disabled={associatingId === escrow.escrowId || connecting}
+                      onClick={async () => {
+                        setAssociateError('');
+                        setAssociatingId(escrow.escrowId);
+                        try {
+                          let fromAccount = walletAccountId;
+                          if (!isConnected) {
+                            fromAccount = await connect();
+                            if (!fromAccount) throw new Error('No wallet connected.');
+                          }
+                          await ensureTokenAssociated(fromAccount, USDC_TOKEN);
+                        } catch (err) {
+                          if (!err?.message?.includes('TOKEN_ALREADY_ASSOCIATED')) {
+                            setAssociateError(err.message || 'Association failed');
+                          }
+                        } finally {
+                          setAssociatingId(null);
+                        }
+                      }}
+                    >
+                      {associatingId === escrow.escrowId ? 'Associating…' : 'Associate USDC'}
+                    </button>
+                    {associateError && associatingId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {associateError}
+                      </p>
+                    )}
+                  </>
+                )}
+
                 {isSeller && (
                   <>
                     <button
@@ -219,6 +259,102 @@ export default function EscrowRoomPage() {
                     {provisionError && provisioningId === null && (
                       <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
                         {provisionError}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* ── Buyer: release funds to seller (on-chain) ── */}
+                {isBuyer && escrow.status === 'funded' && nftTransferred && (
+                  <>
+                    <button
+                      disabled={releasingId === escrow.escrowId}
+                      onClick={async () => {
+                        setReleaseError('');
+                        setReleasingId(escrow.escrowId);
+                        try {
+                          // 1. Backend creates the ScheduleRelease (platform = 1/3).
+                          const { schedule_id: scheduleId } = await initiateRelease(escrow.escrowId);
+
+                          // 2. Buyer co-signs via HashPack (buyer = 2/3 → executes on-chain).
+                          await signSchedule(scheduleId);
+
+                          // 3. Confirm to backend — verifies schedule executed, marks completed.
+                          await completeRelease(escrow.escrowId);
+                        } catch (err) {
+                          setReleaseError(err.message || 'Release failed');
+                        } finally {
+                          setReleasingId(null);
+                        }
+                      }}
+                    >
+                      {releasingId === escrow.escrowId ? 'Releasing…' : 'Release Funds to Seller'}
+                    </button>
+                    {releaseError && releasingId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {releaseError}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* ── Buyer: confirm pending release ── */}
+                {/* Shown when the schedule exists but completeRelease hasn't run yet   */}
+                {/* (e.g. mirror-node lag on the first attempt). Buyer already signed — */}
+                {/* just ping the backend to re-check and mark completed.               */}
+                {isBuyer && escrow.status === 'releaseScheduled' && escrow.scheduleId && (
+                  <>
+                    <button
+                      disabled={releasingId === escrow.escrowId}
+                      onClick={async () => {
+                        setReleaseError('');
+                        setReleasingId(escrow.escrowId);
+                        try {
+                          await completeRelease(escrow.escrowId);
+                        } catch (err) {
+                          setReleaseError(err.message || 'Release confirmation failed');
+                        } finally {
+                          setReleasingId(null);
+                        }
+                      }}
+                    >
+                      {releasingId === escrow.escrowId ? 'Confirming…' : 'Confirm Release'}
+                    </button>
+                    {releaseError && releasingId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {releaseError}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* ── Operator: schedule + force-complete release ── */}
+                {isOperator && (escrow.status === 'funded' || escrow.status === 'releaseScheduled') && (
+                  <>
+                    <button
+                      disabled={releasingId === escrow.escrowId}
+                      onClick={async () => {
+                        setReleaseError('');
+                        setReleasingId(escrow.escrowId);
+                        try {
+                          if (escrow.status === 'funded') {
+                            // Create the schedule first (moves to releaseScheduled).
+                            await initiateRelease(escrow.escrowId);
+                          }
+                          // Force-complete: backend skips on-chain check for operators.
+                          await completeRelease(escrow.escrowId);
+                        } catch (err) {
+                          setReleaseError(err.message || 'Release failed');
+                        } finally {
+                          setReleasingId(null);
+                        }
+                      }}
+                    >
+                      {releasingId === escrow.escrowId ? 'Releasing…' : 'Release to Seller'}
+                    </button>
+                    {releaseError && releasingId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {releaseError}
                       </p>
                     )}
                   </>

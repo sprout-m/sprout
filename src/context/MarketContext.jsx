@@ -221,6 +221,28 @@ export function MarketProvider({ children }) {
     return result;
   }
 
+  // Initiates the on-chain release schedule (platform signs as 1/3).
+  // Returns { schedule_id } — buyer must then co-sign via their wallet.
+  async function initiateRelease(escrowId) {
+    const result = await escrowsApi.scheduleRelease(escrowId);
+    // Optimistically update status to releaseScheduled.
+    setEscrows((prev) =>
+      prev.map((esc) =>
+        esc.escrowId === escrowId
+          ? { ...esc, status: 'releaseScheduled', scheduleId: result.schedule_id }
+          : esc
+      )
+    );
+    return result;
+  }
+
+  // Finalises the release after the buyer has signed the schedule (or operator force-completes).
+  async function completeRelease(escrowId) {
+    const e = await escrowsApi.completeRelease(escrowId);
+    setEscrows((prev) => prev.map((item) => (item.escrowId === escrowId ? e : item)));
+    return e;
+  }
+
   async function transferNFT(escrowId) {
     const result = await escrowsApi.transferNFT(escrowId);
     setEscrows((prev) =>
@@ -333,6 +355,8 @@ export function MarketProvider({ children }) {
     updateOfferStatus,
     provisionEscrow,
     confirmDeposit,
+    initiateRelease,
+    completeRelease,
     linkWallet,
     transferNFT,
     openDispute,

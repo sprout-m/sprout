@@ -9,6 +9,8 @@ import {
   AccountId,
   Client,
   LedgerId,
+  ScheduleId,
+  ScheduleSignTransaction,
   TokenAssociateTransaction,
   TokenId,
   TransferTransaction,
@@ -65,6 +67,7 @@ const WalletContext = createContext({
   disconnect:             async () => {},
   transferUSDC:           async () => { throw new Error('Wallet not ready'); },
   ensureTokenAssociated:  async () => { throw new Error('Wallet not ready'); },
+  signSchedule:           async () => { throw new Error('Wallet not ready'); },
 });
 
 export function WalletProvider({ children }) {
@@ -122,6 +125,36 @@ export function WalletProvider({ children }) {
   }
 
   /**
+   * Co-sign a Hedera Scheduled Transaction via the connected wallet.
+   * Call this after ScheduleRelease has been created on the backend.
+   * Returns the transaction ID of the ScheduleSign transaction.
+   *
+   * When the buyer's signature is the second of the 2-of-3 threshold keys,
+   * Hedera automatically executes the inner (release) transaction.
+   */
+  async function signSchedule(scheduleIdStr) {
+    const signer = getConnector().signers?.[0];
+    if (!signer) throw new Error('No wallet connected');
+
+    const tx = await new ScheduleSignTransaction()
+      .setScheduleId(ScheduleId.fromString(scheduleIdStr))
+      .setNodeAccountIds([new AccountId(3)])
+      .freezeWithSigner(signer);
+
+    const response = await tx.executeWithSigner(signer);
+
+    // getReceipt throws for non-SUCCESS statuses, but some SDK/wallet combinations
+    // silently return NO_NEW_VALID_SIGNATURES without throwing. Check explicitly.
+    const receipt = await response.getReceipt(receiptClient);
+    const statusStr = receipt?.status?.toString();
+    if (statusStr && statusStr !== 'SUCCESS' && statusStr !== 'SCHEDULE_ALREADY_EXECUTED') {
+      throw new Error(`Schedule signing rejected by Hedera: ${statusStr}. Your wallet key may not match the escrow — try re-linking your wallet.`);
+    }
+
+    return response.transactionId.toString();
+  }
+
+  /**
    * Build, sign, and execute a USDC HTS transfer via the connected wallet.
    * Returns the Hedera transaction ID string (e.g. "0.0.12345@1700000000.000000000").
    *
@@ -165,7 +198,7 @@ export function WalletProvider({ children }) {
   }
 
   return (
-    <WalletContext.Provider value={{ accountId, isConnected, connecting, connect, disconnect, transferUSDC, ensureTokenAssociated }}>
+    <WalletContext.Provider value={{ accountId, isConnected, connecting, connect, disconnect, transferUSDC, ensureTokenAssociated, signSchedule }}>
       {children}
     </WalletContext.Provider>
   );
