@@ -337,8 +337,8 @@ export default function ListingDetailPage() {
       {showModal && (
         <RequestAccessModal
           onClose={() => setShowModal(false)}
-          onSubmit={({ ndaSigned, proofMethod, proofAmountUSDC }) =>
-            requestAccess({ listingId, ndaSigned, proofMethod, proofAmountUSDC })
+          onSubmit={({ ndaSigned, proofMethod, proofAmountUSDC, proofTxId }) =>
+            requestAccess({ listingId, ndaSigned, proofMethod, proofAmountUSDC, proofTxId })
           }
         />
       )}

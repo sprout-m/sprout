@@ -152,11 +152,12 @@ export function MarketProvider({ children }) {
   }
 
   // ── Access request actions ────────────────────────────────────────────────
-  async function requestAccess({ listingId, ndaSigned, proofMethod, proofAmountUSDC }) {
+  async function requestAccess({ listingId, ndaSigned, proofMethod, proofAmountUSDC, proofTxId }) {
     const ar = await accessApi.request(listingId, {
       nda_signed: ndaSigned,
       proof_method: proofMethod,
       proof_amount_usdc: Number(proofAmountUSDC),
+      ...(proofTxId ? { proof_tx_id: proofTxId } : {}),
     });
     setAccessRequests((prev) => [ar, ...prev]);
     return ar;
@@ -187,11 +188,10 @@ export function MarketProvider({ children }) {
   async function updateOfferStatus({ offerId, status }) {
     const o = await offersApi.updateStatus(offerId, { status });
     setOffers((prev) => prev.map((item) => (item.offerId === offerId ? o : item)));
-    // If accepted, reload escrows (backend creates one asynchronously)
+    // If accepted, reload escrows — the backend inserts the row synchronously
+    // before responding, so it's immediately available.
     if (status === 'accepted') {
-      setTimeout(() => {
-        escrowsApi.mine().then(setEscrows).catch(() => {});
-      }, 2000);
+      escrowsApi.mine().then(setEscrows).catch(() => {});
     }
     return o;
   }
@@ -199,6 +199,14 @@ export function MarketProvider({ children }) {
   // ── Escrow actions ────────────────────────────────────────────────────────
   // Records a completed on-chain deposit against the escrow row.
   // The actual signing happens in EscrowRoomPage via WalletContext.
+  async function provisionEscrow(escrowId) {
+    const result = await escrowsApi.provision(escrowId);
+    if (!result.already_provisioned) {
+      setEscrows((prev) => prev.map((e) => (e.escrowId === escrowId ? result : e)));
+    }
+    return result;
+  }
+
   async function confirmDeposit(escrowId, transactionId) {
     const e = await escrowsApi.confirmDeposit(escrowId, transactionId);
     setEscrows((prev) => prev.map((item) => (item.escrowId === escrowId ? e : item)));
@@ -323,6 +331,7 @@ export function MarketProvider({ children }) {
     decideAccess,
     submitOffer,
     updateOfferStatus,
+    provisionEscrow,
     confirmDeposit,
     linkWallet,
     transferNFT,
