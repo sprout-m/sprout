@@ -251,9 +251,20 @@ function CreateListingModal({ onClose, onCreated }) {
 }
 
 export default function SellerListingsPage() {
-  const { listings, accessRequests, offers, user } = useMarket();
+  const { listings, accessRequests, offers, user, updateListing } = useMarket();
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  async function toggleStatus(listing) {
+    setTogglingId(listing.id);
+    try {
+      const nextStatus = listing.status === 'live' ? 'draft' : 'live';
+      await updateListing(listing.id, { status: nextStatus });
+    } finally {
+      setTogglingId(null);
+    }
+  }
 
   // Only show this seller's own listings
   const myListings = listings.filter((l) => l.sellerId === user?.id);
@@ -342,6 +353,17 @@ export default function SellerListingsPage() {
                     </td>
                     <td>
                       <div className="actions-row">
+                        <button
+                          style={{
+                            fontSize: '0.75rem',
+                            padding: '0.25rem 0.5rem',
+                            opacity: togglingId === listing.id ? 0.5 : 1,
+                          }}
+                          disabled={togglingId === listing.id}
+                          onClick={() => toggleStatus(listing)}
+                        >
+                          {listing.status === 'live' ? 'Unpublish' : 'Go Live'}
+                        </button>
                         <button
                           className="ghost"
                           style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}

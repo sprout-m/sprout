@@ -126,8 +126,13 @@ export function MarketProvider({ children }) {
   // ── Listing actions ───────────────────────────────────────────────────────
   async function createListing(data) {
     const l = await listingsApi.create(data);
-    // Add immediately so the UI updates before any async reload.
     setListings((prev) => [l, ...prev]);
+    return l;
+  }
+
+  async function updateListing(id, data) {
+    const l = await listingsApi.update(id, data);
+    setListings((prev) => prev.map((item) => (item.id === id ? l : item)));
     return l;
   }
 
@@ -265,6 +270,7 @@ export function MarketProvider({ children }) {
     userCache,
     // Actions
     createListing,
+    updateListing,
     requestAccess,
     decideAccess,
     submitOffer,
