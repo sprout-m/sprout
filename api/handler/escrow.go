@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/meridian-marketplace/api/middleware"
-	"github.com/meridian-marketplace/api/model"
-	meridianhedera "github.com/meridian-marketplace/hedera"
+	"github.com/meridian-mkt/api/middleware"
+	"github.com/meridian-mkt/api/model"
+	meridianhedera "github.com/meridian-mkt/hedera"
 )
 
 // initEscrow is called in a goroutine when an offer is accepted.

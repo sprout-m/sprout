@@ -1,4 +1,4 @@
-module github.com/meridian-marketplace/hedera
+module github.com/meridian-mkt/hedera
 
 go 1.22
 

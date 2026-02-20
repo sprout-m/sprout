@@ -1,4 +1,4 @@
-module github.com/meridian-marketplace/api
+module github.com/meridian-mkt/api
 
 go 1.22
 
@@ -9,7 +9,7 @@ require (
 	github.com/hashgraph/hedera-sdk-go/v2 v2.47.0
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/joho/godotenv v1.5.1
-	github.com/meridian-marketplace/hedera v0.0.0
+	github.com/meridian-mkt/hedera v0.0.0
 	golang.org/x/crypto v0.27.0
 )
 
@@ -67,4 +67,4 @@ require (
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
-replace github.com/meridian-marketplace/hedera => ../hedera
+replace github.com/meridian-mkt/hedera => ../hedera

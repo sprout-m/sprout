@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	meridianhedera "github.com/meridian-marketplace/hedera"
+	meridianhedera "github.com/meridian-mkt/hedera"
 	sdk "github.com/hashgraph/hedera-sdk-go/v2"
 )
 

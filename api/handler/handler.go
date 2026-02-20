@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/meridian-marketplace/api/config"
-	"github.com/meridian-marketplace/api/service"
+	"github.com/meridian-mkt/api/config"
+	"github.com/meridian-mkt/api/service"
 )
 
 // Handler holds shared dependencies injected into all route handlers.

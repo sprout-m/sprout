@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/meridian-marketplace/api/config"
-	"github.com/meridian-marketplace/api/db"
-	"github.com/meridian-marketplace/api/handler"
-	"github.com/meridian-marketplace/api/router"
-	"github.com/meridian-marketplace/api/service"
-	meridianhedera "github.com/meridian-marketplace/hedera"
+	"github.com/meridian-mkt/api/config"
+	"github.com/meridian-mkt/api/db"
+	"github.com/meridian-mkt/api/handler"
+	"github.com/meridian-mkt/api/router"
+	"github.com/meridian-mkt/api/service"
+	meridianhedera "github.com/meridian-mkt/hedera"
 )
 
 func main() {

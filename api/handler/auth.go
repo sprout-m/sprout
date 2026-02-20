@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/meridian-marketplace/api/middleware"
-	"github.com/meridian-marketplace/api/model"
+	"github.com/meridian-mkt/api/middleware"
+	"github.com/meridian-mkt/api/model"
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/meridian-marketplace/api/config"
-	"github.com/meridian-marketplace/api/handler"
-	"github.com/meridian-marketplace/api/middleware"
+	"github.com/meridian-mkt/api/config"
+	"github.com/meridian-mkt/api/handler"
+	"github.com/meridian-mkt/api/middleware"
 )
 
 func New(cfg *config.Config, h *handler.Handler) *gin.Engine {

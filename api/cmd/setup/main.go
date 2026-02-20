@@ -22,7 +22,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	sdk "github.com/hashgraph/hedera-sdk-go/v2"
-	meridianhedera "github.com/meridian-marketplace/hedera"
+	meridianhedera "github.com/meridian-mkt/hedera"
 )
 
 const (
