@@ -11,13 +11,16 @@ const steps = [
 ];
 
 export default function EscrowRoomPage() {
-  const { escrows, offers, listings, user, confirmDeposit, transferNFT, openDispute } = useMarket();
-  const { isConnected, accountId: walletAccountId, transferUSDC } = useWallet();
+  const { escrows, offers, listings, user, provisionEscrow, confirmDeposit, transferNFT, openDispute } = useMarket();
+  const { isConnected, accountId: walletAccountId, connecting, connect, transferUSDC, ensureTokenAssociated } = useWallet();
+  const NFT_COLLECTION = import.meta.env.VITE_HEDERA_NFT_COLLECTION_ID || '';
   const navigate = useNavigate();
   const [depositingId,  setDepositingId]  = useState(null);
   const [depositError,  setDepositError]  = useState('');
   const [transferringId, setTransferringId] = useState(null);
   const [transferError, setTransferError] = useState('');
+  const [provisioningId, setProvisioningId] = useState(null);
+  const [provisionError, setProvisionError] = useState('');
 
   const getOffer = (id) => offers.find((o) => o.offerId === id);
   const getListing = (listingId) => listings.find((l) => l.id === listingId);
@@ -100,28 +103,45 @@ export default function EscrowRoomPage() {
                 {isBuyer && (
                   <>
                     <button
-                      disabled={escrow.status !== 'awaitingDeposit' || depositingId === escrow.escrowId}
+                      disabled={
+                        escrow.status !== 'awaitingDeposit'
+                        || depositingId === escrow.escrowId
+                        || connecting
+                      }
                       onClick={async () => {
                         setDepositError('');
                         setDepositingId(escrow.escrowId);
                         try {
-                          let txId;
-                          const hasRealWallet = isConnected
-                            && escrow.hederaAccountId
-                            && import.meta.env.VITE_HEDERA_USDC_TOKEN_ID;
-
-                          if (hasRealWallet) {
-                            // Real on-chain USDC transfer via HashPack
-                            txId = await transferUSDC(
-                              walletAccountId,
-                              escrow.hederaAccountId,
-                              escrow.amountUSDC,
-                            );
-                          } else {
-                            // Dev/testnet fallback — no real Hedera token configured
-                            txId = `0.0.${Date.now()}@${Math.floor(Date.now() / 1000)}.0`;
+                          // 1. Ensure wallet is connected — auto-open HashPack pairing if not.
+                          let fromAccount = walletAccountId;
+                          if (!isConnected) {
+                            fromAccount = await connect();
+                            if (!fromAccount) throw new Error('No wallet connected. Please pair HashPack and try again.');
                           }
 
+                          // 2. Validate on-chain prerequisites.
+                          if (!import.meta.env.VITE_HEDERA_USDC_TOKEN_ID) {
+                            throw new Error('USDC token ID is not configured (set VITE_HEDERA_USDC_TOKEN_ID).');
+                          }
+                          if (!escrow.hederaAccountId) {
+                            throw new Error('Escrow account is not yet provisioned. Use the Setup button below.');
+                          }
+
+                          // 3. Pre-associate buyer's account with the NFT collection so the
+                          //    operator can send the NFT to them later without hitting
+                          //    TOKEN_NOT_ASSOCIATED_TO_ACCOUNT.  Silently skips if already done.
+                          if (NFT_COLLECTION) {
+                            await ensureTokenAssociated(fromAccount, NFT_COLLECTION);
+                          }
+
+                          // 4. Sign and broadcast via HashPack — wallet modal opens here.
+                          const txId = await transferUSDC(
+                            fromAccount,
+                            escrow.hederaAccountId,
+                            escrow.amountUSDC,
+                          );
+
+                          // 5. Record the confirmed on-chain transaction against the escrow.
                           await confirmDeposit(escrow.escrowId, txId);
                         } catch (err) {
                           setDepositError(err.message || 'Deposit failed');
@@ -130,7 +150,11 @@ export default function EscrowRoomPage() {
                         }
                       }}
                     >
-                      {depositingId === escrow.escrowId ? 'Waiting for HashPack…' : 'Deposit USDC'}
+                      {depositingId === escrow.escrowId
+                        ? 'Waiting for HashPack…'
+                        : !isConnected
+                          ? 'Connect Wallet & Deposit'
+                          : 'Deposit USDC'}
                     </button>
                     {depositError && depositingId === null && (
                       <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
@@ -173,6 +197,33 @@ export default function EscrowRoomPage() {
                     )}
                   </>
                 )}
+                {(isBuyer || isSeller) && !escrow.hederaAccountId && (
+                  <>
+                    <button
+                      className="ghost"
+                      disabled={provisioningId === escrow.escrowId}
+                      onClick={async () => {
+                        setProvisionError('');
+                        setProvisioningId(escrow.escrowId);
+                        try {
+                          await provisionEscrow(escrow.escrowId);
+                        } catch (err) {
+                          setProvisionError(err.message || 'Provisioning failed');
+                        } finally {
+                          setProvisioningId(null);
+                        }
+                      }}
+                    >
+                      {provisioningId === escrow.escrowId ? 'Setting up…' : 'Setup Escrow Account'}
+                    </button>
+                    {provisionError && provisioningId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {provisionError}
+                      </p>
+                    )}
+                  </>
+                )}
+
                 {(isBuyer || isSeller) && (
                   <button
                     className="ghost"

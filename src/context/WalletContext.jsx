@@ -7,7 +7,9 @@ import {
 } from '@hashgraph/hedera-wallet-connect';
 import {
   AccountId,
+  Client,
   LedgerId,
+  TokenAssociateTransaction,
   TokenId,
   TransferTransaction,
 } from '@hashgraph/sdk';
@@ -18,6 +20,9 @@ const USDC_TOKEN   = import.meta.env.VITE_HEDERA_USDC_TOKEN_ID  || '';
 
 const ledgerId = NETWORK === 'mainnet' ? LedgerId.MAINNET : LedgerId.TESTNET;
 const chainId  = NETWORK === 'mainnet' ? HederaChainId.Mainnet : HederaChainId.Testnet;
+
+// Read-only client used only for fetching transaction receipts.
+const receiptClient = NETWORK === 'mainnet' ? Client.forMainnet() : Client.forTestnet();
 
 // Singleton connector — lives outside React to survive StrictMode double-renders.
 let _connector   = null;
@@ -53,12 +58,13 @@ async function ensureInit() {
 // ── Context ───────────────────────────────────────────────────────────────────
 
 const WalletContext = createContext({
-  accountId:    '',
-  isConnected:  false,
-  connecting:   false,
-  connect:      async () => {},
-  disconnect:   async () => {},
-  transferUSDC: async () => { throw new Error('Wallet not ready'); },
+  accountId:              '',
+  isConnected:            false,
+  connecting:             false,
+  connect:                async () => {},
+  disconnect:             async () => {},
+  transferUSDC:           async () => { throw new Error('Wallet not ready'); },
+  ensureTokenAssociated:  async () => { throw new Error('Wallet not ready'); },
 });
 
 export function WalletProvider({ children }) {
@@ -83,6 +89,9 @@ export function WalletProvider({ children }) {
       await ensureInit();
       await getConnector().openModal();
       sync();
+      // Return the account ID directly from the connector so callers don't
+      // have to wait for React state to flush before using it.
+      return getConnector().signers?.[0]?.getAccountId()?.toString() ?? '';
     } finally {
       setConnecting(false);
     }
@@ -91,6 +100,25 @@ export function WalletProvider({ children }) {
   async function disconnect() {
     await getConnector().disconnectAll();
     sync();
+  }
+
+  /**
+   * Ensure fromAccountId is associated with a given HTS token.
+   * HashPack prompts once; silently skips if already associated.
+   */
+  async function ensureTokenAssociated(fromAccountIdStr, tokenIdStr) {
+    const fromId = AccountId.fromString(fromAccountIdStr);
+    const signer = getConnector().getSigner(fromId);
+    try {
+      const tx = await new TokenAssociateTransaction()
+        .setAccountId(fromId)
+        .setTokenIds([TokenId.fromString(tokenIdStr)])
+        .setNodeAccountIds([new AccountId(3)])
+        .freezeWithSigner(signer);
+      await tx.executeWithSigner(signer);
+    } catch (err) {
+      if (!err?.message?.includes('TOKEN_ALREADY_ASSOCIATED')) throw err;
+    }
   }
 
   /**
@@ -107,24 +135,37 @@ export function WalletProvider({ children }) {
       throw new Error('VITE_HEDERA_USDC_TOKEN_ID is not configured');
     }
 
-    const c      = getConnector();
-    const fromId = AccountId.fromString(fromAccountIdStr);
-    const signer = c.getSigner(fromId);
+    const c       = getConnector();
+    const fromId  = AccountId.fromString(fromAccountIdStr);
+    const signer  = c.getSigner(fromId);
+    const tokenId = TokenId.fromString(USDC_TOKEN);
+
+    // Ensure the sender's account is associated with the USDC token.
+    await ensureTokenAssociated(fromAccountIdStr, USDC_TOKEN);
 
     // USDC has 6 decimal places: 1.00 USDC = 1_000_000 units
     const units = Math.round(amountUSDC * 1_000_000);
 
+    // freezeWithSigner requires at least one node account ID on the transaction.
+    // Node 0.0.3 is always a valid entry point on both testnet and mainnet.
     const tx = await new TransferTransaction()
-      .addTokenTransfer(TokenId.fromString(USDC_TOKEN), fromId, -units)
-      .addTokenTransfer(TokenId.fromString(USDC_TOKEN), AccountId.fromString(toAccountIdStr), units)
+      .setNodeAccountIds([new AccountId(3)])
+      .addTokenTransfer(tokenId, fromId, -units)
+      .addTokenTransfer(tokenId, AccountId.fromString(toAccountIdStr), units)
       .freezeWithSigner(signer);
 
     const response = await tx.executeWithSigner(signer);
+
+    // Verify the transaction actually succeeded on-chain.
+    // getReceipt throws a StatusError for any non-SUCCESS status
+    // (e.g. INSUFFICIENT_TOKEN_BALANCE, USER_CANCELLED).
+    await response.getReceipt(receiptClient);
+
     return response.transactionId.toString();
   }
 
   return (
-    <WalletContext.Provider value={{ accountId, isConnected, connecting, connect, disconnect, transferUSDC }}>
+    <WalletContext.Provider value={{ accountId, isConnected, connecting, connect, disconnect, transferUSDC, ensureTokenAssociated }}>
       {children}
     </WalletContext.Provider>
   );
