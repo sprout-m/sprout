@@ -242,7 +242,7 @@ func (h *Handler) UpdateListing(c *gin.Context) {
 
 // nullJSON returns nil if the RawMessage is empty, otherwise returns it as-is.
 // This prevents storing "null" or empty bytes in JSONB columns.
-func nullJSON(r json.RawMessage) interface{} {
+func nullJSON(r json.RawMessage) any {
 	if len(r) == 0 || string(r) == "null" {
 		return nil
 	}

@@ -301,7 +301,7 @@ func (h *Handler) GetDealEvents(c *gin.Context) {
 		return
 	}
 	if hcsTopicID == "" {
-		ok(c, []interface{}{})
+		ok(c, []any{})
 		return
 	}
 
@@ -314,7 +314,10 @@ func (h *Handler) GetDealEvents(c *gin.Context) {
 	ok(c, events)
 }
 
-func scanEscrows(rows interface{ Next() bool; Scan(...any) error }) []model.Escrow {
+func scanEscrows(rows interface {
+	Next() bool
+	Scan(...any) error
+}) []model.Escrow {
 	result := make([]model.Escrow, 0)
 	for rows.Next() {
 		var e model.Escrow

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	meridianhedera "github.com/meridian-mkt/hedera"
 	sdk "github.com/hashgraph/hedera-sdk-go/v2"
+	meridianhedera "github.com/meridian-mkt/hedera"
 )
 
 // HederaService wraps the hedera package and exposes the operations the
@@ -189,7 +189,7 @@ func (s *HederaService) MintListingNFT(listingID uuid.UUID) (int64, error) {
 		return 0, fmt.Errorf("NFT collection not configured (set HEDERA_NFT_COLLECTION_ID)")
 	}
 
-	metadata := []byte(fmt.Sprintf(`{"listing_id":"%s","platform":"Meridian"}`, listingID))
+	metadata := fmt.Appendf(nil, `{"listing_id":"%s","platform":"Meridian"}`, listingID)
 	return meridianhedera.MintListingNFT(s.client, s.nftCollectionID, metadata)
 }
 
