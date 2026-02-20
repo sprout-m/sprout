@@ -140,6 +140,8 @@ export const auth = {
   me: () => apiFetch('/api/v1/users/me').then(normalizeUser),
   updateProfile: (data) =>
     apiFetch('/api/v1/users/me', { method: 'PATCH', body: JSON.stringify(data) }).then(normalizeUser),
+  linkWallet: (data) =>
+    apiFetch('/api/v1/users/me/wallet', { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // ── Listings ─────────────────────────────────────────────────────────────────
@@ -195,6 +197,7 @@ export const escrowsApi = {
       body: JSON.stringify({ transaction_id: txId }),
     }).then(normalizeEscrow),
   scheduleRelease: (id) => apiFetch(`/api/v1/escrows/${id}/release`, { method: 'POST' }),
+  transferNFT: (id) => apiFetch(`/api/v1/escrows/${id}/transfer-nft`, { method: 'POST' }),
   openDispute: (id) => apiFetch(`/api/v1/escrows/${id}/dispute`, { method: 'POST' }),
   getEvents: (id) => apiFetch(`/api/v1/escrows/${id}/events`),
 };

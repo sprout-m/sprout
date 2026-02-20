@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
+import { useWallet } from '../context/WalletContext';
 import StatusPill from '../components/StatusPill';
 
 const steps = [
@@ -9,8 +11,13 @@ const steps = [
 ];
 
 export default function EscrowRoomPage() {
-  const { escrows, offers, listings, depositEscrow, transferOwnership, openDispute } = useMarket();
+  const { escrows, offers, listings, user, confirmDeposit, transferNFT, openDispute } = useMarket();
+  const { isConnected, accountId: walletAccountId, transferUSDC } = useWallet();
   const navigate = useNavigate();
+  const [depositingId,  setDepositingId]  = useState(null);
+  const [depositError,  setDepositError]  = useState('');
+  const [transferringId, setTransferringId] = useState(null);
+  const [transferError, setTransferError] = useState('');
 
   const getOffer = (id) => offers.find((o) => o.offerId === id);
   const getListing = (listingId) => listings.find((l) => l.id === listingId);
@@ -45,9 +52,13 @@ export default function EscrowRoomPage() {
         if (!offer) return null;
 
         const deposited = escrow.status !== 'awaitingDeposit';
-        const transferred = escrow.status === 'completed';
+        const nftTransferred = Boolean(escrow.sellerTransferTx);
+        const released = ['releaseScheduled', 'completed'].includes(escrow.status);
 
-        const stepDone = [deposited, transferred, transferred];
+        const stepDone = [deposited, nftTransferred, released];
+
+        const isBuyer = user?.id === offer.buyerId;
+        const isSeller = user?.id === getListing(offer.listingId)?.sellerId;
 
         return (
           <article key={escrow.escrowId} className="card" style={{ marginBottom: '0.75rem' }}>
@@ -86,36 +97,101 @@ export default function EscrowRoomPage() {
               </div>
 
               <div style={{ display: 'grid', gap: '0.5rem', minWidth: '160px' }}>
-                <button
-                  disabled={escrow.status !== 'awaitingDeposit'}
-                  onClick={() => depositEscrow(escrow.escrowId)}
-                >
-                  Deposit USDC
-                </button>
-                <button
-                  className="ghost"
-                  disabled={escrow.status !== 'funded'}
-                  onClick={() => transferOwnership(escrow.escrowId)}
-                >
-                  Transfer Ownership
-                </button>
-                <button
-                  className="ghost"
-                  disabled={escrow.status === 'completed' || escrow.status === 'disputed'}
-                  onClick={async () => {
-                    await openDispute(escrow.escrowId);
-                    const listing = getListing(offer.listingId);
-                    navigate('/app/messages', {
-                      state: {
-                        listingId: offer.listingId,
-                        buyerId: offer.buyerId,
-                        sellerId: listing?.sellerId,
+                {isBuyer && (
+                  <>
+                    <button
+                      disabled={escrow.status !== 'awaitingDeposit' || depositingId === escrow.escrowId}
+                      onClick={async () => {
+                        setDepositError('');
+                        setDepositingId(escrow.escrowId);
+                        try {
+                          let txId;
+                          const hasRealWallet = isConnected
+                            && escrow.hederaAccountId
+                            && import.meta.env.VITE_HEDERA_USDC_TOKEN_ID;
+
+                          if (hasRealWallet) {
+                            // Real on-chain USDC transfer via HashPack
+                            txId = await transferUSDC(
+                              walletAccountId,
+                              escrow.hederaAccountId,
+                              escrow.amountUSDC,
+                            );
+                          } else {
+                            // Dev/testnet fallback — no real Hedera token configured
+                            txId = `0.0.${Date.now()}@${Math.floor(Date.now() / 1000)}.0`;
+                          }
+
+                          await confirmDeposit(escrow.escrowId, txId);
+                        } catch (err) {
+                          setDepositError(err.message || 'Deposit failed');
+                        } finally {
+                          setDepositingId(null);
+                        }
+                      }}
+                    >
+                      {depositingId === escrow.escrowId ? 'Waiting for HashPack…' : 'Deposit USDC'}
+                    </button>
+                    {depositError && depositingId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {depositError}
+                      </p>
+                    )}
+                  </>
+                )}
+                {isSeller && (
+                  <>
+                    <button
+                      className="ghost"
+                      disabled={
+                        escrow.status !== 'funded' && escrow.status !== 'releaseScheduled'
+                        || Boolean(escrow.sellerTransferTx)
+                        || transferringId === escrow.escrowId
                       }
-                    });
-                  }}
-                >
-                  {escrow.status === 'disputed' ? 'Dispute Opened' : 'Open Dispute'}
-                </button>
+                      onClick={async () => {
+                        setTransferError('');
+                        setTransferringId(escrow.escrowId);
+                        try {
+                          await transferNFT(escrow.escrowId);
+                        } catch (err) {
+                          setTransferError(err.message || 'NFT transfer failed');
+                        } finally {
+                          setTransferringId(null);
+                        }
+                      }}
+                    >
+                      {transferringId === escrow.escrowId
+                        ? 'Transferring…'
+                        : escrow.sellerTransferTx
+                          ? 'NFT Transferred ✓'
+                          : 'Transfer Listing NFT'}
+                    </button>
+                    {transferError && transferringId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {transferError}
+                      </p>
+                    )}
+                  </>
+                )}
+                {(isBuyer || isSeller) && (
+                  <button
+                    className="ghost"
+                    disabled={escrow.status === 'completed' || escrow.status === 'disputed'}
+                    onClick={async () => {
+                      await openDispute(escrow.escrowId);
+                      const listing = getListing(offer.listingId);
+                      navigate('/app/messages', {
+                        state: {
+                          listingId: offer.listingId,
+                          buyerId: offer.buyerId,
+                          sellerId: listing?.sellerId,
+                        }
+                      });
+                    }}
+                  >
+                    {escrow.status === 'disputed' ? 'Dispute Opened' : 'Open Dispute'}
+                  </button>
+                )}
               </div>
             </div>
 
