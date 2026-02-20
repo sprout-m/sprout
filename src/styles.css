@@ -217,6 +217,12 @@ button, input, select, textarea { font: inherit; }
   color: #fff;
 }
 
+.topbar-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .topbar-user {
   display: flex;
   align-items: center;
@@ -225,17 +231,28 @@ button, input, select, textarea { font: inherit; }
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 
-.topbar-user:hover {
+.topbar-user-menu:hover .topbar-user {
   background: rgba(255, 255, 255, 0.13);
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+.topbar-user-dropdown {
+  display: flex;
+  align-items: center;
+}
+
+.topbar-user-dropdown button {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+}
+
 .topbar-user-avatar {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
   border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: #fff;

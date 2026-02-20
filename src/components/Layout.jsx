@@ -102,6 +102,7 @@ export default function Layout() {
               </button>
             ) : (
               <button
+                className="ghost"
                 style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
                 onClick={connect}
                 disabled={connecting}
@@ -109,19 +110,17 @@ export default function Layout() {
                 {connecting ? 'Connecting…' : 'Connect Wallet'}
               </button>
             )}
-            <div className="topbar-user">
-              <span className="topbar-user-avatar">
-                {(user?.handle || '?').charAt(0).toUpperCase()}
-              </span>
-              <span className="topbar-user-handle">{user?.handle}</span>
+            <div className="topbar-user-menu">
+              <div className="topbar-user">
+                <span className="topbar-user-avatar">
+                  {(user?.handle || '?').charAt(0).toUpperCase()}
+                </span>
+                <span className="topbar-user-handle">{user?.handle}</span>
+              </div>
+              <div className="topbar-user-dropdown">
+                <button className="ghost" onClick={handleLogout}>Sign out</button>
+              </div>
             </div>
-            <button
-              className="ghost"
-              style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
-              onClick={handleLogout}
-            >
-              Sign out
-            </button>
           </div>
         </div>
       </header>
