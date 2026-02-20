@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS access_requests (
                                 CHECK (proof_of_funds_status IN ('pending', 'verified', 'failed')),
     proof_amount_usdc       NUMERIC(20,6),
     proof_method            TEXT        CHECK (proof_method IN ('wallet', 'deposit')),
+    proof_tx_id             TEXT,
     seller_decision         TEXT        NOT NULL DEFAULT 'pending'
                                 CHECK (seller_decision IN ('pending', 'approved', 'denied')),
     access_level            TEXT,
@@ -115,3 +116,6 @@ CREATE INDEX IF NOT EXISTS idx_offers_buyer      ON offers (buyer_id);
 CREATE INDEX IF NOT EXISTS idx_messages_thread   ON messages (thread_id);
 CREATE INDEX IF NOT EXISTS idx_threads_buyer     ON message_threads (buyer_id);
 CREATE INDEX IF NOT EXISTS idx_threads_seller    ON message_threads (seller_id);
+
+-- Additive migrations (idempotent — safe to run on existing databases).
+ALTER TABLE access_requests ADD COLUMN IF NOT EXISTS proof_tx_id TEXT;
