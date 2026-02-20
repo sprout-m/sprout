@@ -140,6 +140,8 @@ export const auth = {
   me: () => apiFetch('/api/v1/users/me').then(normalizeUser),
   updateProfile: (data) =>
     apiFetch('/api/v1/users/me', { method: 'PATCH', body: JSON.stringify(data) }).then(normalizeUser),
+  linkWallet: (data) =>
+    apiFetch('/api/v1/users/me/wallet', { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // ── Listings ─────────────────────────────────────────────────────────────────

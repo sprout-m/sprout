@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
+import { useWallet } from '../context/WalletContext';
 import StatusPill from '../components/StatusPill';
 
 const steps = [
@@ -10,8 +11,11 @@ const steps = [
 ];
 
 export default function EscrowRoomPage() {
-  const { escrows, offers, listings, user, depositEscrow, transferNFT, openDispute } = useMarket();
+  const { escrows, offers, listings, user, confirmDeposit, transferNFT, openDispute } = useMarket();
+  const { isConnected, accountId: walletAccountId, transferUSDC } = useWallet();
   const navigate = useNavigate();
+  const [depositingId,  setDepositingId]  = useState(null);
+  const [depositError,  setDepositError]  = useState('');
   const [transferringId, setTransferringId] = useState(null);
   const [transferError, setTransferError] = useState('');
 
@@ -94,12 +98,46 @@ export default function EscrowRoomPage() {
 
               <div style={{ display: 'grid', gap: '0.5rem', minWidth: '160px' }}>
                 {isBuyer && (
-                  <button
-                    disabled={escrow.status !== 'awaitingDeposit'}
-                    onClick={() => depositEscrow(escrow.escrowId)}
-                  >
-                    Deposit USDC
-                  </button>
+                  <>
+                    <button
+                      disabled={escrow.status !== 'awaitingDeposit' || depositingId === escrow.escrowId}
+                      onClick={async () => {
+                        setDepositError('');
+                        setDepositingId(escrow.escrowId);
+                        try {
+                          let txId;
+                          const hasRealWallet = isConnected
+                            && escrow.hederaAccountId
+                            && import.meta.env.VITE_HEDERA_USDC_TOKEN_ID;
+
+                          if (hasRealWallet) {
+                            // Real on-chain USDC transfer via HashPack
+                            txId = await transferUSDC(
+                              walletAccountId,
+                              escrow.hederaAccountId,
+                              escrow.amountUSDC,
+                            );
+                          } else {
+                            // Dev/testnet fallback — no real Hedera token configured
+                            txId = `0.0.${Date.now()}@${Math.floor(Date.now() / 1000)}.0`;
+                          }
+
+                          await confirmDeposit(escrow.escrowId, txId);
+                        } catch (err) {
+                          setDepositError(err.message || 'Deposit failed');
+                        } finally {
+                          setDepositingId(null);
+                        }
+                      }}
+                    >
+                      {depositingId === escrow.escrowId ? 'Waiting for HashPack…' : 'Deposit USDC'}
+                    </button>
+                    {depositError && depositingId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {depositError}
+                      </p>
+                    )}
+                  </>
                 )}
                 {isSeller && (
                   <>

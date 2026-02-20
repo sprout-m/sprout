@@ -197,11 +197,20 @@ export function MarketProvider({ children }) {
   }
 
   // ── Escrow actions ────────────────────────────────────────────────────────
-  async function depositEscrow(escrowId) {
-    const fakeTxId = `0.0.${Date.now()}@${Math.floor(Date.now() / 1000)}.0`;
-    const e = await escrowsApi.confirmDeposit(escrowId, fakeTxId);
+  // Records a completed on-chain deposit against the escrow row.
+  // The actual signing happens in EscrowRoomPage via WalletContext.
+  async function confirmDeposit(escrowId, transactionId) {
+    const e = await escrowsApi.confirmDeposit(escrowId, transactionId);
     setEscrows((prev) => prev.map((item) => (item.escrowId === escrowId ? e : item)));
     return e;
+  }
+
+  async function linkWallet(hederaAccountId) {
+    const result = await auth.linkWallet({ hedera_account_id: hederaAccountId });
+    setUser((prev) =>
+      prev ? { ...prev, hederaAccountId: result.hedera_account_id, hederaPublicKey: result.hedera_public_key } : prev
+    );
+    return result;
   }
 
   async function transferNFT(escrowId) {
@@ -314,7 +323,8 @@ export function MarketProvider({ children }) {
     decideAccess,
     submitOffer,
     updateOfferStatus,
-    depositEscrow,
+    confirmDeposit,
+    linkWallet,
     transferNFT,
     openDispute,
     startConversation,
