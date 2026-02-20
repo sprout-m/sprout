@@ -7,20 +7,23 @@ import (
 )
 
 type MessageThread struct {
-	ID        uuid.UUID `json:"id"`
-	ListingID uuid.UUID `json:"listing_id"`
-	BuyerID   uuid.UUID `json:"buyer_id"`
-	SellerID  uuid.UUID `json:"seller_id"`
-	Title     string    `json:"title,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	ListingID    uuid.UUID `json:"listing_id"`
+	BuyerID      uuid.UUID `json:"buyer_id"`
+	SellerID     uuid.UUID `json:"seller_id"`
+	BuyerHandle  string    `json:"buyer_handle,omitempty"`
+	SellerHandle string    `json:"seller_handle,omitempty"`
+	Title        string    `json:"title,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type Message struct {
-	ID         uuid.UUID  `json:"id"`
-	ThreadID   uuid.UUID  `json:"thread_id"`
-	SenderID   *uuid.UUID `json:"sender_id,omitempty"`
-	SenderType string     `json:"sender_type"`
-	Body       string     `json:"body"`
-	CreatedAt  time.Time  `json:"created_at"`
+	ID           uuid.UUID  `json:"id"`
+	ThreadID     uuid.UUID  `json:"thread_id"`
+	SenderID     *uuid.UUID `json:"sender_id,omitempty"`
+	SenderHandle string     `json:"sender_handle,omitempty"`
+	SenderType   string     `json:"sender_type"`
+	Body         string     `json:"body"`
+	CreatedAt    time.Time  `json:"created_at"`
 }

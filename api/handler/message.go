@@ -16,10 +16,14 @@ func (h *Handler) ListThreads(c *gin.Context) {
 	claims := middleware.GetClaims(c)
 
 	rows, err := h.db.Query(context.Background(), `
-		SELECT id, listing_id, buyer_id, seller_id, COALESCE(title,''), created_at, updated_at
-		FROM message_threads
-		WHERE buyer_id = $1 OR seller_id = $1
-		ORDER BY updated_at DESC
+		SELECT t.id, t.listing_id, t.buyer_id, t.seller_id,
+		       COALESCE(buyer.handle, ''), COALESCE(seller.handle, ''),
+		       COALESCE(t.title,''), t.created_at, t.updated_at
+		FROM message_threads t
+		JOIN users buyer  ON buyer.id = t.buyer_id
+		JOIN users seller ON seller.id = t.seller_id
+		WHERE t.buyer_id = $1 OR t.seller_id = $1
+		ORDER BY t.updated_at DESC
 	`, claims.UserID)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "query failed")
@@ -30,7 +34,10 @@ func (h *Handler) ListThreads(c *gin.Context) {
 	threads := make([]model.MessageThread, 0)
 	for rows.Next() {
 		var t model.MessageThread
-		if err := rows.Scan(&t.ID, &t.ListingID, &t.BuyerID, &t.SellerID, &t.Title, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		if err := rows.Scan(
+			&t.ID, &t.ListingID, &t.BuyerID, &t.SellerID,
+			&t.BuyerHandle, &t.SellerHandle, &t.Title, &t.CreatedAt, &t.UpdatedAt,
+		); err != nil {
 			continue
 		}
 		threads = append(threads, t)
@@ -93,6 +100,8 @@ func (h *Handler) StartThread(c *gin.Context) {
 		fail(c, http.StatusInternalServerError, "failed to create thread")
 		return
 	}
+	t.BuyerHandle = buyerHandle
+	t.SellerHandle = sellerHandle
 
 	created(c, t)
 }
@@ -120,9 +129,12 @@ func (h *Handler) GetThread(c *gin.Context) {
 	}
 
 	rows, err := h.db.Query(context.Background(), `
-		SELECT id, thread_id, sender_id, sender_type, body, created_at
-		FROM messages WHERE thread_id = $1
-		ORDER BY created_at ASC
+		SELECT m.id, m.thread_id, m.sender_id, COALESCE(u.handle, ''),
+		       m.sender_type, m.body, m.created_at
+		FROM messages m
+		LEFT JOIN users u ON u.id = m.sender_id
+		WHERE m.thread_id = $1
+		ORDER BY m.created_at ASC
 	`, threadID)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "query failed")
@@ -133,7 +145,7 @@ func (h *Handler) GetThread(c *gin.Context) {
 	msgs := make([]model.Message, 0)
 	for rows.Next() {
 		var m model.Message
-		if err := rows.Scan(&m.ID, &m.ThreadID, &m.SenderID, &m.SenderType, &m.Body, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.ThreadID, &m.SenderID, &m.SenderHandle, &m.SenderType, &m.Body, &m.CreatedAt); err != nil {
 			continue
 		}
 		msgs = append(msgs, m)
@@ -179,9 +191,10 @@ func (h *Handler) SendMessage(c *gin.Context) {
 	err := h.db.QueryRow(context.Background(), `
 		INSERT INTO messages (thread_id, sender_id, sender_type, body)
 		VALUES ($1, $2, 'user', $3)
-		RETURNING id, thread_id, sender_id, sender_type, body, created_at
+		RETURNING id, thread_id, sender_id, sender_type, body, created_at,
+		          COALESCE((SELECT handle FROM users WHERE id = $2), '')
 	`, threadID, senderID, req.Body).
-		Scan(&m.ID, &m.ThreadID, &m.SenderID, &m.SenderType, &m.Body, &m.CreatedAt)
+		Scan(&m.ID, &m.ThreadID, &m.SenderID, &m.SenderType, &m.Body, &m.CreatedAt, &m.SenderHandle)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to send message")
 		return
