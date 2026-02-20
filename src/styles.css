@@ -1104,6 +1104,7 @@ tbody tr:hover td {
 .listing-card {
   background: var(--surface);
   border: 1px solid var(--line);
+  border-top: 3px solid var(--card-accent, var(--line));
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   padding: 1.25rem;
@@ -1115,8 +1116,12 @@ tbody tr:hover td {
 
 .listing-card:hover {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
-  border-color: var(--primary-border);
+  border-color: var(--card-accent, var(--primary-border));
   transform: translateY(-2px);
+}
+
+.listing-card .cat-label {
+  color: var(--card-accent, var(--accent));
 }
 
 .listing-card-head {

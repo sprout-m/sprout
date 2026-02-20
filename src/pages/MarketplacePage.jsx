@@ -5,6 +5,15 @@ import StatusPill from '../components/StatusPill';
 
 const ALL_CATEGORIES = ['SaaS', 'Ecommerce', 'Media', 'Agency', 'Marketplace'];
 
+const CATEGORY_COLORS = {
+  SaaS:        '#6366f1',
+  Ecommerce:   '#10b981',
+  Media:       '#a855f7',
+  Agency:      '#f97316',
+  Marketplace: '#06b6d4',
+  Other:       '#94a3b8',
+};
+
 export default function MarketplacePage() {
   const { listings, accessRequests, activeUser } = useMarket();
 
@@ -125,7 +134,11 @@ export default function MarketplacePage() {
                 const req = myRequest(listing.id);
                 const decision = req?.sellerDecision ?? null;
                 return (
-                  <article key={listing.id} className="listing-card">
+                  <article
+                    key={listing.id}
+                    className="listing-card"
+                    style={{ '--card-accent': CATEGORY_COLORS[listing.category] || CATEGORY_COLORS.Other }}
+                  >
                     <div className="listing-card-head">
                       <span className="cat-label">{listing.category}</span>
                       <StatusPill status={listing.status} />
