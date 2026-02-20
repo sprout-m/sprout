@@ -6,7 +6,7 @@ const roleRoutes = {
   buyer: [
     { to: '/app', label: 'Marketplace' },
     { to: '/app/my-deals', label: 'My Deals' },
-    { to: '/app/escrow', label: 'Escrow Room' },
+    { to: '/app/escrow', label: 'Closing' },
     { to: '/app/messages', label: 'Messages' },
     { to: '/app/profile', label: 'Profile' }
   ],
@@ -14,7 +14,7 @@ const roleRoutes = {
     { to: '/app/seller/listings', label: 'Listings' },
     { to: '/app/seller/requests', label: 'Access Requests' },
     { to: '/app/seller/offers', label: 'Offers' },
-    { to: '/app/escrow', label: 'Escrow Room' },
+    { to: '/app/escrow', label: 'Closing' },
     { to: '/app/messages', label: 'Messages' },
     { to: '/app/profile', label: 'Profile' }
   ],
@@ -23,7 +23,7 @@ const roleRoutes = {
     { to: '/app/seller/listings', label: 'Listings' },
     { to: '/app/seller/requests', label: 'Access Requests' },
     { to: '/app/seller/offers', label: 'Offers' },
-    { to: '/app/escrow', label: 'Escrow' },
+    { to: '/app/escrow', label: 'Closing' },
     { to: '/app/profile', label: 'Profile' }
   ]
 };
@@ -67,6 +67,7 @@ export default function Layout() {
               <NavLink
                 key={route.to}
                 to={route.to}
+                end={route.to === '/app'}
                 className={({ isActive }) => (isActive ? 'active' : '')}
               >
                 {route.label}

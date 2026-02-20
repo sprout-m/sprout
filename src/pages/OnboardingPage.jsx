@@ -63,6 +63,39 @@ const SELLER_STEPS = [
     private: true,
   },
   {
+    type: 'text',
+    question: "What's your business website?",
+    subLabel: 'Not shown to buyers until you approve them.',
+    placeholder: 'acmecorp.com',
+    label: 'Website URL',
+    private: true,
+  },
+  {
+    type: 'entity',
+    question: 'How would you like to list your business?',
+    private: true,
+    options: [
+      {
+        value: 'individual',
+        label: 'As an individual',
+        desc: 'Sell your business under your own name. Examples include sole proprietors.',
+        fields: [
+          { key: 'firstName', label: 'Legal first name', placeholder: 'First name' },
+          { key: 'lastName', label: 'Legal last name', placeholder: 'Last name' },
+        ],
+        note: 'This will not be visible to a buyer until they send an offer (LOI).',
+      },
+      {
+        value: 'company',
+        label: 'As a company',
+        desc: 'Sell your business under your entity name. Examples include LLCs and corporations.',
+        fields: [
+          { key: 'entityName', label: 'Legal entity name', placeholder: 'e.g. Acme Corp LLC' },
+        ],
+      },
+    ],
+  },
+  {
     type: 'single',
     question: 'What type of business are you selling?',
     options: [
@@ -93,13 +126,6 @@ const SELLER_STEPS = [
       { value: 'lifestyle', label: 'Retirement or lifestyle change' },
     ],
   },
-  {
-    type: 'text',
-    question: "What's your name?",
-    subLabel: 'Used for your seller profile and correspondence.',
-    placeholder: 'Your full name',
-    label: 'Full name',
-  },
 ];
 
 export default function OnboardingPage() {
@@ -121,6 +147,11 @@ export default function OnboardingPage() {
     const ans = answers[step];
     if (currentStep.type === 'multi') return Array.isArray(ans) && ans.length > 0;
     if (currentStep.type === 'text') return typeof ans === 'string' && ans.trim().length > 0;
+    if (currentStep.type === 'entity') {
+      if (!ans?.entityType) return false;
+      const opt = currentStep.options.find((o) => o.value === ans.entityType);
+      return opt ? opt.fields.every((f) => (ans[f.key] || '').trim().length > 0) : false;
+    }
     return !!ans;
   };
 
@@ -148,6 +179,7 @@ export default function OnboardingPage() {
   };
 
   const setSingle = (value) => setAnswers((prev) => ({ ...prev, [step]: value }));
+  const setText = (value) => setAnswers((prev) => ({ ...prev, [step]: value }));
 
   const toggleMulti = (value) => {
     setAnswers((prev) => {
@@ -159,7 +191,17 @@ export default function OnboardingPage() {
     });
   };
 
-  const setText = (value) => setAnswers((prev) => ({ ...prev, [step]: value }));
+  // Entity step handlers
+  const setEntityType = (entityType) => {
+    setAnswers((prev) => ({ ...prev, [step]: { entityType } }));
+  };
+
+  const setEntityField = (key, value) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [step]: { ...(prev[step] || {}), [key]: value },
+    }));
+  };
 
   return (
     <div className="ob-shell">
@@ -197,7 +239,7 @@ export default function OnboardingPage() {
                 </div>
                 <div className="ob-role-text">
                   <strong>I want to buy a business</strong>
-                  <span>Browse vetted listings, access data rooms, and make offers</span>
+                  <span>Browse vetted listings, access documents, and make offers</span>
                 </div>
                 <div className={`ob-radio-dot${role === 'buyer' ? ' ob-radio-dot--on' : ''}`} />
               </button>
@@ -266,7 +308,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Multi-select */}
+            {/* Multi-select chips */}
             {currentStep.type === 'multi' && (
               <div className="ob-chip-grid">
                 {currentStep.options.map((opt) => {
@@ -304,6 +346,64 @@ export default function OnboardingPage() {
                     if (e.key === 'Enter' && canAdvance()) handleNext();
                   }}
                 />
+              </div>
+            )}
+
+            {/* Entity — individual vs company */}
+            {currentStep.type === 'entity' && (
+              <div className="ob-entity-grid">
+                {currentStep.options.map((opt) => {
+                  const isActive = answers[step]?.entityType === opt.value;
+                  const twoCol = opt.fields.length > 1;
+                  return (
+                    <div
+                      key={opt.value}
+                      className={`ob-entity-card${isActive ? ' ob-entity-card--active' : ''}`}
+                    >
+                      {/* Clickable header row */}
+                      <div
+                        className="ob-entity-head"
+                        onClick={() => setEntityType(opt.value)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setEntityType(opt.value)}
+                      >
+                        <div className={`ob-radio-dot${isActive ? ' ob-radio-dot--on' : ''}`} />
+                        <div className="ob-entity-title">
+                          <strong>{opt.label}</strong>
+                          <span>{opt.desc}</span>
+                        </div>
+                      </div>
+
+                      {/* Expanded fields */}
+                      {isActive && (
+                        <div className="ob-entity-body">
+                          <div className={`ob-entity-fields${twoCol ? ' ob-entity-fields--two' : ''}`}>
+                            {opt.fields.map((field, fi) => (
+                              <div key={field.key} className="ob-field">
+                                <label className="ob-field-label">{field.label}</label>
+                                <input
+                                  className="ob-field-input ob-field-input--sm"
+                                  type="text"
+                                  placeholder={field.placeholder}
+                                  value={(answers[step] || {})[field.key] || ''}
+                                  onChange={(e) => setEntityField(field.key, e.target.value)}
+                                  autoFocus={fi === 0}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && canAdvance()) handleNext();
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          {opt.note && (
+                            <p className="ob-entity-note">{opt.note}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

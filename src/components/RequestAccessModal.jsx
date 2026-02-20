@@ -11,7 +11,7 @@ export default function RequestAccessModal({ onClose, onSubmit }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h3>Request Access</h3>
-        <p className="muted">Complete NDA and proof-of-funds to unlock private data room access.</p>
+        <p className="muted">Complete NDA and proof-of-funds to unlock private document access.</p>
 
         {step === 1 && (
           <section className="step-section">

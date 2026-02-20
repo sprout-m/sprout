@@ -6,7 +6,10 @@ import StatusPill from '../components/StatusPill';
 const ALL_CATEGORIES = ['SaaS', 'Ecommerce', 'Media', 'Agency', 'Marketplace'];
 
 export default function MarketplacePage() {
-  const { listings } = useMarket();
+  const { listings, accessRequests, activeUser } = useMarket();
+
+  const myRequest = (listingId) =>
+    accessRequests.find((r) => r.listingId === listingId && r.buyerId === activeUser.id) ?? null;
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [search, setSearch] = useState('');
   const [categories, setCategories] = useState(new Set());
@@ -118,55 +121,64 @@ export default function MarketplacePage() {
             </div>
           ) : (
             <div className="listings-grid">
-              {filtered.map((listing) => (
-                <article key={listing.id} className="listing-card">
-                  <div className="listing-card-head">
-                    <span className="cat-label">{listing.category}</span>
-                    <StatusPill status={listing.status} />
-                  </div>
+              {filtered.map((listing) => {
+                const req = myRequest(listing.id);
+                const decision = req?.sellerDecision ?? null;
+                return (
+                  <article key={listing.id} className="listing-card">
+                    <div className="listing-card-head">
+                      <span className="cat-label">{listing.category}</span>
+                      <StatusPill status={listing.status} />
+                    </div>
 
-                  <div>
-                    <h3 className="listing-card-title">{listing.anonymizedName}</h3>
-                    <p className="listing-card-teaser">{listing.teaserDescription}</p>
-                  </div>
+                    <div>
+                      <h3 className="listing-card-title">{listing.anonymizedName}</h3>
+                      <p className="listing-card-teaser">{listing.teaserDescription}</p>
+                    </div>
 
-                  <div className="listing-metrics">
-                    <div className="metric">
-                      <span>Revenue</span>
-                      <strong>{listing.revenueRange}</strong>
-                    </div>
-                    <div className="metric">
-                      <span>Margin</span>
-                      <strong>{listing.profitRange}</strong>
-                    </div>
-                    <div className="metric">
-                      <span>Established</span>
-                      <strong>{listing.age}</strong>
-                    </div>
-                    <div className="metric">
-                      <span>Location</span>
-                      <strong>{listing.location}</strong>
-                    </div>
-                  </div>
-
-                  <div className="listing-card-footer">
-                    <div className="listing-card-ask">
-                      <span>Asking</span>
-                      <strong>{listing.askingRange}</strong>
-                    </div>
-                    <div className="listing-card-footer-row">
-                      <div className="listing-card-tags">
-                        {listing.verified && <span className="tag">Vetted</span>}
-                        {listing.ndaRequired && <span className="tag">NDA</span>}
-                        <span className="tag">{listing.escrowType}</span>
+                    <div className="listing-metrics">
+                      <div className="metric">
+                        <span>Revenue</span>
+                        <strong>{listing.revenueRange}</strong>
                       </div>
-                      <Link className="button-link" style={{ marginLeft: 'auto' }} to={`/listing/${listing.id}`}>
-                        View
-                      </Link>
+                      <div className="metric">
+                        <span>Margin</span>
+                        <strong>{listing.profitRange}</strong>
+                      </div>
+                      <div className="metric">
+                        <span>Established</span>
+                        <strong>{listing.age}</strong>
+                      </div>
+                      <div className="metric">
+                        <span>Location</span>
+                        <strong>{listing.location}</strong>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+
+                    <div className="listing-card-footer">
+                      <div className="listing-card-ask">
+                        <span>Asking</span>
+                        <strong>{listing.askingRange}</strong>
+                      </div>
+                      <div className="listing-card-footer-row">
+                        <div className="listing-card-tags">
+                          {listing.verified && <span className="tag">Vetted</span>}
+                          {listing.ndaRequired && <span className="tag">NDA</span>}
+                          <span className="tag">{listing.escrowType}</span>
+                        </div>
+                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {decision === 'pending' && <StatusPill status="pending" />}
+                          {decision === 'approved' && <StatusPill status="approved" />}
+                          {decision === 'rejected' && <StatusPill status="rejected" />}
+                          <Link className="button-link" to={`/app/listing/${listing.id}`}>
+                            View
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>

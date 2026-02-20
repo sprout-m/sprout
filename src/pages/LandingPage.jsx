@@ -46,7 +46,7 @@ const features = [
   },
   {
     title: 'NDA-Gated Due Diligence',
-    desc: "Buyers request data room access per listing. Sellers review buyer profiles and approve or decline before anything sensitive is shared.",
+    desc: "Buyers request document access per listing. Sellers review buyer profiles and approve or decline before anything sensitive is shared.",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <rect x="4" y="9" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
@@ -83,7 +83,7 @@ const steps = [
     desc: "Explore verified businesses by category, revenue, and location — no identifying details until you're approved.",
   },
   {
-    title: 'Request data room access',
+    title: 'Request document access',
     desc: 'Sign a platform NDA and submit a request. Sellers review your profile before granting access.',
   },
   {
@@ -161,7 +161,7 @@ export default function LandingPage() {
             </h1>
             <p className="lp-hero-sub">
               Meridian connects vetted buyers with verified sellers through structured due diligence,
-              NDA-gated data rooms, and on-chain escrow.
+              NDA-gated documents, and on-chain escrow.
             </p>
             <div className="lp-hero-actions">
               <Link to="/onboarding" className="lp-btn-primary">Browse Listings →</Link>

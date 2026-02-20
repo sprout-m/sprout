@@ -1,121 +1,136 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
+import StatusPill from '../components/StatusPill';
 
-const columns = ['submitted', 'shortlisted', 'accepted', 'rejected'];
+function OfferCard({ offer, listingName, pof, onShortlist, onAccept, onReject }) {
+  const isActive = offer.status === 'submitted' || offer.status === 'shortlisted';
+  const isAccepted = offer.status === 'accepted';
 
-const columnLabels = {
-  submitted: 'Submitted',
-  shortlisted: 'Shortlisted',
-  accepted: 'Accepted',
-  rejected: 'Rejected'
-};
+  return (
+    <div className="req-card">
+      <div className="req-card-head">
+        <div>
+          <span className="req-card-listing">{listingName}</span>
+          <span className="req-card-date">{offer.terms.dealType}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
+          <span className="offer-amount-pill">{offer.amountUSDC.toLocaleString()} USDC</span>
+          <StatusPill status={offer.status} />
+        </div>
+      </div>
+
+      <div className="req-card-meta">
+        <span className="req-badge">Diligence: {offer.terms.diligencePeriod}</span>
+        <span className="req-badge">Close: {offer.terms.closeWindow}</span>
+        {pof && (
+          <>
+            <span className={`req-badge ${pof.proofOfFundsStatus === 'verified' ? 'req-badge--ok' : ''}`}>
+              PoF: {pof.proofAmountUSDC?.toLocaleString()} USDC
+            </span>
+            <span className={`req-badge ${pof.ndaSigned ? 'req-badge--ok' : 'req-badge--warn'}`}>
+              {pof.ndaSigned ? '✓ NDA Signed' : '! NDA Missing'}
+            </span>
+          </>
+        )}
+      </div>
+
+      {(isActive || isAccepted) && (
+        <div className={`req-card-actions${isAccepted ? ' req-card-actions--decided' : ''}`}>
+          {isActive ? (
+            <>
+              {offer.status === 'submitted' && (
+                <button className="ghost" onClick={onShortlist}>Shortlist</button>
+              )}
+              <button onClick={onAccept}>Accept</button>
+              <button className="ghost" onClick={onReject}>Reject</button>
+            </>
+          ) : (
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ok)' }}>
+              Escrow opened — go to Closing
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SellerOffersBoardPage() {
-  const { offers, listings, updateOfferStatus, accessRequests } = useMarket();
+  const { offers, listings, users, updateOfferStatus, accessRequests } = useMarket();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const filterListingId = location.state?.listingId ?? null;
+  const filterListing = filterListingId ? listings.find((l) => l.id === filterListingId) : null;
+
   const listingName = (id) => listings.find((l) => l.id === id)?.anonymizedName || id;
   const getPof = (listingId, buyerId) =>
     accessRequests.find((r) => r.listingId === listingId && r.buyerId === buyerId);
 
+  const filtered = filterListingId ? offers.filter((o) => o.listingId === filterListingId) : offers;
+  const active = filtered.filter((o) => o.status === 'submitted' || o.status === 'shortlisted');
+  const decided = filtered.filter((o) => o.status === 'accepted' || o.status === 'rejected');
+  const hasBoth = active.length > 0 && decided.length > 0;
+
+  const handlers = (offer) => ({
+    onShortlist: () => updateOfferStatus({ offerId: offer.offerId, status: 'shortlisted' }),
+    onAccept: () => updateOfferStatus({ offerId: offer.offerId, status: 'accepted' }),
+    onReject: () => updateOfferStatus({ offerId: offer.offerId, status: 'rejected' }),
+  });
+
   return (
     <section>
       <div className="page-header">
-        <h2>Offers Board</h2>
-        <p>Manage inbound offers from submission through acceptance and escrow.</p>
+        <h2>Offers</h2>
+        <p>Review and act on inbound offers from approved buyers.</p>
       </div>
 
-      <div className="kanban-grid">
-        {columns.map((column) => {
-          const columnOffers = offers.filter((offer) => offer.status === column);
-          return (
-            <div className="kanban-col" key={column}>
-              <div className="kanban-col-header">
-                <h3>{columnLabels[column]}</h3>
-                {columnOffers.length > 0 && (
-                  <span className="col-count">{columnOffers.length}</span>
-                )}
-              </div>
+      {filterListing && (
+        <div className="filter-banner">
+          <span>Filtered: <strong>{filterListing.anonymizedName}</strong></span>
+          <button className="ghost" onClick={() => navigate('/app/seller/offers', { replace: true, state: {} })}>
+            Clear filter
+          </button>
+        </div>
+      )}
 
-              {columnOffers.length === 0 ? (
-                <p className="empty-state">No offers</p>
-              ) : (
-                columnOffers.map((offer) => {
-                  const pof = getPof(offer.listingId, offer.buyerId);
-                  return (
-                    <article className="card compact" key={offer.offerId} style={{ marginBottom: '0.5rem' }}>
-                      <div className="listing-card-head" style={{ marginBottom: '0.125rem' }}>
-                        <span className="cat-label">{offer.terms.dealType}</span>
-                      </div>
-
-                      <strong className="offer-card-amount">
-                        {offer.amountUSDC.toLocaleString()} USDC
-                      </strong>
-
-                      <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '0.125rem' }}>
-                        {listingName(offer.listingId)}
-                      </p>
-
-                      <div className="offer-card-metrics">
-                        <div className="metric">
-                          <span>Diligence</span>
-                          <strong>{offer.terms.diligencePeriod}</strong>
-                        </div>
-                        <div className="metric">
-                          <span>Close</span>
-                          <strong>{offer.terms.closeWindow}</strong>
-                        </div>
-                        {pof && (
-                          <>
-                            <div className="metric">
-                              <span>PoF</span>
-                              <strong>{pof.proofAmountUSDC?.toLocaleString()} USDC</strong>
-                            </div>
-                            <div className="metric">
-                              <span>NDA</span>
-                              <strong>{pof.ndaSigned ? 'Signed' : 'Missing'}</strong>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      {(column === 'submitted' || column === 'shortlisted') && (
-                        <div className="actions-row">
-                          {column === 'submitted' && (
-                            <button
-                              className="ghost"
-                              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                              onClick={() => updateOfferStatus({ offerId: offer.offerId, status: 'shortlisted' })}
-                            >
-                              Shortlist
-                            </button>
-                          )}
-                          <button
-                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                            onClick={() => updateOfferStatus({ offerId: offer.offerId, status: 'accepted' })}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            className="ghost"
-                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                            onClick={() => updateOfferStatus({ offerId: offer.offerId, status: 'rejected' })}
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
-
-                      {column === 'accepted' && (
-                        <p style={{ fontSize: '0.75rem', color: 'var(--ok)', fontWeight: 600, marginTop: '0.375rem' }}>
-                          Escrow opened →
-                        </p>
-                      )}
-                    </article>
-                  );
-                })
-              )}
+      {filtered.length === 0 ? (
+        <div className="card empty-center">
+          <p>No offers{filterListing ? ' for this listing' : ' yet'}</p>
+          <p>{filterListing ? 'No buyers have submitted offers on this listing.' : 'Offers from approved buyers will appear here.'}</p>
+        </div>
+      ) : (
+        <div className="req-list">
+          {active.length > 0 && (
+            <div className="req-group">
+              {hasBoth && <div className="req-section-label">Needs Action · {active.length}</div>}
+              {active.map((o) => (
+                <OfferCard
+                  key={o.offerId}
+                  offer={o}
+                  listingName={listingName(o.listingId)}
+                  pof={getPof(o.listingId, o.buyerId)}
+                  {...handlers(o)}
+                />
+              ))}
             </div>
-          );
-        })}
-      </div>
+          )}
+          {decided.length > 0 && (
+            <div className="req-group">
+              {hasBoth && <div className="req-section-label">Decided · {decided.length}</div>}
+              {decided.map((o) => (
+                <OfferCard
+                  key={o.offerId}
+                  offer={o}
+                  listingName={listingName(o.listingId)}
+                  pof={getPof(o.listingId, o.buyerId)}
+                  {...handlers(o)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

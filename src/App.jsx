@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import Layout from './components/Layout';
 import EscrowRoomPage from './pages/EscrowRoomPage';
 import LandingPage from './pages/LandingPage';
@@ -12,12 +12,18 @@ import SellerListingsPage from './pages/SellerListingsPage';
 import SellerOffersBoardPage from './pages/SellerOffersBoardPage';
 import SellerRequestsPage from './pages/SellerRequestsPage';
 
+function LegacyListingRedirect() {
+  const { listingId } = useParams();
+  return <Navigate to={`/app/listing/${listingId}`} replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/listing/:listingId" element={<LegacyListingRedirect />} />
         <Route path="/app" element={<Layout />}>
           <Route index element={<MarketplacePage />} />
           <Route path="listing/:listingId" element={<ListingDetailPage />} />

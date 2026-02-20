@@ -47,7 +47,7 @@ export default function ProfilePage() {
         <article className="card compact">
           <h3>Permissions</h3>
           <ProfileRow label="Marketplace" value="Full Access" />
-          <ProfileRow label="Data Rooms" value="NDA-gated" />
+          <ProfileRow label="Documents" value="NDA-gated" />
           <ProfileRow label="Escrow" value="Active" />
         </article>
       </div>

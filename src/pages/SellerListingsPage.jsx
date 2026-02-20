@@ -1,8 +1,10 @@
+import { useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
 
 export default function SellerListingsPage() {
   const { listings, accessRequests, offers } = useMarket();
+  const navigate = useNavigate();
 
   const countRequests = (listingId) => accessRequests.filter((r) => r.listingId === listingId).length;
   const countOffers = (listingId) => offers.filter((o) => o.listingId === listingId).length;
@@ -11,7 +13,7 @@ export default function SellerListingsPage() {
     <section>
       <div className="page-header">
         <h2>Listings</h2>
-        <p>Manage listing status, data room readiness, and in-flight demand.</p>
+        <p>Manage listing status, document readiness, and in-flight demand.</p>
       </div>
 
       <div className="market-stats">
@@ -70,13 +72,13 @@ export default function SellerListingsPage() {
                   </td>
                   <td>
                     <div className="actions-row">
-                      <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
-                        Data Room
+                      <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }} onClick={() => navigate(`/app/listing/${listing.id}`)}>
+                        Documents
                       </button>
-                      <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
+                      <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }} onClick={() => navigate('/app/seller/requests', { state: { listingId: listing.id } })}>
                         Requests
                       </button>
-                      <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
+                      <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }} onClick={() => navigate('/app/seller/offers', { state: { listingId: listing.id } })}>
                         Offers
                       </button>
                     </div>

@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
 
@@ -8,7 +9,8 @@ const steps = [
 ];
 
 export default function EscrowRoomPage() {
-  const { escrows, offers, listings, depositEscrow, transferOwnership } = useMarket();
+  const { escrows, offers, listings, depositEscrow, transferOwnership, openDispute } = useMarket();
+  const navigate = useNavigate();
 
   const getOffer = (id) => offers.find((o) => o.offerId === id);
   const getListingName = (listingId) => listings.find((l) => l.id === listingId)?.anonymizedName || listingId;
@@ -17,13 +19,13 @@ export default function EscrowRoomPage() {
     return (
       <section>
         <div className="page-header">
-          <h2>Escrow Room</h2>
-          <p>Accepted offers move here for USDC deposit, ownership transfer, and closing.</p>
+          <h2>Closing</h2>
+          <p>Accepted offers move here for USDC deposit, ownership transfer, and finalization.</p>
         </div>
         <div className="card empty-center">
-          <p>No active escrows</p>
+          <p>No active closings</p>
           <p style={{ color: 'var(--muted)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
-            Accept an offer on the Offers board to open an escrow.
+            Accept an offer on the Offers board to open a closing workflow.
           </p>
         </div>
       </section>
@@ -33,8 +35,8 @@ export default function EscrowRoomPage() {
   return (
     <section>
       <div className="page-header">
-        <h2>Escrow Room</h2>
-        <p>Accepted offers move here for USDC deposit, ownership transfer, and closing.</p>
+        <h2>Closing</h2>
+        <p>Accepted offers move here for USDC deposit, ownership transfer, and finalization.</p>
       </div>
 
       {escrows.map((escrow) => {
@@ -96,7 +98,18 @@ export default function EscrowRoomPage() {
                 >
                   Transfer Ownership
                 </button>
-                <button className="ghost">Open Dispute</button>
+                <button
+                  className="ghost"
+                  disabled={escrow.status === 'completed' || escrow.status === 'disputed'}
+                  onClick={() => {
+                    openDispute(escrow.escrowId);
+                    navigate('/app/messages', {
+                      state: { listingId: offer.listingId, buyerId: offer.buyerId }
+                    });
+                  }}
+                >
+                  {escrow.status === 'disputed' ? 'Dispute Opened' : 'Open Dispute'}
+                </button>
               </div>
             </div>
 

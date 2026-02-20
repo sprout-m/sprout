@@ -8,7 +8,62 @@ export function MarketProvider({ children }) {
   const [accessRequests, setAccessRequests] = useState(accessRequestsSeed);
   const [offers, setOffers] = useState(offersSeed);
   const [escrows, setEscrows] = useState(escrowsSeed);
+  const [messageThreads, setMessageThreads] = useState([]);
   const [activeUser, setActiveUser] = useState(users.buyer);
+
+  const startConversation = ({ listingId, buyerId, sellerId = users.seller.id }) => {
+    const listingName = listings.find((l) => l.id === listingId)?.anonymizedName || listingId;
+    const buyerName = Object.values(users).find((u) => u.id === buyerId)?.handle || buyerId;
+    const sellerName = Object.values(users).find((u) => u.id === sellerId)?.handle || sellerId;
+    const threadId = `thr-${listingId}-${buyerId}-${sellerId}`;
+
+    setMessageThreads((prev) => {
+      if (prev.some((thread) => thread.threadId === threadId)) return prev;
+
+      return [
+        {
+          threadId,
+          listingId,
+          buyerId,
+          sellerId,
+          title: `${listingName} · ${buyerName} <> ${sellerName}`,
+          updatedAt: new Date().toISOString(),
+          messages: []
+        },
+        ...prev
+      ];
+    });
+
+    return threadId;
+  };
+
+  const sendMessage = ({ threadId, text, senderId = activeUser.id }) => {
+    const body = String(text || '').trim();
+    if (!body) return;
+
+    setMessageThreads((prev) => {
+      const stamp = new Date().toISOString();
+      const next = prev.map((thread) =>
+        thread.threadId === threadId
+          ? {
+              ...thread,
+              updatedAt: stamp,
+              messages: [
+                ...thread.messages,
+                {
+                  id: `msg-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
+                  senderId,
+                  text: body,
+                  createdAt: stamp
+                }
+              ]
+            }
+          : thread
+      );
+
+      return next.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    });
+  };
 
   const requestAccess = ({ listingId, ndaSigned, proofMethod, proofAmountUSDC }) => {
     const existing = accessRequests.find((r) => r.listingId === listingId && r.buyerId === activeUser.id);
@@ -108,6 +163,31 @@ export function MarketProvider({ children }) {
     );
   };
 
+  const openDispute = (escrowId) => {
+    const escrow = escrows.find((esc) => esc.escrowId === escrowId);
+    if (!escrow || escrow.status === 'completed') return null;
+
+    const offer = offers.find((item) => item.offerId === escrow.offerId);
+    if (!offer) return null;
+
+    setEscrows((prev) =>
+      prev.map((item) =>
+        item.escrowId === escrowId && item.status !== 'completed'
+          ? { ...item, status: 'disputed' }
+          : item
+      )
+    );
+
+    const threadId = startConversation({ listingId: offer.listingId, buyerId: offer.buyerId });
+    sendMessage({
+      threadId,
+      senderId: 'system',
+      text: 'Dispute opened for this closing. Please coordinate resolution steps here.'
+    });
+
+    return { threadId, listingId: offer.listingId, buyerId: offer.buyerId };
+  };
+
   const value = useMemo(
     () => ({
       listings,
@@ -115,17 +195,21 @@ export function MarketProvider({ children }) {
       accessRequests,
       offers,
       escrows,
+      messageThreads,
       activeUser,
       setActiveUser,
       users,
+      startConversation,
+      sendMessage,
       requestAccess,
       decideAccess,
       submitOffer,
       updateOfferStatus,
       depositEscrow,
-      transferOwnership
+      transferOwnership,
+      openDispute
     }),
-    [listings, accessRequests, offers, escrows, activeUser]
+    [listings, accessRequests, offers, escrows, messageThreads, activeUser]
   );
 
   return <MarketContext.Provider value={value}>{children}</MarketContext.Provider>;

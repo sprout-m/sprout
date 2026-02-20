@@ -1,13 +1,98 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
 
+function RequestCard({ request, level, onLevelChange, onApprove, onReject, onMessage }) {
+  const isPending = request.sellerDecision === 'pending';
+  const isApproved = request.sellerDecision === 'approved';
+
+  return (
+    <div className="req-card">
+      <div className="req-card-head">
+        <div>
+          <span className="req-card-listing">{request.listingName}</span>
+          <span className="req-card-date">Submitted {request.requestedAt}</span>
+        </div>
+        <StatusPill status={request.sellerDecision} />
+      </div>
+
+      <div className="req-card-meta">
+        <span className="req-buyer-pill">
+          <span className="req-buyer-avatar">{request.buyerHandle[0]?.toUpperCase()}</span>
+          <span className="req-buyer-name">{request.buyerHandle}</span>
+        </span>
+        <span className={`req-badge ${request.ndaSigned ? 'req-badge--ok' : 'req-badge--warn'}`}>
+          {request.ndaSigned ? '✓ NDA Signed' : '! NDA Missing'}
+        </span>
+        <span className={`req-badge ${request.proofOfFundsStatus === 'verified' ? 'req-badge--ok' : ''}`}>
+          {request.proofAmountUSDC.toLocaleString()} USDC
+          {request.proofOfFundsStatus === 'verified' ? ' · Verified' : ' · Pending'}
+        </span>
+        {isApproved && request.accessLevel && (
+          <span className="req-badge">{request.accessLevel}</span>
+        )}
+      </div>
+
+      {(isPending || isApproved) && (
+        <div className={`req-card-actions${isApproved ? ' req-card-actions--decided' : ''}`}>
+          {isPending ? (
+            <>
+              <span className="req-action-label">Grant level</span>
+              <select value={level} onChange={(e) => onLevelChange(e.target.value)}>
+                <option>Level 1</option>
+                <option>Level 2</option>
+                <option>Level 3</option>
+              </select>
+              <button onClick={onApprove}>Approve</button>
+              <button className="ghost" onClick={onReject}>Reject</button>
+            </>
+          ) : (
+            <button
+              className="ghost"
+              style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
+              onClick={onMessage}
+            >
+              Message Buyer
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SellerRequestsPage() {
   const { accessRequests, decideAccess, listings, users } = useMarket();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [levels, setLevels] = useState({});
 
-  const listingName = (id) => listings.find((l) => l.id === id)?.anonymizedName || id;
-  const buyerHandle = (id) => Object.values(users).find((u) => u.id === id)?.handle || id;
+  const filterListingId = location.state?.listingId ?? null;
+  const filterListing = filterListingId ? listings.find((l) => l.id === filterListingId) : null;
+
+  const enriched = accessRequests
+    .filter((r) => !filterListingId || r.listingId === filterListingId)
+    .map((r) => ({
+      ...r,
+      listingName: listings.find((l) => l.id === r.listingId)?.anonymizedName || r.listingId,
+      buyerHandle: Object.values(users).find((u) => u.id === r.buyerId)?.handle || r.buyerId
+    }));
+
+  const pending = enriched.filter((r) => r.sellerDecision === 'pending');
+  const decided = enriched.filter((r) => r.sellerDecision !== 'pending');
+  const hasBoth = pending.length > 0 && decided.length > 0;
+
+  function makeHandlers(request) {
+    const level = levels[request.id] || 'Level 2';
+    return {
+      level,
+      onLevelChange: (val) => setLevels((prev) => ({ ...prev, [request.id]: val })),
+      onApprove: () => decideAccess({ requestId: request.id, decision: 'approved', accessLevel: level }),
+      onReject: () => decideAccess({ requestId: request.id, decision: 'rejected' }),
+      onMessage: () => navigate('/app/messages', { state: { listingId: request.listingId, buyerId: request.buyerId } })
+    };
+  }
 
   return (
     <section>
@@ -16,85 +101,38 @@ export default function SellerRequestsPage() {
         <p>Review NDA and proof-of-funds submissions, then approve or reject buyer access.</p>
       </div>
 
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Listing</th>
-              <th>Buyer</th>
-              <th>NDA</th>
-              <th>Proof of Funds</th>
-              <th>Submitted</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {accessRequests.map((request) => {
-              const isPending = request.sellerDecision === 'pending';
-              return (
-                <tr key={request.id}>
-                  <td>{listingName(request.listingId)}</td>
-                  <td>{buyerHandle(request.buyerId)}</td>
-                  <td>{request.ndaSigned ? 'Signed' : 'Missing'}</td>
-                  <td>
-                    {request.proofAmountUSDC.toLocaleString()} USDC
-                    {request.proofOfFundsStatus === 'verified' && (
-                      <span style={{ color: 'var(--ok)', marginLeft: '0.375rem', fontSize: '0.75rem' }}>✓</span>
-                    )}
-                  </td>
-                  <td>{request.requestedAt}</td>
-                  <td>
-                    <StatusPill status={request.sellerDecision} />
-                  </td>
-                  <td>
-                    {isPending ? (
-                      <div className="action-cell">
-                        <div className="action-cell-inline">
-                          <select
-                            value={levels[request.id] || 'Level 2'}
-                            onChange={(e) => setLevels((prev) => ({ ...prev, [request.id]: e.target.value }))}
-                          >
-                            <option>Level 1</option>
-                            <option>Level 2</option>
-                            <option>Level 3</option>
-                          </select>
-                          <button
-                            onClick={() =>
-                              decideAccess({
-                                requestId: request.id,
-                                decision: 'approved',
-                                accessLevel: levels[request.id] || 'Level 2'
-                              })
-                            }
-                          >
-                            Approve
-                          </button>
-                          <button
-                            className="ghost"
-                            onClick={() => decideAccess({ requestId: request.id, decision: 'rejected' })}
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="decided-row">
-                        {request.accessLevel && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{request.accessLevel}</span>
-                        )}
-                        <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
-                          Message
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {filterListing && (
+        <div className="filter-banner">
+          <span>Filtered: <strong>{filterListing.anonymizedName}</strong></span>
+          <button className="ghost" onClick={() => navigate('/app/seller/requests', { replace: true, state: {} })}>
+            Clear filter
+          </button>
+        </div>
+      )}
+
+      {enriched.length === 0 ? (
+        <div className="card">
+          <div className="empty-center">
+            <p>No requests{filterListing ? ' for this listing' : ' yet'}</p>
+            <p>{filterListing ? 'No buyers have requested access to this listing.' : 'Buyer access requests will appear here.'}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="req-list">
+          {pending.length > 0 && (
+            <div className="req-group">
+              {hasBoth && <div className="req-section-label">Needs Review · {pending.length}</div>}
+              {pending.map((r) => <RequestCard key={r.id} request={r} {...makeHandlers(r)} />)}
+            </div>
+          )}
+          {decided.length > 0 && (
+            <div className="req-group">
+              {hasBoth && <div className="req-section-label">Decided · {decided.length}</div>}
+              {decided.map((r) => <RequestCard key={r.id} request={r} {...makeHandlers(r)} />)}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

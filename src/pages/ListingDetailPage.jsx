@@ -5,7 +5,7 @@ import StatusPill from '../components/StatusPill';
 import { useMarket } from '../context/MarketContext';
 
 const lockedTabs = ['Overview', 'Metrics', 'Process', 'Q&A'];
-const unlockedTabs = ['Overview', 'Financials', 'Data Room', 'Offers', 'Activity'];
+const unlockedTabs = ['Overview', 'Financials', 'Documents', 'Offers', 'Activity'];
 
 export default function ListingDetailPage() {
   const { listingId } = useParams();
@@ -158,7 +158,7 @@ export default function ListingDetailPage() {
               </div>
             )}
 
-            {activeTab === 'Data Room' && unlocked && (
+            {activeTab === 'Documents' && unlocked && (
               <div className="folder-list">
                 {Object.entries(listing.dataroomFolders).map(([folder, files]) => (
                   <div key={folder} className="folder">
@@ -251,7 +251,7 @@ export default function ListingDetailPage() {
           <div>
             <h4>Access Requirements</h4>
             <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.25rem' }}>
-              Complete all three steps to unlock the full data room.
+              Complete all three steps to unlock the full documents section.
             </p>
           </div>
 
