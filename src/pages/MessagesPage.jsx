@@ -45,8 +45,16 @@ export default function MessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeThread?.messages?.length]);
 
-  const userHandle = (id) => {
-    if (id === 'system') return 'System';
+  const senderName = (msg) => {
+    if (msg.senderId === 'system' || msg.senderType === 'system') return 'System';
+    if (msg.senderHandle) return msg.senderHandle;
+
+    const id = msg.senderId;
+    if (!id) return 'Unknown user';
+    if (id === activeThread?.buyerId && activeThread?.buyerHandle) return activeThread.buyerHandle;
+    if (id === activeThread?.sellerId && activeThread?.sellerHandle) return activeThread.sellerHandle;
+    if (id === user?.id && user?.handle) return user.handle;
+
     return userCache[id]?.handle || id?.slice(0, 8) || id;
   };
 
@@ -133,7 +141,7 @@ export default function MessagesPage() {
                   return (
                     <div key={msg.id} className={`msg-row${isMe ? ' msg-row--me' : ''}`}>
                       <div className={`msg-bubble ${isMe ? 'msg-bubble--me' : 'msg-bubble--other'}`}>
-                        <div className="msg-sender">{userHandle(msg.senderId)}</div>
+                        <div className="msg-sender">{senderName(msg)}</div>
                         <div className="msg-text">{msg.text}</div>
                         <div className="msg-time">
                           {new Date(msg.createdAt).toLocaleTimeString([], {
