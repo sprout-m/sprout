@@ -1,11 +1,69 @@
 import { useState } from 'react';
+import { useWallet } from '../context/WalletContext';
+
+const POF_ACCOUNT = import.meta.env.VITE_HEDERA_POF_ACCOUNT_ID || '';
 
 export default function RequestAccessModal({ onClose, onSubmit }) {
+  const { isConnected, accountId, connecting, connect, transferUSDC } = useWallet();
+
   const [step, setStep] = useState(1);
   const [ndaChecked, setNdaChecked] = useState(false);
   const [signature, setSignature] = useState('');
   const [proofMethod, setProofMethod] = useState('deposit');
   const [proofAmountUSDC, setProofAmountUSDC] = useState(500);
+
+  // PoF deposit state
+  const [depositing, setDepositing] = useState(false);
+  const [depositError, setDepositError] = useState('');
+  const [pofTxId, setPofTxId] = useState('');
+
+  // For deposit method: sign the tx AND submit the access request in one step.
+  // The user shouldn't have to click a second "Submit" button after HashPack confirms.
+  async function handlePoFDeposit() {
+    setDepositError('');
+    setDepositing(true);
+    try {
+      if (!import.meta.env.VITE_HEDERA_USDC_TOKEN_ID) {
+        throw new Error('USDC token ID is not configured (set VITE_HEDERA_USDC_TOKEN_ID).');
+      }
+      if (!POF_ACCOUNT) {
+        throw new Error('PoF holding account is not configured (set VITE_HEDERA_POF_ACCOUNT_ID).');
+      }
+
+      let fromAccount = accountId;
+      if (!isConnected) {
+        fromAccount = await connect();
+        if (!fromAccount) throw new Error('No wallet connected. Please pair HashPack and try again.');
+      }
+
+      // Sign and broadcast — HashPack modal opens here.
+      const txId = await transferUSDC(fromAccount, POF_ACCOUNT, Number(proofAmountUSDC));
+
+      // Tx confirmed on-chain — immediately submit the access request.
+      await onSubmit({ ndaSigned: true, proofMethod, proofAmountUSDC: Number(proofAmountUSDC), proofTxId: txId });
+
+      setPofTxId(txId);
+      setStep(3); // confirmation screen
+    } catch (err) {
+      setDepositError(err.message || 'Deposit failed');
+    } finally {
+      setDepositing(false);
+    }
+  }
+
+  // For wallet attestation: submit from the review step.
+  async function handleWalletSubmit() {
+    setDepositError('');
+    setDepositing(true);
+    try {
+      await onSubmit({ ndaSigned: true, proofMethod, proofAmountUSDC: Number(proofAmountUSDC), proofTxId: null });
+      onClose();
+    } catch (err) {
+      setDepositError(err.message || 'Submission failed');
+    } finally {
+      setDepositing(false);
+    }
+  }
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -64,37 +122,71 @@ export default function RequestAccessModal({ onClose, onSubmit }) {
               value={proofAmountUSDC}
               onChange={(e) => setProofAmountUSDC(e.target.value)}
             />
+
+            {proofMethod === 'deposit' && (
+              <p style={{ fontSize: '0.8125rem', color: 'var(--muted)', marginTop: '0.25rem' }}>
+                {Number(proofAmountUSDC).toLocaleString()} USDC will be transferred to the platform escrow account
+                via HashPack. Funds are returned when the request is resolved.
+              </p>
+            )}
+
+            {depositError && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.5rem' }}>
+                {depositError}
+              </p>
+            )}
+
             <div className="actions-row">
               <button className="ghost" onClick={() => setStep(1)}>
                 Back
               </button>
-              <button onClick={() => setStep(3)}>Continue</button>
+              {proofMethod === 'deposit' ? (
+                <button onClick={handlePoFDeposit} disabled={depositing || connecting}>
+                  {depositing || connecting ? 'Waiting for HashPack…' : 'Sign & Lock USDC'}
+                </button>
+              ) : (
+                <button onClick={() => setStep(3)}>Continue</button>
+              )}
             </div>
           </section>
         )}
 
         {step === 3 && (
           <section className="step-section">
-            <h4>Step 3 - Submit</h4>
-            <p className="callout">Status after submit: Pending seller approval.</p>
-            <ul>
-              <li>NDA signed: {ndaChecked ? 'Yes' : 'No'}</li>
-              <li>PoF method: {proofMethod}</li>
-              <li>PoF amount: {proofAmountUSDC} USDC</li>
-            </ul>
-            <div className="actions-row">
-              <button className="ghost" onClick={() => setStep(2)}>
-                Back
-              </button>
-              <button
-                onClick={() => {
-                  onSubmit({ ndaSigned: true, proofMethod, proofAmountUSDC: Number(proofAmountUSDC) });
-                  onClose();
-                }}
-              >
-                Submit Request
-              </button>
-            </div>
+            {pofTxId ? (
+              <>
+                <h4>Deposit Confirmed</h4>
+                <p className="callout">
+                  Your USDC deposit was confirmed on-chain and your access request has been submitted.
+                  The seller will review your request shortly.
+                </p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--muted)', wordBreak: 'break-all', marginTop: '0.5rem' }}>
+                  Tx: <code>{pofTxId}</code>
+                </p>
+                <button onClick={onClose} style={{ marginTop: '0.75rem', width: '100%' }}>Done</button>
+              </>
+            ) : (
+              <>
+                <h4>Step 3 - Submit</h4>
+                <p className="callout">Status after submit: Pending seller approval.</p>
+                <ul>
+                  <li>NDA signed: {ndaChecked ? 'Yes' : 'No'}</li>
+                  <li>PoF method: {proofMethod}</li>
+                  <li>PoF amount: {Number(proofAmountUSDC).toLocaleString()} USDC</li>
+                </ul>
+                {depositError && (
+                  <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.5rem' }}>
+                    {depositError}
+                  </p>
+                )}
+                <div className="actions-row">
+                  <button className="ghost" onClick={() => setStep(2)}>Back</button>
+                  <button onClick={handleWalletSubmit} disabled={depositing}>
+                    {depositing ? 'Submitting…' : 'Submit Request'}
+                  </button>
+                </div>
+              </>
+            )}
           </section>
         )}
       </div>
