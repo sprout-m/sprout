@@ -1786,6 +1786,8 @@ tr:last-child td {
 .ob-role-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
 }
 
 /* Radio dot indicator */
