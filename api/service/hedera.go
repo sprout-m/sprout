@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 
-	"github.com/google/uuid"
 	sdk "github.com/hashgraph/hedera-sdk-go/v2"
 	meridianhedera "github.com/meridian-mkt/hedera"
 )
@@ -221,14 +220,18 @@ func (s *HederaService) GetDealEvents(topicIDStr string) ([]meridianhedera.DealE
 
 // --- NFT ---
 
-// MintListingNFT mints an NFT representing a listing and returns the serial number.
-func (s *HederaService) MintListingNFT(listingID uuid.UUID) (int64, error) {
+// MintListingNFT mints an NFT for a listing using the given HIP-412 metadata URL.
+// The URL is stored as the HTS token metadata bytes (≤100 bytes) so that wallets
+// and explorers can fetch the full metadata JSON — including the generated image —
+// from the platform's own API.
+func (s *HederaService) MintListingNFT(metadataURL string) (int64, error) {
 	if s.nftCollectionID == (sdk.TokenID{}) {
 		return 0, fmt.Errorf("NFT collection not configured (set HEDERA_NFT_COLLECTION_ID)")
 	}
-
-	metadata := fmt.Appendf(nil, `{"listing_id":"%s","platform":"Meridian"}`, listingID)
-	return meridianhedera.MintListingNFT(s.client, s.nftCollectionID, metadata)
+	if len(metadataURL) > 100 {
+		return 0, fmt.Errorf("metadata URL too long (%d bytes, max 100): %s", len(metadataURL), metadataURL)
+	}
+	return meridianhedera.MintListingNFT(s.client, s.nftCollectionID, []byte(metadataURL))
 }
 
 // TransferNFTFromPlatform transfers a listing NFT from the platform treasury (operator account)

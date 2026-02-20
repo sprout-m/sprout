@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -208,9 +209,12 @@ func (h *Handler) CreateListing(c *gin.Context) {
 	l.DataroomFolders = json.RawMessage(dataroomFolders)
 
 	// Optionally mint a listing NFT in the background.
+	// The metadata URL points to our own /nft/metadata/:id endpoint (HIP-412),
+	// which in turn serves the generated image via /nft/image/:id.
 	if h.hedera != nil {
 		go func(listingID uuid.UUID) {
-			serial, err := h.hedera.MintListingNFT(listingID)
+			metadataURL := fmt.Sprintf("%s/api/v1/nft/metadata/%s", h.cfg.AppBaseURL, listingID)
+			serial, err := h.hedera.MintListingNFT(metadataURL)
 			if err != nil {
 				return
 			}
