@@ -8,6 +8,15 @@ import { useWallet } from '../context/WalletContext';
 const lockedTabs = ['Overview', 'Metrics', 'Process', 'Q&A'];
 const unlockedTabs = ['Overview', 'Financials', 'Documents', 'Offers', 'Activity'];
 
+const CATEGORY_COLORS = {
+  SaaS:        '#6366f1',
+  Ecommerce:   '#10b981',
+  Media:       '#a855f7',
+  Agency:      '#f97316',
+  Marketplace: '#06b6d4',
+  Other:       '#94a3b8',
+};
+
 export default function ListingDetailPage() {
   const { listingId } = useParams();
   const { listings, accessRequests, offers, activeUser, requestAccess, submitOffer } = useMarket();
@@ -49,51 +58,51 @@ export default function ListingDetailPage() {
 
   if (!listing) return <p>Listing not found.</p>;
 
-  return (
-    <section>
+  const accentColor = CATEGORY_COLORS[listing.category] || CATEGORY_COLORS.Other;
 
-      {/* ── Listing Hero ── */}
-      <div className="listing-hero">
-        <div className="listing-hero-left">
-          <div className="listing-hero-meta">
-            <span className="cat-label">{listing.category}</span>
-            <span className="listing-hero-dot" />
-            <span>{listing.location}</span>
-            <span className="listing-hero-dot" />
-            <span>{listing.age}</span>
+  return (
+    <section className="listing-detail">
+
+      {/* ── Hero ── */}
+      <div className="ld-hero" style={{ borderTopColor: accentColor }}>
+        <div className="ld-hero-body">
+          <div className="ld-hero-eyebrow">
+            <span className="cat-label" style={{ color: accentColor }}>{listing.category}</span>
+            {listing.location && <><span className="ld-dot" /><span>{listing.location}</span></>}
+            {listing.age && <><span className="ld-dot" /><span>{listing.age} old</span></>}
           </div>
-          <h2 className="listing-hero-title">{listing.anonymizedName}</h2>
-          <p className="listing-hero-teaser">{listing.teaserDescription}</p>
-          <div className="listing-hero-badges">
+
+          <h1 className="ld-hero-title">{listing.anonymizedName}</h1>
+          <p className="ld-hero-teaser">{listing.teaserDescription}</p>
+
+          <div className="ld-hero-tags">
             {listing.verified && <span className="tag">Operator Vetted</span>}
             {listing.ndaRequired && <span className="tag">NDA Required</span>}
-            <span className="tag">{listing.escrowType} Escrow</span>
-            <StatusPill status={unlocked ? 'approved' : request?.sellerDecision || 'locked'} />
+            {listing.escrowType && <span className="tag">{listing.escrowType} Escrow</span>}
+            {listing.industryTags?.map((t) => <span key={t} className="tag">{t}</span>)}
           </div>
         </div>
 
-        <div className="listing-hero-right">
-          <div className="listing-hero-ask">
-            <span className="listing-hero-ask-label">Asking Price</span>
-            <strong className="listing-hero-ask-val">{listing.askingRange}</strong>
+        <div className="ld-hero-stats">
+          <div className="ld-stat">
+            <span>Asking Price</span>
+            <strong>{listing.askingRange}</strong>
           </div>
-          <div className="listing-hero-chips">
-            <div className="listing-hero-chip">
-              <span>Revenue</span>
-              <strong>{listing.revenueRange}</strong>
-            </div>
-            <div className="listing-hero-chip">
-              <span>Margin</span>
-              <strong>{listing.profitRange}</strong>
-            </div>
+          <div className="ld-stat">
+            <span>Revenue</span>
+            <strong>{listing.revenueRange}</strong>
+          </div>
+          <div className="ld-stat">
+            <span>Profit</span>
+            <strong>{listing.profitRange}</strong>
           </div>
         </div>
       </div>
 
-      {/* ── Two-column body ── */}
+      {/* ── Body ── */}
       <div className="listing-layout">
 
-        {/* Main content */}
+        {/* Main */}
         <div>
           <div className="tab-row">
             {tabs.map((tab) => (
@@ -105,26 +114,8 @@ export default function ListingDetailPage() {
 
           <div className="tab-panel">
             {activeTab === 'Overview' && (
-              <div style={{ display: 'grid', gap: '1rem' }}>
-                <div className="listing-metrics" style={{ gridTemplateColumns: 'repeat(4, auto)', justifyContent: 'start', gap: '0 2.5rem' }}>
-                  <div className="metric">
-                    <span>Asking</span>
-                    <strong>{listing.askingRange}</strong>
-                  </div>
-                  <div className="metric">
-                    <span>Revenue</span>
-                    <strong>{listing.revenueRange}</strong>
-                  </div>
-                  <div className="metric">
-                    <span>Profit</span>
-                    <strong>{listing.profitRange}</strong>
-                  </div>
-                  <div className="metric">
-                    <span>Age</span>
-                    <strong>{listing.age}</strong>
-                  </div>
-                </div>
-                <p style={{ fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'grid', gap: '1.25rem' }}>
+                <p style={{ fontSize: '0.9375rem', lineHeight: 1.75, color: 'var(--text-secondary)', margin: 0 }}>
                   {listing.teaserDescription}
                 </p>
                 {listing.industryTags?.length > 0 && (
@@ -249,14 +240,8 @@ export default function ListingDetailPage() {
                   <h4>Make an Offer</h4>
                   <div className="form-field">
                     <label className="form-label">Offer Amount (USDC)</label>
-                    <input
-                      type="number"
-                      required
-                      min="1000"
-                      value={offerAmount}
-                      onChange={(e) => setOfferAmount(e.target.value)}
-                      placeholder="e.g. 950000"
-                    />
+                    <input type="number" required min="1000" value={offerAmount}
+                      onChange={(e) => setOfferAmount(e.target.value)} placeholder="e.g. 950000" />
                   </div>
                   <div className="form-field">
                     <label className="form-label">Deal Type</label>
@@ -268,11 +253,7 @@ export default function ListingDetailPage() {
                   <div className="card-grid two">
                     <div className="form-field">
                       <label className="form-label">Diligence Period (days)</label>
-                      <input
-                        type="number"
-                        value={diligencePeriod}
-                        onChange={(e) => setDiligencePeriod(e.target.value)}
-                      />
+                      <input type="number" value={diligencePeriod} onChange={(e) => setDiligencePeriod(e.target.value)} />
                     </div>
                     <div className="form-field">
                       <label className="form-label">Close Window</label>
@@ -281,20 +262,14 @@ export default function ListingDetailPage() {
                   </div>
                   <div className="form-field">
                     <label className="form-label">Notes to Seller</label>
-                    <textarea
-                      value={offerNotes}
-                      onChange={(e) => setOfferNotes(e.target.value)}
-                      placeholder="Optional — any context for the seller"
-                      rows={3}
-                    />
+                    <textarea value={offerNotes} onChange={(e) => setOfferNotes(e.target.value)}
+                      placeholder="Optional — any context for the seller" rows={3} />
                   </div>
                   <label className="check-row">
                     <input type="checkbox" required />
                     I can fund escrow within 24 hours.
                   </label>
-                  {offerError && (
-                    <p style={{ color: 'var(--danger)', fontSize: '0.8125rem' }}>{offerError}</p>
-                  )}
+                  {offerError && <p style={{ color: 'var(--danger)', fontSize: '0.8125rem' }}>{offerError}</p>}
                   <button type="submit" disabled={submitting}>
                     {submitting ? 'Submitting…' : 'Submit Offer'}
                   </button>
@@ -312,9 +287,10 @@ export default function ListingDetailPage() {
 
         {/* CTA sidebar */}
         <aside className="cta-panel">
-          <div className="cta-panel-header">
+          <div className="ld-access-header" style={{ borderColor: accentColor }}>
+            <StatusPill status={unlocked ? 'approved' : request?.sellerDecision || 'locked'} />
             <h4>Access Requirements</h4>
-            <p>Complete all three steps to unlock documents and make an offer.</p>
+            <p>Complete all steps to unlock documents and submit an offer.</p>
           </div>
 
           <div className="access-checklist">

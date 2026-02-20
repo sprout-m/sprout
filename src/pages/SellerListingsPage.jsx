@@ -1,3 +1,4 @@
+import * as Slider from '@radix-ui/react-slider';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
@@ -11,21 +12,121 @@ const INDUSTRY_TAGS = [
   'Dev Tools', 'Newsletter', 'Podcast', 'D2C', 'Subscription', 'AdTech',
 ];
 
+const DOC_GROUPS = [
+  {
+    label: 'Financial',
+    docs: [
+      'P&L Statement (TTM + 3 years)',
+      'Balance Sheet',
+      'Cash Flow Statement',
+      'Tax Returns (3 years)',
+      'MRR / ARR Breakdown',
+    ],
+  },
+  {
+    label: 'Business Operations',
+    docs: [
+      'Business Overview / Pitch Deck',
+      'Customer List (anonymized)',
+      'Vendor & Supplier Contracts',
+      'Employee & Contractor Agreements',
+    ],
+  },
+  {
+    label: 'Technical',
+    docs: [
+      'Product Roadmap',
+      'Technical Architecture Overview',
+      'IP & Patent Documentation',
+    ],
+  },
+  {
+    label: 'Legal',
+    docs: [
+      'Certificate of Incorporation',
+      'Cap Table',
+      'Litigation History',
+    ],
+  },
+];
+
+function fmtDollars(n) {
+  if (n >= 1_000_000) return `$${+(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${Math.round(n / 1_000)}K`;
+  return `$${n}`;
+}
+
+function RangeSlider({ label, min, max, step, value, onValueChange, format }) {
+  return (
+    <div className="ob-field">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
+        <label className="ob-field-label" style={{ margin: 0 }}>{label}</label>
+        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text)' }}>
+          {format(value[0])} – {format(value[1])}
+        </span>
+      </div>
+      <Slider.Root
+        className="rdx-slider"
+        min={min} max={max} step={step}
+        value={value}
+        onValueChange={onValueChange}
+        minStepsBetweenThumbs={1}
+      >
+        <Slider.Track className="rdx-track">
+          <Slider.Range className="rdx-range" />
+        </Slider.Track>
+        <Slider.Thumb className="rdx-thumb" aria-label={`${label} low`} />
+        <Slider.Thumb className="rdx-thumb" aria-label={`${label} high`} />
+      </Slider.Root>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', color: 'var(--muted-light)', marginTop: '0.375rem' }}>
+        <span>{format(min)}</span><span>{format(max)}</span>
+      </div>
+    </div>
+  );
+}
+
+function SingleSlider({ label, min, max, step, value, onValueChange, format }) {
+  return (
+    <div className="ob-field">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
+        <label className="ob-field-label" style={{ margin: 0 }}>{label}</label>
+        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text)' }}>{format(value)}</span>
+      </div>
+      <Slider.Root
+        className="rdx-slider"
+        min={min} max={max} step={step}
+        value={[value]}
+        onValueChange={([v]) => onValueChange(v)}
+      >
+        <Slider.Track className="rdx-track">
+          <Slider.Range className="rdx-range" />
+        </Slider.Track>
+        <Slider.Thumb className="rdx-thumb" aria-label={label} />
+      </Slider.Root>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6875rem', color: 'var(--muted-light)', marginTop: '0.375rem' }}>
+        <span>{format(min)}</span><span>{format(max)}</span>
+      </div>
+    </div>
+  );
+}
+
 const EMPTY_FORM = {
   anonymizedName: '',
   category: '',
   location: '',
-  askingRange: '',
-  revenueRange: '',
-  profitRange: '',
-  age: '',
+  asking:   [250_000,  2_000_000],
+  revenue:  [100_000,    750_000],
+  profit:   [ 30_000,    200_000],
+  ageYears: 3,
   teaserDescription: '',
   ndaRequired: false,
   industryTags: [],
+  docs: [],
 };
 
 function CreateListingModal({ onClose, onCreated }) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [docFiles, setDocFiles] = useState({});
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const { createListing } = useMarket();
@@ -40,6 +141,14 @@ function CreateListingModal({ onClose, onCreated }) {
         : [...f.industryTags, tag],
     }));
 
+  const toggleDoc = (doc) =>
+    setForm((f) => ({
+      ...f,
+      docs: f.docs.includes(doc)
+        ? f.docs.filter((d) => d !== doc)
+        : [...f.docs, doc],
+    }));
+
   const valid = form.anonymizedName.trim() && form.category;
 
   async function handleSubmit(e) {
@@ -49,16 +158,17 @@ function CreateListingModal({ onClose, onCreated }) {
     setSaving(true);
     try {
       const listing = await createListing({
-        anonymized_name: form.anonymizedName.trim(),
-        category: form.category,
-        industry_tags: form.industryTags,
-        location: form.location.trim(),
-        asking_range: form.askingRange.trim(),
-        revenue_range: form.revenueRange.trim(),
-        profit_range: form.profitRange.trim(),
-        age: form.age.trim(),
+        anonymized_name:    form.anonymizedName.trim(),
+        category:           form.category,
+        industry_tags:      form.industryTags,
+        location:           form.location.trim(),
+        asking_range:       `${fmtDollars(form.asking[0])} – ${fmtDollars(form.asking[1])}`,
+        revenue_range:      `${fmtDollars(form.revenue[0])} – ${fmtDollars(form.revenue[1])}`,
+        profit_range:       `${fmtDollars(form.profit[0])} – ${fmtDollars(form.profit[1])}`,
+        age:                form.ageYears === 1 ? '1 year' : `${form.ageYears} years`,
         teaser_description: form.teaserDescription.trim(),
-        nda_required: form.ndaRequired,
+        nda_required:       form.ndaRequired,
+        document_checklist: form.docs,
       });
       onCreated(listing);
     } catch (err) {
@@ -83,24 +193,21 @@ function CreateListingModal({ onClose, onCreated }) {
           background: 'var(--surface)',
           border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)',
-          width: '100%', maxWidth: '560px',
+          width: '100%', maxWidth: '580px',
           maxHeight: '90vh', overflowY: 'auto',
           padding: '1.75rem',
           boxShadow: '0 20px 48px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1)',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>New Listing</h2>
-          <button
-            className="ghost"
-            style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-            onClick={onClose}
-          >
+          <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }} onClick={onClose}>
             Cancel
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
+
           {/* Listing name */}
           <div className="ob-field">
             <label className="ob-field-label">
@@ -111,8 +218,7 @@ function CreateListingModal({ onClose, onCreated }) {
               placeholder="e.g. Anonymous SaaS Co."
               value={form.anonymizedName}
               onChange={(e) => set('anonymizedName', e.target.value)}
-              autoFocus
-              required
+              autoFocus required
             />
             <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.25rem' }}>
               Shown to all buyers — keep it anonymous.
@@ -124,12 +230,7 @@ function CreateListingModal({ onClose, onCreated }) {
             <label className="ob-field-label">
               Category <span style={{ color: 'var(--danger, #e55)' }}>*</span>
             </label>
-            <select
-              className="ob-field-input"
-              value={form.category}
-              onChange={(e) => set('category', e.target.value)}
-              required
-            >
+            <select className="ob-field-input" value={form.category} onChange={(e) => set('category', e.target.value)} required>
               <option value="">Select a category…</option>
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -142,12 +243,7 @@ function CreateListingModal({ onClose, onCreated }) {
               {INDUSTRY_TAGS.map((tag) => {
                 const selected = form.industryTags.includes(tag);
                 return (
-                  <button
-                    key={tag}
-                    type="button"
-                    className={`ob-chip${selected ? ' ob-chip--active' : ''}`}
-                    onClick={() => toggleTag(tag)}
-                  >
+                  <button key={tag} type="button" className={`ob-chip${selected ? ' ob-chip--active' : ''}`} onClick={() => toggleTag(tag)}>
                     {selected && (
                       <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                         <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -160,70 +256,129 @@ function CreateListingModal({ onClose, onCreated }) {
             </div>
           </div>
 
-          {/* Two-column grid for ranges */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div className="ob-field">
-              <label className="ob-field-label">Asking range</label>
-              <input
-                className="ob-field-input"
-                placeholder="e.g. $500K – $750K"
-                value={form.askingRange}
-                onChange={(e) => set('askingRange', e.target.value)}
-              />
-            </div>
-            <div className="ob-field">
-              <label className="ob-field-label">Revenue range</label>
-              <input
-                className="ob-field-input"
-                placeholder="e.g. $200K – $300K ARR"
-                value={form.revenueRange}
-                onChange={(e) => set('revenueRange', e.target.value)}
-              />
-            </div>
-            <div className="ob-field">
-              <label className="ob-field-label">Profit range</label>
-              <input
-                className="ob-field-input"
-                placeholder="e.g. $80K – $120K"
-                value={form.profitRange}
-                onChange={(e) => set('profitRange', e.target.value)}
-              />
-            </div>
-            <div className="ob-field">
-              <label className="ob-field-label">Business age</label>
-              <input
-                className="ob-field-input"
-                placeholder="e.g. 3 years"
-                value={form.age}
-                onChange={(e) => set('age', e.target.value)}
-              />
-            </div>
-          </div>
+          {/* Sliders */}
+          <div style={{ display: 'grid', gap: '1.5rem', padding: '1.25rem', background: 'var(--surface-soft)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
+            <p style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--muted-light)', margin: 0 }}>Financials</p>
 
-          <div className="ob-field">
-            <label className="ob-field-label">Location</label>
-            <input
-              className="ob-field-input"
-              placeholder="e.g. United States"
-              value={form.location}
-              onChange={(e) => set('location', e.target.value)}
+            <RangeSlider
+              label="Asking range"
+              min={50_000} max={10_000_000} step={50_000}
+              value={form.asking}
+              onValueChange={(v) => set('asking', v)}
+              format={fmtDollars}
+            />
+            <RangeSlider
+              label="Revenue range"
+              min={10_000} max={5_000_000} step={10_000}
+              value={form.revenue}
+              onValueChange={(v) => set('revenue', v)}
+              format={fmtDollars}
+            />
+            <RangeSlider
+              label="Profit range"
+              min={0} max={2_000_000} step={10_000}
+              value={form.profit}
+              onValueChange={(v) => set('profit', v)}
+              format={fmtDollars}
+            />
+            <SingleSlider
+              label="Business age"
+              min={1} max={20} step={1}
+              value={form.ageYears}
+              onValueChange={(v) => set('ageYears', v)}
+              format={(v) => v === 1 ? '1 year' : `${v} years`}
             />
           </div>
 
-          {/* Teaser description */}
+          {/* Location */}
+          <div className="ob-field">
+            <label className="ob-field-label">Location</label>
+            <input className="ob-field-input" placeholder="e.g. United States" value={form.location} onChange={(e) => set('location', e.target.value)} />
+          </div>
+
+          {/* Teaser */}
           <div className="ob-field">
             <label className="ob-field-label">Teaser description</label>
             <textarea
-              className="ob-field-input"
-              rows={4}
-              placeholder="A brief, anonymous description shown to all buyers on the marketplace…"
+              className="ob-field-input" rows={3}
+              placeholder="A brief, anonymous description shown to all buyers…"
               value={form.teaserDescription}
               onChange={(e) => set('teaserDescription', e.target.value)}
               style={{ resize: 'vertical', fontFamily: 'inherit' }}
             />
           </div>
 
-          {/* NDA required */}
+          {/* Document checklist */}
+          <div style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+            <div style={{ padding: '0.75rem 1rem', background: 'var(--surface-soft)', borderBottom: '1px solid var(--line)' }}>
+              <p style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--muted-light)', margin: 0 }}>
+                Dataroom Documents
+              </p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.2rem' }}>
+                Select the documents you'll provide and upload each file.
+              </p>
+            </div>
+            {DOC_GROUPS.map((group) => (
+              <div key={group.label} style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--line)' }}>
+                <p style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', marginBottom: '0.5rem' }}>
+                  {group.label}
+                </p>
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                  {group.docs.map((doc) => {
+                    const checked = form.docs.includes(doc);
+                    const file = docFiles[doc];
+                    return (
+                      <div key={doc}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              toggleDoc(doc);
+                              if (checked) setDocFiles((f) => { const n = { ...f }; delete n[doc]; return n; });
+                            }}
+                            style={{ accentColor: 'var(--primary)', flexShrink: 0 }}
+                          />
+                          {doc}
+                        </label>
+                        {checked && (
+                          <div className="doc-upload-row">
+                            {file ? (
+                              <>
+                                <span className="doc-upload-name">{file.name}</span>
+                                <button
+                                  type="button"
+                                  className="ghost"
+                                  style={{ fontSize: '0.6875rem', padding: '0.125rem 0.375rem' }}
+                                  onClick={() => setDocFiles((f) => { const n = { ...f }; delete n[doc]; return n; })}
+                                >
+                                  Remove
+                                </button>
+                              </>
+                            ) : (
+                              <label className="doc-upload-btn">
+                                <input
+                                  type="file"
+                                  style={{ display: 'none' }}
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) setDocFiles((prev) => ({ ...prev, [doc]: f }));
+                                  }}
+                                />
+                                + Attach file
+                              </label>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* NDA */}
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
             <input
               type="checkbox"
@@ -234,14 +389,10 @@ function CreateListingModal({ onClose, onCreated }) {
             Require NDA before buyers can request access
           </label>
 
-          {error && (
-            <p style={{ color: 'var(--danger, #e55)', fontSize: '0.8125rem' }}>{error}</p>
-          )}
+          {error && <p style={{ color: 'var(--danger, #e55)', fontSize: '0.8125rem' }}>{error}</p>}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.25rem' }}>
-            <button type="button" className="ghost" onClick={onClose} disabled={saving}>
-              Cancel
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+            <button type="button" className="ghost" onClick={onClose} disabled={saving}>Cancel</button>
             <button type="submit" disabled={!valid || saving}>
               {saving ? 'Publishing…' : 'Publish Listing'}
             </button>
@@ -298,7 +449,7 @@ export default function SellerListingsPage() {
           <p>Manage listing status, document readiness, and in-flight demand.</p>
         </div>
         <button onClick={handleNewListing} disabled={connecting}>
-          {connecting ? 'Connecting…' : !isConnected ? 'Connect Wallet' : '+ New Listing'}
+          {connecting ? 'Connecting…' : '+ New Listing'}
         </button>
       </div>
 
