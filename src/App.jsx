@@ -4,12 +4,12 @@ import Layout from './components/Layout';
 import EscrowRoomPage from './pages/EscrowRoomPage';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
-import OnboardingPage from './pages/OnboardingPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import MessagesPage from './pages/MessagesPage';
 import MyDealsPage from './pages/MyDealsPage';
 import ProfilePage from './pages/ProfilePage';
+import CreateListingPage from './pages/CreateListingPage';
 import SellerListingsPage from './pages/SellerListingsPage';
 import SellerOffersBoardPage from './pages/SellerOffersBoardPage';
 import SellerRequestsPage from './pages/SellerRequestsPage';
@@ -38,7 +38,6 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/listing/:listingId" element={<LegacyListingRedirect />} />
         <Route
           path="/app"
@@ -52,6 +51,7 @@ export default function App() {
           <Route path="listing/:listingId" element={<ListingDetailPage />} />
           <Route path="my-deals" element={<MyDealsPage />} />
           <Route path="seller/listings" element={<SellerListingsPage />} />
+          <Route path="seller/listings/new" element={<CreateListingPage />} />
           <Route path="seller/requests" element={<SellerRequestsPage />} />
           <Route path="seller/offers" element={<SellerOffersBoardPage />} />
           <Route path="escrow" element={<EscrowRoomPage />} />

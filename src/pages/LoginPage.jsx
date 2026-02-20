@@ -86,7 +86,7 @@ export default function LoginPage() {
 
           <p style={{ marginTop: '1.5rem', fontSize: '0.8125rem', color: 'var(--muted)' }}>
             Don't have an account?{' '}
-            <Link to="/onboarding" style={{ color: 'var(--accent, #6366f1)' }}>
+            <Link to="/login" style={{ color: 'var(--accent, #6366f1)' }}>
               Create one
             </Link>
           </p>

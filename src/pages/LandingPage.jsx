@@ -196,7 +196,7 @@ export default function LandingPage() {
             <Link to="/login" className="lp-btn-primary lp-btn-sm">
               Sign In
             </Link>
-            <Link to="/onboarding" className="lp-btn-primary lp-btn-sm">
+            <Link to="/login" className="lp-btn-primary lp-btn-sm">
               Enter Marketplace →
             </Link>
           </div>
@@ -220,7 +220,7 @@ export default function LandingPage() {
               a fraction of a cent per transaction.
             </p>
             <div className="lp-hero-actions">
-              <Link to="/onboarding" className="lp-btn-primary">Browse Listings →</Link>
+              <Link to="/login" className="lp-btn-primary">Browse Listings →</Link>
               <a href="#how-it-works" className="lp-btn-outline">How it works</a>
             </div>
             <div className="lp-hero-stats">
@@ -358,7 +358,7 @@ export default function LandingPage() {
               A structured, end-to-end process designed to protect both buyers and sellers at every step —
               with deterministic settlement and an independently verifiable audit trail.
             </p>
-            <Link to="/onboarding" className="lp-btn-dark">Browse Listings →</Link>
+            <Link to="/login" className="lp-btn-dark">Browse Listings →</Link>
           </div>
           <div className="lp-steps">
             {steps.map((step, i) => (
@@ -385,7 +385,7 @@ export default function LandingPage() {
           <h2>Ready to find your next acquisition?</h2>
           <p>Browse current listings — anonymized, operator-verified, and built for secure closings.</p>
           <div className="lp-final-cta-actions">
-            <Link to="/onboarding" className="lp-btn-primary lp-btn-lg">Browse Listings →</Link>
+            <Link to="/login" className="lp-btn-primary lp-btn-lg">Browse Listings →</Link>
             <a href="#how-it-works" className="lp-btn-outline">Learn how it works</a>
           </div>
         </div>

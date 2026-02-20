@@ -42,7 +42,7 @@ function RequestCard({ request, level, onLevelChange, onApprove, onReject, onMes
               <select value={level} onChange={(e) => onLevelChange(e.target.value)}>
                 <option>Level 1</option>
                 <option>Level 2</option>
-                <option>Level 3</option>
+                <option>Shortlist</option>
               </select>
               <button onClick={onApprove}>Approve</button>
               <button className="ghost" onClick={onReject}>Reject</button>
@@ -84,7 +84,7 @@ export default function SellerRequestsPage() {
   const hasBoth = pending.length > 0 && decided.length > 0;
 
   function makeHandlers(request) {
-    const level = levels[request.id] || 'Level 2';
+    const level = levels[request.id] || 'Level 1';
     return {
       level,
       onLevelChange: (val) => setLevels((prev) => ({ ...prev, [request.id]: val })),

@@ -3992,3 +3992,93 @@ tr:last-child td {
     grid-template-columns: 1fr;
   }
 }
+
+/* ─────────────────────────────
+   Create Listing Wizard
+───────────────────────────── */
+.wizard-wrap {
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: 4rem;
+}
+
+.wizard-steps {
+  display: flex;
+  align-items: flex-start;
+  margin: 1.75rem 0 0;
+  padding-bottom: 2.25rem; /* room for labels below dots */
+}
+
+.wizard-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.wizard-step-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--line-strong);
+  margin-top: 13px; /* centers on 28px dot */
+  transition: background 0.2s;
+  min-width: 1rem;
+}
+
+.wizard-step-connector.done {
+  background: var(--primary);
+}
+
+.wizard-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid var(--line-strong);
+  color: var(--muted);
+  background: var(--surface);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.wizard-step-dot.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+}
+
+.wizard-step-dot.done {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.wizard-step-label {
+  font-size: 0.6875rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.wizard-step-label.active {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.wizard-content {
+  /* no extra margin — sits right after the step labels */
+}
+
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
