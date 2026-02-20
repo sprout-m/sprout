@@ -193,6 +193,13 @@ func (s *HederaService) MintListingNFT(listingID uuid.UUID) (int64, error) {
 	return meridianhedera.MintListingNFT(s.client, s.nftCollectionID, metadata)
 }
 
+// TransferNFTFromPlatform transfers a listing NFT from the platform treasury (operator account)
+// to the buyer. This is the normal post-close path — the NFT always lives in the platform
+// treasury after minting, so the from account is always the operator.
+func (s *HederaService) TransferNFTFromPlatform(serialNumber int64, toAccountIDStr string) error {
+	return s.TransferListingNFT(serialNumber, s.cfg.OperatorAccountID, toAccountIDStr)
+}
+
 // TransferListingNFT transfers a listing NFT from the platform treasury to the buyer.
 func (s *HederaService) TransferListingNFT(serialNumber int64, fromAccountIDStr, toAccountIDStr string) error {
 	if s.nftCollectionID == (sdk.TokenID{}) {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -312,6 +313,81 @@ func (h *Handler) GetDealEvents(c *gin.Context) {
 	}
 
 	ok(c, events)
+}
+
+// TransferNFT — seller signals completion by transferring the listing NFT to the buyer.
+// The platform operator account holds the NFT (minted there at listing creation) and
+// executes the on-chain transfer on the seller's behalf using the operator key.
+func (h *Handler) TransferNFT(c *gin.Context) {
+	claims := middleware.GetClaims(c)
+	escrowID, ok2 := parseUUID(c, "id")
+	if !ok2 {
+		return
+	}
+
+	var (
+		serialNumber int64
+		hcsTopicID   string
+		offerIDStr   string
+		escrowStatus string
+		buyerHedera  string
+		sellerID     uuid.UUID
+	)
+
+	err := h.db.QueryRow(context.Background(), `
+		SELECT l.nft_serial_number, COALESCE(e.hcs_topic_id,''), e.offer_id::text,
+		       e.status, COALESCE(buyer.hedera_account_id,''), l.seller_id
+		FROM escrows e
+		JOIN offers   o    ON o.id    = e.offer_id
+		JOIN listings l    ON l.id    = o.listing_id
+		JOIN users    buyer ON buyer.id = o.buyer_id
+		WHERE e.id = $1
+	`, escrowID).Scan(&serialNumber, &hcsTopicID, &offerIDStr, &escrowStatus, &buyerHedera, &sellerID)
+	if err != nil {
+		fail(c, http.StatusNotFound, "escrow not found")
+		return
+	}
+
+	if sellerID != claims.UserID {
+		fail(c, http.StatusForbidden, "only the seller can transfer the listing NFT")
+		return
+	}
+	if escrowStatus != "funded" && escrowStatus != "releaseScheduled" {
+		fail(c, http.StatusConflict, "escrow must be funded before transferring NFT")
+		return
+	}
+	if serialNumber == 0 {
+		fail(c, http.StatusConflict, "no NFT has been minted for this listing")
+		return
+	}
+	if buyerHedera == "" {
+		fail(c, http.StatusConflict, "buyer has not linked a Hedera wallet")
+		return
+	}
+	if h.hedera == nil {
+		fail(c, http.StatusServiceUnavailable, "Hedera service not configured")
+		return
+	}
+
+	if err := h.hedera.TransferNFTFromPlatform(serialNumber, buyerHedera); err != nil {
+		fail(c, http.StatusInternalServerError, "NFT transfer failed: "+err.Error())
+		return
+	}
+
+	nftRef := fmt.Sprintf("nft:serial:%d->%s", serialNumber, buyerHedera)
+	h.db.Exec(context.Background(), `
+		UPDATE escrows SET seller_transfer_tx = $1, updated_at = NOW() WHERE id = $2
+	`, nftRef, escrowID)
+
+	if hcsTopicID != "" {
+		go h.hedera.LogEvent(hcsTopicID, meridianhedera.EventNFTTransferred, offerIDStr,
+			map[string]string{
+				"to":     buyerHedera,
+				"serial": fmt.Sprintf("%d", serialNumber),
+			})
+	}
+
+	ok(c, gin.H{"seller_transfer_tx": nftRef, "status": escrowStatus})
 }
 
 func scanEscrows(rows interface {
