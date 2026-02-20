@@ -34,16 +34,16 @@ const previewCards = [
 ];
 
 const hederaStats = [
-  { val: '3–5s', label: 'Transaction finality' },
-  { val: '<$0.001', label: 'Per transaction fee' },
-  { val: '10,000+', label: 'TPS capacity' },
-  { val: 'aBFT', label: 'Consensus security' },
+  { val: '3–5s', label: 'Finality' },
+  { val: '<$0.001', label: 'Per tx fee' },
+  { val: '10,000+', label: 'TPS' },
+  { val: 'aBFT', label: 'Consensus' },
 ];
 
 const hederaServices = [
   {
-    title: 'Hedera Token Service (HTS)',
-    desc: 'Native token transfers with 3–5 second finality and fees under $0.001. No Solidity contracts, no gas auctions — deterministic, predictable settlement every time.',
+    title: 'Token Service (HTS)',
+    desc: 'Native token transfers with 3–5 second finality and fees under $0.001. No gas auctions, no pricing surprises, and predictable settlement every time.',
     icon: (
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
         <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
@@ -52,7 +52,7 @@ const hederaServices = [
     ),
   },
   {
-    title: 'Hedera Consensus Service (HCS)',
+    title: 'Consensus Service (HCS)',
     desc: 'Every LOI action, NDA approval, and closing milestone committed as an immutable, ordered message — a tamper-proof audit trail from first contact to signed close.',
     icon: (
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -64,7 +64,7 @@ const hederaServices = [
   },
   {
     title: 'HashScan Explorer',
-    desc: "Every transaction ID and HCS topic is publicly verifiable on HashScan — Hedera's native block explorer. Share a link and any party can independently confirm the record.",
+    desc: 'Every transaction ID and HCS topic is publicly verifiable on HashScan. Share a link and any party can independently confirm the record.',
     icon: (
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
         <path d="M8.5 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -109,8 +109,8 @@ const features = [
     ),
   },
   {
-    title: 'Hedera-Native Settlement',
-    desc: 'Closing flows execute through HTS with deterministic finality in seconds. No Solidity, no intermediaries, no settlement risk.',
+    title: 'Deterministic Settlement',
+    desc: 'Closing flows execute through HTS with deterministic finality in seconds. Fewer intermediaries and less settlement risk.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
         <path d="M10 3 L10 7 M10 7 C7 7 4.5 9 4.5 12C4.5 15 7 17 10 17C13 17 15.5 15 15.5 12C15.5 9 13 7 10 7Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -135,11 +135,11 @@ const steps = [
   },
   {
     title: 'Submit and negotiate an offer',
-    desc: 'Make a formal LOI, receive counteroffers, and agree on final terms. Everything logged on HCS and timestamped.',
+    desc: 'Make a formal LOI, receive counteroffers, and agree on final terms. Every action is timestamped and auditable.',
   },
   {
-    title: 'Close with Hedera-native settlement',
-    desc: 'Token transfers execute through HTS with 3–5 second finality. Key milestones are committed to HCS and can be verified on HashScan.',
+    title: 'Close with deterministic settlement',
+    desc: 'Token transfers execute through HTS with 3–5 second finality. Key milestones are committed to HCS and verifiable on HashScan.',
   },
 ];
 
@@ -191,7 +191,7 @@ export default function LandingPage() {
                 <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.8" />
                 <path d="M6 7h8M6 13h8M6 10h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
-              Built on Hedera
+              Verifiable settlement
             </span>
             <Link to="/onboarding" className="lp-btn-primary lp-btn-sm">
               Enter Marketplace →
@@ -213,7 +213,7 @@ export default function LandingPage() {
             </h1>
             <p className="lp-hero-sub">
               Meridian connects vetted buyers with verified sellers through structured due diligence,
-              NDA-gated documents, and Hedera-native settlement — delivering 3–5 second finality at
+              NDA-gated documents, and deterministic settlement rails — delivering 3–5 second finality at
               a fraction of a cent per transaction.
             </p>
             <div className="lp-hero-actions">
@@ -262,7 +262,7 @@ export default function LandingPage() {
       <div className="lp-hedera-strip">
         <div className="lp-container lp-hedera-strip-inner">
           <div className="lp-hedera-wordmark">
-            <span className="lp-hedera-powered-label">Settlement by</span>
+            <span className="lp-hedera-powered-label">Settlement network</span>
             <span className="lp-hedera-wordmark-text">Hedera</span>
           </div>
           <div className="lp-hedera-strip-stats">
@@ -279,7 +279,7 @@ export default function LandingPage() {
             rel="noopener noreferrer"
             className="lp-hedera-learn-link"
           >
-            About Hedera →
+            Network details →
           </a>
         </div>
       </div>
@@ -289,11 +289,11 @@ export default function LandingPage() {
         <div className="lp-container">
           <div className="lp-section-header">
             <div>
-              <p className="lp-section-label">Hedera Foundation</p>
-              <h2 className="lp-section-h2">Why Hedera for M&amp;A?</h2>
+              <p className="lp-section-label">Settlement Foundation</p>
+              <h2 className="lp-section-h2">Why this settlement stack works</h2>
             </div>
             <p className="lp-section-desc">
-              Built on Hedera SDKs and native services — not Solidity, not Ethereum.
+              Built on Hedera SDKs and native services for fast finality and ordered records.
               Every step is fast, ordered, and independently verifiable.
             </p>
           </div>
@@ -310,7 +310,7 @@ export default function LandingPage() {
 
           {/* Governing Council trust strip */}
           <div className="lp-council-strip">
-            <p className="lp-council-label">Hedera Governing Council includes</p>
+            <p className="lp-council-label">Governing council includes</p>
             <div className="lp-council-names">
               {councilMembers.map((m) => (
                 <span key={m}>{m}</span>
@@ -353,7 +353,7 @@ export default function LandingPage() {
             <h2 className="lp-section-h2">From browse<br />to close</h2>
             <p className="lp-hiw-sub">
               A structured, end-to-end process designed to protect both buyers and sellers at every step —
-              with Hedera providing the settlement and audit infrastructure.
+              with deterministic settlement and an independently verifiable audit trail.
             </p>
             <Link to="/onboarding" className="lp-btn-dark">Browse Listings →</Link>
           </div>
@@ -380,7 +380,7 @@ export default function LandingPage() {
         <div className="lp-container lp-final-cta-inner">
           <p className="lp-eyebrow" style={{ marginBottom: '1rem' }}>Get started</p>
           <h2>Ready to find your next acquisition?</h2>
-          <p>Browse current listings — anonymized, operator-verified, and settled on Hedera.</p>
+          <p>Browse current listings — anonymized, operator-verified, and built for secure closings.</p>
           <div className="lp-final-cta-actions">
             <Link to="/onboarding" className="lp-btn-primary lp-btn-lg">Browse Listings →</Link>
             <a href="#how-it-works" className="lp-btn-outline">Learn how it works</a>

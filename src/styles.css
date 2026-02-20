@@ -2144,10 +2144,9 @@ tr:last-child td {
 
 /* ── Hero ── */
 .lp-hero {
-  background: var(--surface);
+  background: var(--primary);
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid var(--line);
 }
 
 /* Dot grid texture */
@@ -2155,18 +2154,18 @@ tr:last-child td {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 28px 28px;
   pointer-events: none;
 }
 
 .lp-hero-glow {
   position: absolute;
-  width: 700px;
-  height: 700px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.07) 0%, transparent 65%);
-  top: -180px;
-  right: 5%;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.28) 0%, transparent 60%);
+  top: -200px;
+  right: 0%;
   pointer-events: none;
 }
 
@@ -2183,6 +2182,64 @@ tr:last-child td {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+
+/* ── Hero dark overrides ── */
+.lp-hero .lp-eyebrow {
+  color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.lp-hero .lp-h1 {
+  color: #fff;
+}
+
+.lp-hero .lp-hero-sub {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.lp-hero .lp-hero-stats {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.lp-hero .lp-hero-stat strong {
+  color: #fff;
+}
+
+.lp-hero .lp-hero-stat span {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.lp-hero .lp-hero-stat:not(:first-child) {
+  border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+.lp-hero .lp-hero-stat-div {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lp-hero .lp-btn-primary {
+  background: #fff;
+  color: var(--primary);
+  border-color: transparent;
+}
+
+.lp-hero .lp-btn-primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: transparent;
+}
+
+.lp-hero .lp-btn-outline {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: transparent;
+}
+
+.lp-hero .lp-btn-outline:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .lp-eyebrow {
@@ -2276,12 +2333,12 @@ tr:last-child td {
 
 .lp-preview-frame {
   background: var(--bg);
-  border: 1px solid var(--line-strong);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.08),
-    0 1px 4px rgba(0, 0, 0, 0.04);
+    0 24px 64px rgba(0, 0, 0, 0.35),
+    0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .lp-preview-frame-bar {
@@ -2422,7 +2479,8 @@ tr:last-child td {
 /* ── Features ── */
 .lp-section {
   padding: 5rem 0;
-  background: var(--bg);
+  background: var(--surface);
+  border-top: 1px solid var(--line);
 }
 
 .lp-section--white {
@@ -2433,9 +2491,9 @@ tr:last-child td {
 
 .lp-section-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 2rem;
+  gap: 3rem;
   margin-bottom: 2.5rem;
 }
 
@@ -2457,12 +2515,12 @@ tr:last-child td {
 }
 
 .lp-section-desc {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--muted);
   line-height: 1.7;
-  max-width: 380px;
+  max-width: 360px;
   flex-shrink: 0;
-  padding-bottom: 0.125rem;
+  padding-top: 0.125rem;
 }
 
 .lp-feature-grid {
@@ -2473,7 +2531,7 @@ tr:last-child td {
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .lp-feature-card {
@@ -2542,6 +2600,10 @@ tr:last-child td {
 }
 
 /* ── How it works ── */
+#how-it-works {
+  background: var(--bg);
+}
+
 .lp-hiw-grid {
   display: grid;
   grid-template-columns: 280px 1fr;
@@ -2820,8 +2882,9 @@ tr:last-child td {
 
 /* ── Hedera Tech Strip ── */
 .lp-hedera-strip {
-  background: var(--primary);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: #070f1c;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   padding: 1.75rem 0;
 }
 
@@ -2829,6 +2892,7 @@ tr:last-child td {
   display: flex;
   align-items: center;
   gap: 0;
+  min-height: 64px;
 }
 
 .lp-hedera-wordmark {
@@ -2859,14 +2923,19 @@ tr:last-child td {
 }
 
 .lp-hedera-strip-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   flex: 1;
+  align-items: center;
 }
 
 .lp-hedera-strip-stat {
+  flex: 1;
   padding: 0 2rem;
   border-right: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
 }
 
 .lp-hedera-strip-stat:first-child {
@@ -2878,23 +2947,22 @@ tr:last-child td {
 }
 
 .lp-hedera-strip-stat strong {
-  display: block;
   font-size: 1.25rem;
   font-weight: 800;
   color: #fff;
   letter-spacing: -0.04em;
   line-height: 1;
-  margin-bottom: 0.3125rem;
   font-feature-settings: 'tnum';
+  white-space: nowrap;
 }
 
 .lp-hedera-strip-stat span {
-  display: block;
   font-size: 0.5625rem;
   color: rgba(255, 255, 255, 0.35);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
+  white-space: nowrap;
 }
 
 .lp-hedera-learn-link {
@@ -2920,6 +2988,7 @@ tr:last-child td {
 
 .lp-hedera-card {
   border-top: 2px solid var(--accent) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
 }
 
 .lp-hedera-card-icon {
