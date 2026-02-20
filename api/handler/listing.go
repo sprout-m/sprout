@@ -55,7 +55,7 @@ func (h *Handler) MyListings(c *gin.Context) {
 		SELECT id, seller_id, anonymized_name, category, industry_tags,
 		       location, asking_range, revenue_range, profit_range, age,
 		       teaser_description, status, verified, nda_required, escrow_type,
-		       created_at, updated_at
+		       full_financials, dataroom_folders, created_at, updated_at
 		FROM listings
 		WHERE seller_id = $1
 		ORDER BY created_at DESC
@@ -69,14 +69,17 @@ func (h *Handler) MyListings(c *gin.Context) {
 	listings := make([]model.Listing, 0)
 	for rows.Next() {
 		var l model.Listing
+		var fullFinancials, dataroomFolders []byte
 		if err := rows.Scan(
 			&l.ID, &l.SellerID, &l.AnonymizedName, &l.Category, &l.IndustryTags,
 			&l.Location, &l.AskingRange, &l.RevenueRange, &l.ProfitRange, &l.Age,
 			&l.TeaserDescription, &l.Status, &l.Verified, &l.NDARequired, &l.EscrowType,
-			&l.CreatedAt, &l.UpdatedAt,
+			&fullFinancials, &dataroomFolders, &l.CreatedAt, &l.UpdatedAt,
 		); err != nil {
 			continue
 		}
+		l.FullFinancials = json.RawMessage(fullFinancials)
+		l.DataroomFolders = json.RawMessage(dataroomFolders)
 		listings = append(listings, l)
 	}
 
