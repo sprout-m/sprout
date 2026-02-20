@@ -138,42 +138,33 @@ export default function MarketplacePage() {
 
                     <div className="listing-metrics">
                       <div className="metric">
-                        <span>Revenue</span>
+                        <span>TTM Revenue</span>
                         <strong>{listing.revenueRange}</strong>
                       </div>
                       <div className="metric">
-                        <span>Margin</span>
+                        <span>TTM Profit</span>
                         <strong>{listing.profitRange}</strong>
                       </div>
                       <div className="metric">
-                        <span>Established</span>
-                        <strong>{listing.age}</strong>
-                      </div>
-                      <div className="metric">
-                        <span>Location</span>
-                        <strong>{listing.location}</strong>
+                        <span>Asking Price</span>
+                        <strong>{listing.askingRange}</strong>
                       </div>
                     </div>
 
                     <div className="listing-card-footer">
-                      <div className="listing-card-ask">
-                        <span>Asking</span>
-                        <strong>{listing.askingRange}</strong>
+                      <div className="listing-card-tags">
+                        {listing.verified && <span className="tag">Vetted</span>}
+                        {listing.ndaRequired && <span className="tag">NDA</span>}
+                        <span className="tag">{listing.escrowType}</span>
+                        {listing.location && <span className="tag">{listing.location}</span>}
                       </div>
-                      <div className="listing-card-footer-row">
-                        <div className="listing-card-tags">
-                          {listing.verified && <span className="tag">Vetted</span>}
-                          {listing.ndaRequired && <span className="tag">NDA</span>}
-                          <span className="tag">{listing.escrowType}</span>
-                        </div>
-                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          {decision === 'pending' && <StatusPill status="pending" />}
-                          {decision === 'approved' && <StatusPill status="approved" />}
-                          {decision === 'rejected' && <StatusPill status="rejected" />}
-                          <Link className="button-link" to={`/app/listing/${listing.id}`}>
-                            View
-                          </Link>
-                        </div>
+                      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {decision === 'pending' && <StatusPill status="pending" />}
+                        {decision === 'approved' && <StatusPill status="approved" />}
+                        {decision === 'rejected' && <StatusPill status="rejected" />}
+                        <Link className="button-link" to={`/app/listing/${listing.id}`}>
+                          View
+                        </Link>
                       </div>
                     </div>
                   </article>
