@@ -141,7 +141,7 @@ export function MarketProvider({ children }) {
     const ar = await accessApi.request(listingId, {
       nda_signed: ndaSigned,
       proof_method: proofMethod,
-      proof_amount_usdc: proofAmountUSDC,
+      proof_amount_usdc: Number(proofAmountUSDC),
     });
     setAccessRequests((prev) => [ar, ...prev]);
     return ar;
@@ -161,7 +161,7 @@ export function MarketProvider({ children }) {
   // ── Offer actions ─────────────────────────────────────────────────────────
   async function submitOffer({ listingId, amountUSDC, terms, notes }) {
     const o = await offersApi.submit(listingId, {
-      amount_usdc: amountUSDC,
+      amount_usdc: Number(amountUSDC),
       terms,
       notes,
     });
