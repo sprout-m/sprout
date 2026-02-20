@@ -10,6 +10,35 @@ const steps = [
   { label: 'Funds released to seller', key: 'release' }
 ];
 
+const HEDERA_NETWORK = import.meta.env.VITE_HEDERA_NETWORK || 'testnet';
+const HASHSCAN_BASE = (HEDERA_NETWORK === 'mainnet' || HEDERA_NETWORK === 'testnet')
+  ? `https://hashscan.io/${HEDERA_NETWORK}`
+  : null;
+
+function hashscanUrl(value, type) {
+  if (!value || !HASHSCAN_BASE) return null;
+  if (type === 'transaction') {
+    // HashPack tx IDs: 0.0.ACCOUNT@SECONDS.NANOS → 0.0.ACCOUNT-SECONDS-NANOS
+    const norm = value.replace('@', '-').replace(/(\d+)\.(\d{9})$/, '$1-$2');
+    return `${HASHSCAN_BASE}/transaction/${norm}`;
+  }
+  if (type === 'schedule') return `${HASHSCAN_BASE}/schedule/${value}`;
+  if (type === 'account')  return `${HASHSCAN_BASE}/account/${value}`;
+  if (type === 'token')    return `${HASHSCAN_BASE}/token/${value}`;
+  return null;
+}
+
+function HashScanCode({ value, type, href }) {
+  const url = href !== undefined ? href : hashscanUrl(value, type);
+  if (!value) return <code>—</code>;
+  if (!url)   return <code>{value}</code>;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline dotted' }}>
+      <code>{value}</code>
+    </a>
+  );
+}
+
 export default function EscrowRoomPage() {
   const { escrows, offers, listings, user, provisionEscrow, confirmDeposit, transferNFT, openDispute, initiateRelease, completeRelease } = useMarket();
   const { isConnected, accountId: walletAccountId, connecting, connect, transferUSDC, ensureTokenAssociated, signSchedule } = useWallet();
@@ -385,15 +414,21 @@ export default function EscrowRoomPage() {
             <div className="tx-grid" style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--line)' }}>
               <div className="tx-item">
                 <span>Deposit Tx</span>
-                <code>{escrow.buyerDepositTx || '—'}</code>
+                <HashScanCode value={escrow.buyerDepositTx} type="transaction" />
               </div>
               <div className="tx-item">
                 <span>Transfer Tx</span>
-                <code>{escrow.sellerTransferTx || '—'}</code>
+                <HashScanCode
+                  value={escrow.sellerTransferTx}
+                  href={(() => {
+                    const m = escrow.sellerTransferTx?.match(/^nft:serial:(\d+)->/);
+                    return m && NFT_COLLECTION ? hashscanUrl(`${NFT_COLLECTION}/${m[1]}`, 'token') : null;
+                  })()}
+                />
               </div>
               <div className="tx-item">
                 <span>Release Tx</span>
-                <code>{escrow.scheduleId || '—'}</code>
+                <HashScanCode value={escrow.scheduleId} type="schedule" />
               </div>
             </div>
           </article>
