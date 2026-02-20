@@ -55,6 +55,7 @@ export function normalizeAccessRequest(r) {
     proofOfFundsStatus: r.proof_of_funds_status,
     proofAmountUSDC: r.proof_amount_usdc,
     proofMethod: r.proof_method,
+    proofTxId: r.proof_tx_id || null,
     // backend uses 'denied'; pages expect 'rejected'
     sellerDecision: r.seller_decision === 'denied' ? 'rejected' : r.seller_decision,
     accessLevel: r.access_level ?? null,
@@ -191,6 +192,10 @@ export const offersApi = {
 export const escrowsApi = {
   mine: () => apiFetch('/api/v1/escrows').then((l) => l.map(normalizeEscrow)),
   get: (id) => apiFetch(`/api/v1/escrows/${id}`).then(normalizeEscrow),
+  provision: (id) =>
+    apiFetch(`/api/v1/escrows/${id}/provision`, { method: 'POST' }).then((r) =>
+      r.already_provisioned ? r : normalizeEscrow(r)
+    ),
   confirmDeposit: (id, txId) =>
     apiFetch(`/api/v1/escrows/${id}/deposit`, {
       method: 'POST',
