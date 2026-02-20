@@ -199,6 +199,19 @@ export const escrowsApi = {
   getEvents: (id) => apiFetch(`/api/v1/escrows/${id}/events`),
 };
 
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+export const adminApi = {
+  stats: () => apiFetch('/api/v1/admin/stats'),
+  users: () => apiFetch('/api/v1/admin/users'),
+  allListings: () => apiFetch('/api/v1/admin/listings'),
+  verifyListing: (id, verified) =>
+    apiFetch(`/api/v1/admin/listings/${id}/verify`, { method: 'PATCH', body: JSON.stringify({ verified }) }),
+  disputes: () => apiFetch('/api/v1/admin/disputes'),
+  resolveDispute: (id, resolution) =>
+    apiFetch(`/api/v1/admin/disputes/${id}/resolve`, { method: 'POST', body: JSON.stringify({ resolution }) }),
+};
+
 // ── Threads ───────────────────────────────────────────────────────────────────
 
 export const threadsApi = {

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
+  adminApi,
   auth,
   accessApi,
   escrowsApi,
@@ -24,6 +25,12 @@ export function MarketProvider({ children }) {
   const [messageThreads, setMessageThreads] = useState([]);
   // Cache of id → { id, handle } for displaying sender names
   const [userCache, setUserCache] = useState({});
+
+  // Operator/admin state
+  const [adminStats, setAdminStats] = useState(null);
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminListings, setAdminListings] = useState([]);
+  const [adminDisputes, setAdminDisputes] = useState([]);
 
   // ── Session restore ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -86,14 +93,18 @@ export function MarketProvider({ children }) {
     }
 
     if (u.role === 'operator') {
-      const [publicListings, myAccess, myOffers] = await Promise.all([
+      const [publicListings, stats, users, allListings, disputes] = await Promise.all([
         listingsApi.list().catch(() => []),
-        accessApi.mine().catch(() => []),
-        offersApi.mine().catch(() => []),
+        adminApi.stats().catch(() => null),
+        adminApi.users().catch(() => []),
+        adminApi.allListings().catch(() => []),
+        adminApi.disputes().catch(() => []),
       ]);
       setListings(publicListings);
-      setAccessRequests(myAccess);
-      setOffers(myOffers);
+      setAdminStats(stats);
+      setAdminUsers(users);
+      setAdminListings(allListings);
+      setAdminDisputes(disputes);
     }
   }
 
@@ -121,6 +132,10 @@ export function MarketProvider({ children }) {
     setEscrows([]);
     setMessageThreads([]);
     setUserCache({});
+    setAdminStats(null);
+    setAdminUsers([]);
+    setAdminListings([]);
+    setAdminDisputes([]);
   }
 
   // ── Listing actions ───────────────────────────────────────────────────────
@@ -207,6 +222,28 @@ export function MarketProvider({ children }) {
     );
   }
 
+  // ── Admin actions ─────────────────────────────────────────────────────────
+  async function adminVerifyListing(id, verified) {
+    await adminApi.verifyListing(id, verified);
+    setAdminListings((prev) => prev.map((l) => (l.id === id ? { ...l, verified } : l)));
+  }
+
+  async function adminToggleListingStatus(listing) {
+    const nextStatus = listing.status === 'live' ? 'draft' : 'live';
+    await listingsApi.update(listing.id, { status: nextStatus });
+    setAdminListings((prev) =>
+      prev.map((l) => (l.id === listing.id ? { ...l, status: nextStatus } : l))
+    );
+  }
+
+  async function resolveDispute(id, resolution) {
+    await adminApi.resolveDispute(id, resolution);
+    setAdminDisputes((prev) => prev.filter((d) => d.id !== id));
+    setAdminStats((prev) =>
+      prev ? { ...prev, escrows_disputed: Math.max(0, (prev.escrows_disputed || 1) - 1) } : prev
+    );
+  }
+
   // ── Message actions ───────────────────────────────────────────────────────
   async function startConversation({ listingId, buyerId, sellerId }) {
     const body = { listing_id: listingId };
@@ -281,6 +318,14 @@ export function MarketProvider({ children }) {
     startConversation,
     loadThreadMessages,
     sendMessage,
+    // Admin
+    adminStats,
+    adminUsers,
+    adminListings,
+    adminDisputes,
+    adminVerifyListing,
+    adminToggleListingStatus,
+    resolveDispute,
   };
 
   return <MarketContext.Provider value={value}>{children}</MarketContext.Provider>;

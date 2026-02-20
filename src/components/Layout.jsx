@@ -19,19 +19,20 @@ const roleRoutes = {
     { to: '/app/profile', label: 'Profile' }
   ],
   operator: [
-    { to: '/app', label: 'Marketplace' },
-    { to: '/app/seller/listings', label: 'Listings' },
-    { to: '/app/seller/requests', label: 'Access Requests' },
-    { to: '/app/seller/offers', label: 'Offers' },
-    { to: '/app/escrow', label: 'Closing' },
-    { to: '/app/profile', label: 'Profile' }
+    { to: '/app/operator', label: 'Dashboard' },
+    { to: '/app/operator/users', label: 'Users' },
+    { to: '/app/operator/listings', label: 'Listings' },
+    { to: '/app/operator/disputes', label: 'Disputes' },
+    { to: '/app/escrow', label: 'Escrows' },
+    { to: '/app/messages', label: 'Messages' },
+    { to: '/app/profile', label: 'Profile' },
   ]
 };
 
 const roleLanding = {
   buyer: '/app',
   seller: '/app/seller/listings',
-  operator: '/app'
+  operator: '/app/operator'
 };
 
 export default function Layout() {
@@ -44,6 +45,7 @@ export default function Layout() {
 
   useEffect(() => {
     if (location.pathname.startsWith('/app/listing/')) return;
+    if (location.pathname.startsWith('/app/operator/')) return;
     const allowed = routes.some(
       (route) =>
         location.pathname === route.to || location.pathname.startsWith(`${route.to}/`)

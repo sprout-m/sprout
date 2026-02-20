@@ -13,6 +13,10 @@ import ProfilePage from './pages/ProfilePage';
 import SellerListingsPage from './pages/SellerListingsPage';
 import SellerOffersBoardPage from './pages/SellerOffersBoardPage';
 import SellerRequestsPage from './pages/SellerRequestsPage';
+import OperatorDashboardPage from './pages/OperatorDashboardPage';
+import OperatorUsersPage from './pages/OperatorUsersPage';
+import OperatorListingsPage from './pages/OperatorListingsPage';
+import OperatorDisputesPage from './pages/OperatorDisputesPage';
 
 function LegacyListingRedirect() {
   const { listingId } = useParams();
@@ -53,6 +57,10 @@ export default function App() {
           <Route path="escrow" element={<EscrowRoomPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="operator" element={<OperatorDashboardPage />} />
+          <Route path="operator/users" element={<OperatorUsersPage />} />
+          <Route path="operator/listings" element={<OperatorListingsPage />} />
+          <Route path="operator/disputes" element={<OperatorDisputesPage />} />
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Route>
       </Routes>
