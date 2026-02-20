@@ -353,8 +353,9 @@ export default function OnboardingPage() {
               >
                 <div className="ob-role-icon ob-role-icon--seller">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 17l5-5 4 4 5-6 4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M15 6h6M21 6v6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                    <path d="M4.5 7h15l-1.2 4.6a2 2 0 0 1-1.94 1.5H7.64a2 2 0 0 1-1.94-1.5L4.5 7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                    <path d="M6.5 13.1V19h11v-5.9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M10 19v-3h4v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
                 <div className="ob-role-text">
