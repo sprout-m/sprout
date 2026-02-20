@@ -41,33 +41,49 @@ export default function ListingDetailPage() {
 
   return (
     <section>
-      <div className="page-header">
-        <h2>{listing.anonymizedName}</h2>
-        <p>{listing.category} · {listing.location} · {listing.age}</p>
-      </div>
 
-      <div className="listing-stats">
-        <div className="stat-chip">
-          <strong>{listing.askingRange}</strong>
-          <span>Asking Range</span>
-        </div>
-        <div className="stat-chip">
-          <strong>{listing.revenueRange}</strong>
-          <span>Revenue (MRR)</span>
-        </div>
-        <div className="stat-chip">
-          <strong>{listing.profitRange}</strong>
-          <span>Profit Margin</span>
-        </div>
-        <div className="stat-chip">
-          <div style={{ marginBottom: '0.375rem' }}>
+      {/* ── Listing Hero ── */}
+      <div className="listing-hero">
+        <div className="listing-hero-left">
+          <div className="listing-hero-meta">
+            <span className="cat-label">{listing.category}</span>
+            <span className="listing-hero-dot" />
+            <span>{listing.location}</span>
+            <span className="listing-hero-dot" />
+            <span>{listing.age}</span>
+          </div>
+          <h2 className="listing-hero-title">{listing.anonymizedName}</h2>
+          <p className="listing-hero-teaser">{listing.teaserDescription}</p>
+          <div className="listing-hero-badges">
+            {listing.verified && <span className="tag">Operator Vetted</span>}
+            {listing.ndaRequired && <span className="tag">NDA Required</span>}
+            <span className="tag">{listing.escrowType} Escrow</span>
             <StatusPill status={unlocked ? 'approved' : request?.sellerDecision || 'locked'} />
           </div>
-          <span>Access Status</span>
+        </div>
+
+        <div className="listing-hero-right">
+          <div className="listing-hero-ask">
+            <span className="listing-hero-ask-label">Asking Price</span>
+            <strong className="listing-hero-ask-val">{listing.askingRange}</strong>
+          </div>
+          <div className="listing-hero-chips">
+            <div className="listing-hero-chip">
+              <span>Revenue</span>
+              <strong>{listing.revenueRange}</strong>
+            </div>
+            <div className="listing-hero-chip">
+              <span>Margin</span>
+              <strong>{listing.profitRange}</strong>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* ── Two-column body ── */}
       <div className="listing-layout">
+
+        {/* Main content */}
         <div>
           <div className="tab-row">
             {tabs.map((tab) => (
@@ -80,9 +96,6 @@ export default function ListingDetailPage() {
           <div className="tab-panel">
             {activeTab === 'Overview' && (
               <div style={{ display: 'grid', gap: '1rem' }}>
-                <p style={{ fontSize: '0.9375rem', lineHeight: 1.65, color: 'var(--text-secondary)' }}>
-                  {listing.teaserDescription}
-                </p>
                 <div className="listing-metrics">
                   <div className="metric">
                     <span>Asking</span>
@@ -97,15 +110,20 @@ export default function ListingDetailPage() {
                     <strong>{listing.profitRange}</strong>
                   </div>
                   <div className="metric">
-                    <span>Category</span>
-                    <strong>{listing.category}</strong>
+                    <span>Age</span>
+                    <strong>{listing.age}</strong>
                   </div>
                 </div>
-                <div className="badge-row">
-                  {listing.verified && <span className="tag">Operator Vetted</span>}
-                  {listing.ndaRequired && <span className="tag">NDA Required</span>}
-                  <span className="tag">{listing.escrowType} Escrow</span>
-                </div>
+                <p style={{ fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                  {listing.teaserDescription}
+                </p>
+                {listing.industryTags?.length > 0 && (
+                  <div className="badge-row">
+                    {listing.industryTags.map((tag) => (
+                      <span key={tag} className="tag">{tag}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -265,7 +283,7 @@ export default function ListingDetailPage() {
                     I can fund escrow within 24 hours.
                   </label>
                   {offerError && (
-                    <p style={{ color: 'var(--danger, #e55)', fontSize: '0.8125rem' }}>{offerError}</p>
+                    <p style={{ color: 'var(--danger)', fontSize: '0.8125rem' }}>{offerError}</p>
                   )}
                   <button type="submit" disabled={submitting}>
                     {submitting ? 'Submitting…' : 'Submit Offer'}
@@ -282,41 +300,45 @@ export default function ListingDetailPage() {
           </div>
         </div>
 
+        {/* CTA sidebar */}
         <aside className="cta-panel">
-          <div>
+          <div className="cta-panel-header">
             <h4>Access Requirements</h4>
-            <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.25rem' }}>
-              Complete all three steps to unlock the full documents section.
-            </p>
+            <p>Complete all three steps to unlock documents and make an offer.</p>
           </div>
 
           <div className="access-checklist">
-            <div className="step-row">
-              <span className={`step-indicator${request?.ndaSigned ? ' done' : ''}`}>
+            <div className="cta-step-row">
+              <span className={`cta-step-dot${request?.ndaSigned ? ' done' : ''}`}>
                 {request?.ndaSigned ? '✓' : '1'}
               </span>
-              <span style={request?.ndaSigned ? { color: 'var(--ok)' } : {}}>Sign NDA</span>
+              <div>
+                <p className="cta-step-label">Sign NDA</p>
+                <p className="cta-step-sub">Platform mutual non-disclosure</p>
+              </div>
             </div>
-            <div className="step-row">
-              <span className={`step-indicator${request?.proofOfFundsStatus === 'verified' ? ' done' : ''}`}>
+            <div className="cta-step-row">
+              <span className={`cta-step-dot${request?.proofOfFundsStatus === 'verified' ? ' done' : ''}`}>
                 {request?.proofOfFundsStatus === 'verified' ? '✓' : '2'}
               </span>
-              <span style={request?.proofOfFundsStatus === 'verified' ? { color: 'var(--ok)' } : {}}>
-                Proof of Funds
-              </span>
+              <div>
+                <p className="cta-step-label">Proof of Funds</p>
+                <p className="cta-step-sub">Deposit or wallet attestation</p>
+              </div>
             </div>
-            <div className="step-row">
-              <span className={`step-indicator${request?.sellerDecision === 'approved' ? ' done' : ''}`}>
+            <div className="cta-step-row">
+              <span className={`cta-step-dot${request?.sellerDecision === 'approved' ? ' done' : ''}`}>
                 {request?.sellerDecision === 'approved' ? '✓' : '3'}
               </span>
-              <span style={request?.sellerDecision === 'approved' ? { color: 'var(--ok)' } : {}}>
-                Seller Approval
-              </span>
+              <div>
+                <p className="cta-step-label">Seller Approval</p>
+                <p className="cta-step-sub">Seller reviews your profile</p>
+              </div>
             </div>
           </div>
 
-          <button style={{ width: '100%' }} onClick={() => setShowModal(true)} disabled={Boolean(request)}>
-            {request ? 'Request Submitted' : 'Request Access'}
+          <button className="cta-panel-btn" onClick={() => setShowModal(true)} disabled={Boolean(request)}>
+            {request ? 'Request Submitted' : 'Request Access →'}
           </button>
 
           {request && (

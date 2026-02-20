@@ -79,12 +79,13 @@ function CreateListingModal({ onClose, onCreated }) {
     >
       <div
         style={{
-          background: 'var(--surface, #1a1a1a)',
-          border: '1px solid var(--line, #2a2a2a)',
-          borderRadius: '10px',
+          background: 'var(--surface)',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--radius-lg)',
           width: '100%', maxWidth: '560px',
           maxHeight: '90vh', overflowY: 'auto',
           padding: '1.75rem',
+          boxShadow: '0 20px 48px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>

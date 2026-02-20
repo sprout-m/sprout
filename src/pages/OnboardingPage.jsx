@@ -257,7 +257,10 @@ export default function OnboardingPage() {
               style={{ height: '36px', filter: 'brightness(0) invert(1)' }}
             />
           </Link>
-          <Link to="/" className="ob-exit-link">Exit</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Link to="/login" className="ob-exit-link">Sign in</Link>
+            <Link to="/" className="ob-exit-link">Exit</Link>
+          </div>
         </div>
       </header>
 

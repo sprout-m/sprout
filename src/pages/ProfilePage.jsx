@@ -2,14 +2,11 @@ import { useState } from 'react';
 import { useMarket } from '../context/MarketContext';
 import { useWallet } from '../context/WalletContext';
 
-function ProfileRow({ label, value }) {
+function ProfileRow({ label, value, mono = false }) {
   return (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '0.4375rem 0', borderBottom: '1px solid var(--line)',
-    }}>
-      <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>{label}</span>
-      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text)', fontFamily: label === 'Account ID' || label === 'Public Key' ? 'monospace' : 'inherit', wordBreak: 'break-all', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+    <div className="profile-row">
+      <span className="profile-row-label">{label}</span>
+      <span className={`profile-row-value${mono ? ' mono' : ''}`}>{value}</span>
     </div>
   );
 }
@@ -50,69 +47,86 @@ export default function ProfilePage() {
 
   return (
     <section>
-      <div className="page-header">
-        <h2>Profile</h2>
-        <p>Account identity, wallet, and permissions.</p>
-      </div>
 
-      <div className="profile-header">
-        <div className="avatar">
+      {/* ── Profile Hero ── */}
+      <div className="profile-hero">
+        <div className="profile-hero-avatar">
           {activeUser.handle.charAt(0).toUpperCase()}
         </div>
-        <div className="profile-header-info">
-          <h3>{activeUser.handle}</h3>
-          <p style={{ textTransform: 'capitalize' }}>{activeUser.role}</p>
+        <div className="profile-hero-body">
+          <h2 className="profile-hero-name">{activeUser.handle}</h2>
+          <div className="profile-hero-meta">
+            <span className="tag" style={{ textTransform: 'capitalize' }}>{activeUser.role}</span>
+            <span className="profile-hero-email">{activeUser.email}</span>
+          </div>
         </div>
+        {hasLinkedWallet && (
+          <div className="profile-hero-wallet-badge">
+            <span className="profile-wallet-dot" />
+            <span className="mono" style={{ fontSize: '0.8125rem' }}>{activeUser.hederaAccountId}</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+              {network.charAt(0).toUpperCase() + network.slice(1)}
+            </span>
+          </div>
+        )}
       </div>
 
-      <div className="dashboard-grid">
-        {/* Identity */}
-        <article className="card compact">
-          <h3>Identity</h3>
-          <ProfileRow label="Handle" value={`@${activeUser.handle}`} />
-          <ProfileRow label="Email"  value={activeUser.email} />
-          <ProfileRow label="Role"   value={activeUser.role.charAt(0).toUpperCase() + activeUser.role.slice(1)} />
-        </article>
+      {/* ── Two-column body ── */}
+      <div className="profile-layout">
 
-        {/* Hedera Wallet */}
+        {/* Left: Identity + Permissions */}
+        <div style={{ display: 'grid', gap: '0.75rem', alignContent: 'start' }}>
+          <article className="card compact">
+            <p className="card-section-label">Identity</p>
+            <ProfileRow label="Handle" value={`@${activeUser.handle}`} />
+            <ProfileRow label="Email"  value={activeUser.email} />
+            <ProfileRow label="Role"   value={activeUser.role.charAt(0).toUpperCase() + activeUser.role.slice(1)} />
+          </article>
+
+          <article className="card compact">
+            <p className="card-section-label">Permissions</p>
+            <ProfileRow label="Marketplace" value="Full Access" />
+            <ProfileRow label="Documents"   value="NDA-gated" />
+            <ProfileRow
+              label="Escrow"
+              value={hasLinkedWallet ? 'Active' : 'Link wallet to enable'}
+            />
+          </article>
+        </div>
+
+        {/* Right: Wallet */}
         <article className="card compact">
-          <h3>Hedera Wallet</h3>
+          <p className="card-section-label">Hedera Wallet</p>
 
           {hasLinkedWallet && (
             <>
-              <ProfileRow label="Account ID"  value={activeUser.hederaAccountId} />
+              <ProfileRow label="Account ID"  value={activeUser.hederaAccountId} mono />
               <ProfileRow
                 label="Public Key"
                 value={activeUser.hederaPublicKey
-                  ? activeUser.hederaPublicKey.slice(0, 16) + '…'
+                  ? activeUser.hederaPublicKey.slice(0, 20) + '…'
                   : '—'}
+                mono
               />
-              <ProfileRow label="Network"     value={network.charAt(0).toUpperCase() + network.slice(1)} />
-              <ProfileRow label="Token"       value="USDC (HTS)" />
+              <ProfileRow label="Network" value={network.charAt(0).toUpperCase() + network.slice(1)} />
+              <ProfileRow label="Token"   value="USDC (HTS)" />
             </>
           )}
 
           {!hasLinkedWallet && !isConnected && (
-            <p style={{ fontSize: '0.8125rem', color: 'var(--muted)', marginBottom: '0.75rem' }}>
-              Connect your HashPack wallet to participate in USDC escrow.
+            <p style={{ fontSize: '0.875rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '1rem' }}>
+              Connect your HashPack wallet to participate in USDC escrow and sign on-chain documents.
             </p>
           )}
 
-          {/* Connection status */}
           {isConnected && (
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '0.4375rem 0', borderBottom: '1px solid var(--line)',
-            }}>
-              <span style={{ fontSize: '0.8125rem', color: 'var(--muted)' }}>Connected</span>
-              <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--ok, #10b981)' }}>
-                {accountId}
-              </span>
+            <div className="profile-row">
+              <span className="profile-row-label">Connected</span>
+              <span className="mono" style={{ fontSize: '0.8125rem', color: 'var(--ok, #16a34a)' }}>{accountId}</span>
             </div>
           )}
 
-          {/* Actions */}
-          <div style={{ display: 'grid', gap: '0.5rem', marginTop: '0.75rem' }}>
+          <div style={{ display: 'grid', gap: '0.5rem', marginTop: '1rem' }}>
             {!isConnected && (
               <button onClick={handleConnect} disabled={connecting} style={{ width: '100%' }}>
                 {connecting ? 'Opening HashPack…' : 'Connect HashPack'}
@@ -126,12 +140,7 @@ export default function ProfilePage() {
             )}
 
             {isConnected && walletLinkedAndMatches && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.4rem 0.75rem', borderRadius: '6px',
-                background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
-                fontSize: '0.8125rem', color: 'var(--ok, #10b981)',
-              }}>
+              <div className="wallet-linked-badge">
                 <span>✓</span>
                 <span>Wallet linked</span>
               </div>
@@ -147,14 +156,6 @@ export default function ProfilePage() {
           {linkError && (
             <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.5rem' }}>{linkError}</p>
           )}
-        </article>
-
-        {/* Permissions */}
-        <article className="card compact">
-          <h3>Permissions</h3>
-          <ProfileRow label="Marketplace" value="Full Access" />
-          <ProfileRow label="Documents"   value="NDA-gated" />
-          <ProfileRow label="Escrow"      value={hasLinkedWallet ? 'Active' : 'Link wallet to enable'} />
         </article>
       </div>
     </section>

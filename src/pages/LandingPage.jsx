@@ -193,6 +193,9 @@ export default function LandingPage() {
               </svg>
               Verifiable settlement
             </span>
+            <Link to="/login" className="lp-btn-primary lp-btn-sm">
+              Sign In
+            </Link>
             <Link to="/onboarding" className="lp-btn-primary lp-btn-sm">
               Enter Marketplace →
             </Link>
