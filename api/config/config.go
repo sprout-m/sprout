@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	Port        string
+	AppBaseURL  string
 	DatabaseURL string
 	JWTSecret   string
 
@@ -22,6 +23,7 @@ type Config struct {
 func Load() (*Config, error) {
 	cfg := &Config{
 		Port:                    envOr("APP_PORT", "8080"),
+		AppBaseURL:              envOr("APP_BASE_URL", "http://localhost:8080"),
 		DatabaseURL:             os.Getenv("DATABASE_URL"),
 		JWTSecret:               os.Getenv("JWT_SECRET"),
 		HederaNetwork:           envOr("HEDERA_NETWORK", "testnet"),

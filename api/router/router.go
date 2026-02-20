@@ -31,6 +31,10 @@ func New(cfg *config.Config, h *handler.Handler) *gin.Engine {
 	// Public listing browse (teaser only, no token required).
 	api.GET("/listings", h.ListListings)
 
+	// NFT metadata & image — must be public so wallets and explorers can fetch them.
+	api.GET("/nft/metadata/:id", h.NFTMetadata)
+	api.GET("/nft/image/:id", h.NFTImage)
+
 	// --- Protected ---
 	protected := api.Group("")
 	protected.Use(middleware.Auth(cfg.JWTSecret))
