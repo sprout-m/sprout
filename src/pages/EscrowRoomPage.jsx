@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
@@ -9,8 +10,10 @@ const steps = [
 ];
 
 export default function EscrowRoomPage() {
-  const { escrows, offers, listings, user, depositEscrow, transferOwnership, openDispute } = useMarket();
+  const { escrows, offers, listings, user, depositEscrow, transferNFT, openDispute } = useMarket();
   const navigate = useNavigate();
+  const [transferringId, setTransferringId] = useState(null);
+  const [transferError, setTransferError] = useState('');
 
   const getOffer = (id) => offers.find((o) => o.offerId === id);
   const getListing = (listingId) => listings.find((l) => l.id === listingId);
@@ -45,9 +48,10 @@ export default function EscrowRoomPage() {
         if (!offer) return null;
 
         const deposited = escrow.status !== 'awaitingDeposit';
-        const transferred = escrow.status === 'completed';
+        const nftTransferred = Boolean(escrow.sellerTransferTx);
+        const released = ['releaseScheduled', 'completed'].includes(escrow.status);
 
-        const stepDone = [deposited, transferred, transferred];
+        const stepDone = [deposited, nftTransferred, released];
 
         const isBuyer = user?.id === offer.buyerId;
         const isSeller = user?.id === getListing(offer.listingId)?.sellerId;
@@ -98,13 +102,38 @@ export default function EscrowRoomPage() {
                   </button>
                 )}
                 {isSeller && (
-                  <button
-                    className="ghost"
-                    disabled={escrow.status !== 'funded'}
-                    onClick={() => transferOwnership(escrow.escrowId)}
-                  >
-                    Transfer Ownership
-                  </button>
+                  <>
+                    <button
+                      className="ghost"
+                      disabled={
+                        escrow.status !== 'funded' && escrow.status !== 'releaseScheduled'
+                        || Boolean(escrow.sellerTransferTx)
+                        || transferringId === escrow.escrowId
+                      }
+                      onClick={async () => {
+                        setTransferError('');
+                        setTransferringId(escrow.escrowId);
+                        try {
+                          await transferNFT(escrow.escrowId);
+                        } catch (err) {
+                          setTransferError(err.message || 'NFT transfer failed');
+                        } finally {
+                          setTransferringId(null);
+                        }
+                      }}
+                    >
+                      {transferringId === escrow.escrowId
+                        ? 'Transferring…'
+                        : escrow.sellerTransferTx
+                          ? 'NFT Transferred ✓'
+                          : 'Transfer Listing NFT'}
+                    </button>
+                    {transferError && transferringId === null && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                        {transferError}
+                      </p>
+                    )}
+                  </>
                 )}
                 {(isBuyer || isSeller) && (
                   <button

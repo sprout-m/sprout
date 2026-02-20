@@ -204,11 +204,13 @@ export function MarketProvider({ children }) {
     return e;
   }
 
-  // Kept for UI compatibility — in real flow the operator schedules release
-  function transferOwnership(escrowId) {
+  async function transferNFT(escrowId) {
+    const result = await escrowsApi.transferNFT(escrowId);
     setEscrows((prev) =>
       prev.map((esc) =>
-        esc.escrowId === escrowId ? { ...esc, status: 'releaseScheduled' } : esc
+        esc.escrowId === escrowId
+          ? { ...esc, sellerTransferTx: result.seller_transfer_tx }
+          : esc
       )
     );
   }
@@ -313,7 +315,7 @@ export function MarketProvider({ children }) {
     submitOffer,
     updateOfferStatus,
     depositEscrow,
-    transferOwnership,
+    transferNFT,
     openDispute,
     startConversation,
     loadThreadMessages,
