@@ -61,7 +61,7 @@ export default function EscrowRoomPage() {
 
         const deposited = escrow.status !== 'awaitingDeposit';
         const nftTransferred = Boolean(escrow.sellerTransferTx);
-        const released = ['releaseScheduled', 'completed'].includes(escrow.status);
+        const released = escrow.status === 'completed';
 
         const stepDone = [deposited, nftTransferred, released];
 
