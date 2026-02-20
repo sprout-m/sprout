@@ -23,7 +23,7 @@ func mirrorNodeBase(network string) string {
 
 var mirrorClient = &http.Client{Timeout: 10 * time.Second}
 
-func mirrorGet(url string, dest interface{}) error {
+func mirrorGet(url string, dest any) error {
 	resp, err := mirrorClient.Get(url)
 	if err != nil {
 		return fmt.Errorf("mirror node GET %s: %w", url, err)
@@ -153,8 +153,8 @@ func GetDealEvents(network, topicID string) ([]DealEvent, error) {
 type ScheduleInfo struct {
 	ScheduleID     string `json:"schedule_id"`
 	Memo           string `json:"memo"`
-	Executed       string `json:"executed_timestamp"`  // empty if not yet executed
-	Deleted        string `json:"deleted_timestamp"`   // empty if not deleted
+	Executed       string `json:"executed_timestamp"` // empty if not yet executed
+	Deleted        string `json:"deleted_timestamp"`  // empty if not deleted
 	ExpirationTime string `json:"expiration_time"`
 	Signatories    []struct {
 		PublicKeyPrefix string `json:"public_key_prefix"`
