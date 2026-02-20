@@ -13,7 +13,8 @@ export default function EscrowRoomPage() {
   const navigate = useNavigate();
 
   const getOffer = (id) => offers.find((o) => o.offerId === id);
-  const getListingName = (listingId) => listings.find((l) => l.id === listingId)?.anonymizedName || listingId;
+  const getListing = (listingId) => listings.find((l) => l.id === listingId);
+  const getListingName = (listingId) => getListing(listingId)?.anonymizedName || listingId;
 
   if (!escrows.length) {
     return (
@@ -101,10 +102,15 @@ export default function EscrowRoomPage() {
                 <button
                   className="ghost"
                   disabled={escrow.status === 'completed' || escrow.status === 'disputed'}
-                  onClick={() => {
-                    openDispute(escrow.escrowId);
+                  onClick={async () => {
+                    await openDispute(escrow.escrowId);
+                    const listing = getListing(offer.listingId);
                     navigate('/app/messages', {
-                      state: { listingId: offer.listingId, buyerId: offer.buyerId }
+                      state: {
+                        listingId: offer.listingId,
+                        buyerId: offer.buyerId,
+                        sellerId: listing?.sellerId,
+                      }
                     });
                   }}
                 >

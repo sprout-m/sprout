@@ -56,7 +56,7 @@ function OfferCard({ offer, listingName, pof, onShortlist, onAccept, onReject })
 }
 
 export default function SellerOffersBoardPage() {
-  const { offers, listings, users, updateOfferStatus, accessRequests } = useMarket();
+  const { offers, listings, updateOfferStatus, accessRequests } = useMarket();
   const navigate = useNavigate();
   const location = useLocation();
 

@@ -1,216 +1,267 @@
-import { createContext, useContext, useMemo, useState } from 'react';
-import { accessRequestsSeed, escrowsSeed, listingsSeed, offersSeed, users } from '../data/mockData';
+import { createContext, useContext, useEffect, useState } from 'react';
+import {
+  auth,
+  accessApi,
+  escrowsApi,
+  listingsApi,
+  offersApi,
+  threadsApi,
+  clearToken,
+  getToken,
+  setToken,
+} from '../api/client';
 
 const MarketContext = createContext(null);
 
 export function MarketProvider({ children }) {
-  const [listings, setListings] = useState(listingsSeed);
-  const [accessRequests, setAccessRequests] = useState(accessRequestsSeed);
-  const [offers, setOffers] = useState(offersSeed);
-  const [escrows, setEscrows] = useState(escrowsSeed);
+  const [user, setUser] = useState(null);
+  const [initializing, setInitializing] = useState(true);
+
+  const [listings, setListings] = useState([]);
+  const [accessRequests, setAccessRequests] = useState([]);
+  const [offers, setOffers] = useState([]);
+  const [escrows, setEscrows] = useState([]);
   const [messageThreads, setMessageThreads] = useState([]);
-  const [activeUser, setActiveUser] = useState(users.buyer);
+  // Cache of id → { id, handle } for displaying sender names
+  const [userCache, setUserCache] = useState({});
 
-  const startConversation = ({ listingId, buyerId, sellerId = users.seller.id }) => {
-    const listingName = listings.find((l) => l.id === listingId)?.anonymizedName || listingId;
-    const buyerName = Object.values(users).find((u) => u.id === buyerId)?.handle || buyerId;
-    const sellerName = Object.values(users).find((u) => u.id === sellerId)?.handle || sellerId;
-    const threadId = `thr-${listingId}-${buyerId}-${sellerId}`;
+  // ── Session restore ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!getToken()) {
+      setInitializing(false);
+      return;
+    }
+    auth
+      .me()
+      .then((u) => {
+        setUser(u);
+        cacheUser(u);
+      })
+      .catch(() => clearToken())
+      .finally(() => setInitializing(false));
+  }, []);
 
-    setMessageThreads((prev) => {
-      if (prev.some((thread) => thread.threadId === threadId)) return prev;
+  // ── Load role data whenever user changes ───────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    loadUserData(user);
+  }, [user?.id]);
 
-      return [
-        {
-          threadId,
-          listingId,
-          buyerId,
-          sellerId,
-          title: `${listingName} · ${buyerName} <> ${sellerName}`,
-          updatedAt: new Date().toISOString(),
-          messages: []
-        },
-        ...prev
-      ];
-    });
+  function cacheUser(u) {
+    setUserCache((prev) => ({ ...prev, [u.id]: u }));
+  }
 
-    return threadId;
-  };
-
-  const sendMessage = ({ threadId, text, senderId = activeUser.id }) => {
-    const body = String(text || '').trim();
-    if (!body) return;
-
-    setMessageThreads((prev) => {
-      const stamp = new Date().toISOString();
-      const next = prev.map((thread) =>
-        thread.threadId === threadId
-          ? {
-              ...thread,
-              updatedAt: stamp,
-              messages: [
-                ...thread.messages,
-                {
-                  id: `msg-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
-                  senderId,
-                  text: body,
-                  createdAt: stamp
-                }
-              ]
-            }
-          : thread
-      );
-
-      return next.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-    });
-  };
-
-  const requestAccess = ({ listingId, ndaSigned, proofMethod, proofAmountUSDC }) => {
-    const existing = accessRequests.find((r) => r.listingId === listingId && r.buyerId === activeUser.id);
-    if (existing) return;
-
-    setAccessRequests((prev) => [
-      {
-        id: `ar-${Date.now()}`,
-        listingId,
-        buyerId: activeUser.id,
-        ndaSigned,
-        proofOfFundsStatus: proofMethod === 'wallet' ? 'pending' : 'verified',
-        proofAmountUSDC,
-        proofMethod,
-        sellerDecision: 'pending',
-        accessLevel: null,
-        requestedAt: new Date().toISOString().slice(0, 10)
-      },
-      ...prev
+  async function loadUserData(u) {
+    // Everyone loads public listings and their own threads + escrows
+    const [allListings, myEscrows, myThreads] = await Promise.all([
+      listingsApi.list().catch(() => []),
+      escrowsApi.mine().catch(() => []),
+      threadsApi.list().catch(() => []),
     ]);
-  };
+    setListings(allListings);
+    setEscrows(myEscrows);
+    setMessageThreads(myThreads);
 
-  const decideAccess = ({ requestId, decision, accessLevel }) => {
-    setAccessRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId
-          ? {
-              ...r,
-              sellerDecision: decision,
-              accessLevel: decision === 'approved' ? accessLevel : null,
-              proofOfFundsStatus: r.proofOfFundsStatus === 'pending' && decision === 'approved' ? 'verified' : r.proofOfFundsStatus
-            }
-          : r
-      )
-    );
-  };
+    if (u.role === 'buyer' || u.role === 'operator') {
+      const [myAccess, myOffers] = await Promise.all([
+        accessApi.mine().catch(() => []),
+        offersApi.mine().catch(() => []),
+      ]);
+      setAccessRequests(myAccess);
+      setOffers(myOffers);
+    }
 
-  const submitOffer = ({ listingId, amountUSDC, terms, notes }) => {
-    const newOffer = {
-      offerId: `off-${Date.now()}`,
-      listingId,
-      buyerId: activeUser.id,
-      amountUSDC: Number(amountUSDC),
+    if (u.role === 'seller' || u.role === 'operator') {
+      const myListings = allListings.filter((l) => l.sellerId === u.id);
+      if (myListings.length) {
+        const [accessNested, offersNested] = await Promise.all([
+          Promise.all(myListings.map((l) => accessApi.forListing(l.id).catch(() => []))),
+          Promise.all(myListings.map((l) => offersApi.forListing(l.id).catch(() => []))),
+        ]);
+        setAccessRequests(accessNested.flat());
+        setOffers(offersNested.flat());
+      }
+    }
+  }
+
+  // ── Auth actions ──────────────────────────────────────────────────────────
+  async function loginUser({ email, password }) {
+    const { token, user: u } = await auth.login({ email, password });
+    setToken(token);
+    setUser(u);
+    cacheUser(u);
+  }
+
+  async function registerUser({ email, handle, password, role }) {
+    const { token, user: u } = await auth.register({ email, handle, password, role });
+    setToken(token);
+    setUser(u);
+    cacheUser(u);
+  }
+
+  function logoutUser() {
+    clearToken();
+    setUser(null);
+    setListings([]);
+    setAccessRequests([]);
+    setOffers([]);
+    setEscrows([]);
+    setMessageThreads([]);
+    setUserCache({});
+  }
+
+  // ── Listing actions ───────────────────────────────────────────────────────
+  async function createListing(data) {
+    const l = await listingsApi.create(data);
+    setListings((prev) => [l, ...prev]);
+    return l;
+  }
+
+  // ── Access request actions ────────────────────────────────────────────────
+  async function requestAccess({ listingId, ndaSigned, proofMethod, proofAmountUSDC }) {
+    const ar = await accessApi.request(listingId, {
+      nda_signed: ndaSigned,
+      proof_method: proofMethod,
+      proof_amount_usdc: proofAmountUSDC,
+    });
+    setAccessRequests((prev) => [ar, ...prev]);
+    return ar;
+  }
+
+  async function decideAccess({ requestId, decision, accessLevel }) {
+    // Frontend uses 'rejected'; backend expects 'denied'
+    const backendDecision = decision === 'rejected' ? 'denied' : decision;
+    const ar = await accessApi.decide(requestId, {
+      decision: backendDecision,
+      access_level: accessLevel,
+    });
+    setAccessRequests((prev) => prev.map((r) => (r.id === requestId ? ar : r)));
+    return ar;
+  }
+
+  // ── Offer actions ─────────────────────────────────────────────────────────
+  async function submitOffer({ listingId, amountUSDC, terms, notes }) {
+    const o = await offersApi.submit(listingId, {
+      amount_usdc: amountUSDC,
       terms,
       notes,
-      status: 'submitted'
-    };
-    setOffers((prev) => [newOffer, ...prev]);
-  };
+    });
+    setOffers((prev) => [o, ...prev]);
+    return o;
+  }
 
-  const updateOfferStatus = ({ offerId, status }) => {
-    setOffers((prev) =>
-      prev.map((offer) => {
-        if (offer.offerId !== offerId) return offer;
-        if (status === 'accepted') {
-          setEscrows((escPrev) => {
-            if (escPrev.some((esc) => esc.offerId === offerId)) return escPrev;
-            return [
-              {
-                escrowId: `esc-${Date.now()}`,
-                offerId,
-                buyerDepositTx: null,
-                sellerTransferTx: null,
-                amountUSDC: offer.amountUSDC,
-                status: 'awaitingDeposit'
-              },
-              ...escPrev
-            ];
-          });
-        }
-        return { ...offer, status };
-      })
-    );
-  };
+  async function updateOfferStatus({ offerId, status }) {
+    const o = await offersApi.updateStatus(offerId, { status });
+    setOffers((prev) => prev.map((item) => (item.offerId === offerId ? o : item)));
+    // If accepted, reload escrows (backend creates one asynchronously)
+    if (status === 'accepted') {
+      setTimeout(() => {
+        escrowsApi.mine().then(setEscrows).catch(() => {});
+      }, 2000);
+    }
+    return o;
+  }
 
-  const depositEscrow = (escrowId) => {
+  // ── Escrow actions ────────────────────────────────────────────────────────
+  async function depositEscrow(escrowId) {
+    const fakeTxId = `0.0.${Date.now()}@${Math.floor(Date.now() / 1000)}.0`;
+    const e = await escrowsApi.confirmDeposit(escrowId, fakeTxId);
+    setEscrows((prev) => prev.map((item) => (item.escrowId === escrowId ? e : item)));
+    return e;
+  }
+
+  // Kept for UI compatibility — in real flow the operator schedules release
+  function transferOwnership(escrowId) {
     setEscrows((prev) =>
       prev.map((esc) =>
-        esc.escrowId === escrowId
-          ? { ...esc, status: 'funded', buyerDepositTx: `0xdep${Math.random().toString(16).slice(2, 10)}` }
-          : esc
+        esc.escrowId === escrowId ? { ...esc, status: 'releaseScheduled' } : esc
       )
     );
-  };
+  }
 
-  const transferOwnership = (escrowId) => {
+  async function openDispute(escrowId) {
+    await escrowsApi.openDispute(escrowId);
     setEscrows((prev) =>
-      prev.map((esc) => {
-        if (esc.escrowId !== escrowId) return esc;
-        const next = {
-          ...esc,
-          status: 'completed',
-          sellerTransferTx: `0xtrf${Math.random().toString(16).slice(2, 10)}`
-        };
-        return next;
-      })
-    );
-  };
-
-  const openDispute = (escrowId) => {
-    const escrow = escrows.find((esc) => esc.escrowId === escrowId);
-    if (!escrow || escrow.status === 'completed') return null;
-
-    const offer = offers.find((item) => item.offerId === escrow.offerId);
-    if (!offer) return null;
-
-    setEscrows((prev) =>
-      prev.map((item) =>
-        item.escrowId === escrowId && item.status !== 'completed'
-          ? { ...item, status: 'disputed' }
-          : item
+      prev.map((esc) =>
+        esc.escrowId === escrowId ? { ...esc, status: 'disputed' } : esc
       )
     );
+  }
 
-    const threadId = startConversation({ listingId: offer.listingId, buyerId: offer.buyerId });
-    sendMessage({
-      threadId,
-      senderId: 'system',
-      text: 'Dispute opened for this closing. Please coordinate resolution steps here.'
+  // ── Message actions ───────────────────────────────────────────────────────
+  async function startConversation({ listingId, buyerId, sellerId }) {
+    const body = { listing_id: listingId };
+    if (user?.role === 'seller' || user?.role === 'operator') {
+      body.buyer_id = buyerId;
+    } else {
+      body.seller_id = sellerId;
+    }
+
+    const thread = await threadsApi.start(body);
+
+    setMessageThreads((prev) => {
+      if (prev.some((t) => t.threadId === thread.threadId)) {
+        return prev.map((t) => (t.threadId === thread.threadId ? thread : t));
+      }
+      return [thread, ...prev];
     });
 
-    return { threadId, listingId: offer.listingId, buyerId: offer.buyerId };
-  };
+    return thread.threadId;
+  }
 
-  const value = useMemo(
-    () => ({
-      listings,
-      setListings,
-      accessRequests,
-      offers,
-      escrows,
-      messageThreads,
-      activeUser,
-      setActiveUser,
-      users,
-      startConversation,
-      sendMessage,
-      requestAccess,
-      decideAccess,
-      submitOffer,
-      updateOfferStatus,
-      depositEscrow,
-      transferOwnership,
-      openDispute
-    }),
-    [listings, accessRequests, offers, escrows, messageThreads, activeUser]
-  );
+  async function loadThreadMessages(threadId) {
+    const msgs = await threadsApi.getMessages(threadId);
+    setMessageThreads((prev) =>
+      prev.map((t) => (t.threadId === threadId ? { ...t, messages: msgs } : t))
+    );
+  }
+
+  async function sendMessage({ threadId, text }) {
+    const msg = await threadsApi.send(threadId, text);
+    setMessageThreads((prev) =>
+      prev.map((t) =>
+        t.threadId === threadId
+          ? {
+              ...t,
+              updatedAt: msg.createdAt,
+              messages: [...(t.messages || []), msg],
+            }
+          : t
+      )
+    );
+  }
+
+  // ── Context value ─────────────────────────────────────────────────────────
+  const value = {
+    // Auth
+    user,
+    initializing,
+    loginUser,
+    registerUser,
+    logoutUser,
+    // For backward compat — pages reference activeUser.*
+    activeUser: user,
+    // Data
+    listings,
+    setListings,
+    accessRequests,
+    offers,
+    escrows,
+    messageThreads,
+    userCache,
+    // Actions
+    createListing,
+    requestAccess,
+    decideAccess,
+    submitOffer,
+    updateOfferStatus,
+    depositEscrow,
+    transferOwnership,
+    openDispute,
+    startConversation,
+    loadThreadMessages,
+    sendMessage,
+  };
 
   return <MarketContext.Provider value={value}>{children}</MarketContext.Provider>;
 }

@@ -1,7 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { useMarket } from './context/MarketContext';
 import Layout from './components/Layout';
 import EscrowRoomPage from './pages/EscrowRoomPage';
 import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
 import OnboardingPage from './pages/OnboardingPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
@@ -17,14 +19,31 @@ function LegacyListingRedirect() {
   return <Navigate to={`/app/listing/${listingId}`} replace />;
 }
 
+// Redirects to /login when not authenticated; shows a blank screen while the
+// session is being restored from localStorage.
+function RequireAuth({ children }) {
+  const { user, initializing } = useMarket();
+  if (initializing) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/listing/:listingId" element={<LegacyListingRedirect />} />
-        <Route path="/app" element={<Layout />}>
+        <Route
+          path="/app"
+          element={
+            <RequireAuth>
+              <Layout />
+            </RequireAuth>
+          }
+        >
           <Route index element={<MarketplacePage />} />
           <Route path="listing/:listingId" element={<ListingDetailPage />} />
           <Route path="my-deals" element={<MyDealsPage />} />

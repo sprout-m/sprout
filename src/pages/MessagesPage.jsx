@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 
 export default function MessagesPage() {
-  const { messageThreads, users, activeUser, startConversation, sendMessage } = useMarket();
+  const { messageThreads, userCache, user, startConversation, loadThreadMessages, sendMessage } =
+    useMarket();
   const location = useLocation();
   const [activeThreadId, setActiveThreadId] = useState('');
   const [draft, setDraft] = useState('');
@@ -14,27 +15,39 @@ export default function MessagesPage() {
     [messageThreads, activeThreadId]
   );
 
+  // Open or create a thread when navigated here with listing/buyer state
   useEffect(() => {
     const listingId = location.state?.listingId;
     const buyerId = location.state?.buyerId;
-    if (!listingId || !buyerId) return;
-    const threadId = startConversation({ listingId, buyerId });
-    setActiveThreadId(threadId);
-  }, [location.state?.buyerId, location.state?.listingId]);
+    const sellerId = location.state?.sellerId;
+    if (!listingId || (!buyerId && !sellerId)) return;
 
+    startConversation({ listingId, buyerId, sellerId }).then((threadId) => {
+      setActiveThreadId(threadId);
+    });
+  }, [location.state?.listingId, location.state?.buyerId, location.state?.sellerId]);
+
+  // Auto-select first thread when no thread is active
   useEffect(() => {
     if (activeThreadId) return;
     if (!messageThreads.length) return;
     setActiveThreadId(messageThreads[0].threadId);
   }, [activeThreadId, messageThreads]);
 
+  // Load messages when the active thread changes
+  useEffect(() => {
+    if (!activeThreadId) return;
+    loadThreadMessages(activeThreadId);
+  }, [activeThreadId]);
+
+  // Scroll to bottom when messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeThread?.messages.length]);
+  }, [activeThread?.messages?.length]);
 
   const userHandle = (id) => {
     if (id === 'system') return 'System';
-    return Object.values(users).find((u) => u.id === id)?.handle || id;
+    return userCache[id]?.handle || id?.slice(0, 8) || id;
   };
 
   const relTime = (iso) => {
@@ -47,11 +60,12 @@ export default function MessagesPage() {
     return new Date(iso).toLocaleDateString();
   };
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!draft.trim()) return;
-    sendMessage({ threadId: activeThread.threadId, text: draft, senderId: activeUser.id });
+    const text = draft;
     setDraft('');
+    await sendMessage({ threadId: activeThread.threadId, text });
   };
 
   return (
@@ -67,7 +81,8 @@ export default function MessagesPage() {
             </div>
           )}
           {messageThreads.map((thread) => {
-            const lastMsg = thread.messages[thread.messages.length - 1];
+            const msgs = thread.messages || [];
+            const lastMsg = msgs[msgs.length - 1];
             const isActive = thread.threadId === activeThreadId;
             return (
               <button
@@ -92,22 +107,22 @@ export default function MessagesPage() {
             <div className="msg-panel-head">
               <div className="msg-panel-title">{activeThread.title}</div>
               <div className="msg-panel-meta">
-                {activeThread.messages.length
+                {(activeThread.messages || []).length
                   ? `${activeThread.messages.length} message${activeThread.messages.length === 1 ? '' : 's'}`
                   : 'No messages yet'}
               </div>
             </div>
 
             <div className="msg-body">
-              {activeThread.messages.length === 0 ? (
+              {!(activeThread.messages || []).length ? (
                 <div className="msg-empty">
                   <p>No messages yet</p>
                   <p>Start the conversation below.</p>
                 </div>
               ) : (
-                activeThread.messages.map((msg) => {
-                  const isMe = msg.senderId === activeUser.id;
-                  const isSystem = msg.senderId === 'system';
+                (activeThread.messages || []).map((msg) => {
+                  const isMe = msg.senderId === user?.id;
+                  const isSystem = msg.senderId === 'system' || msg.senderType === 'system';
                   if (isSystem) {
                     return (
                       <div key={msg.id} className="msg-row msg-row--system">
@@ -121,7 +136,10 @@ export default function MessagesPage() {
                         <div className="msg-sender">{userHandle(msg.senderId)}</div>
                         <div className="msg-text">{msg.text}</div>
                         <div className="msg-time">
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(msg.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </div>
                       </div>
                     </div>
@@ -144,16 +162,27 @@ export default function MessagesPage() {
               />
               <div className="msg-compose-footer">
                 <span className="msg-compose-hint">⌘↵ to send</span>
-                <button type="submit" disabled={!draft.trim()}>Send</button>
+                <button type="submit" disabled={!draft.trim()}>
+                  Send
+                </button>
               </div>
             </form>
           </>
         ) : (
           <div className="msg-empty">
-            {messageThreads.length
-              ? <><p>Select a thread</p><p>Choose a conversation from the sidebar.</p></>
-              : <><p>No conversations yet</p><p>Open a conversation from Access Requests or Closing to start messaging.</p></>
-            }
+            {messageThreads.length ? (
+              <>
+                <p>Select a thread</p>
+                <p>Choose a conversation from the sidebar.</p>
+              </>
+            ) : (
+              <>
+                <p>No conversations yet</p>
+                <p>
+                  Open a conversation from Access Requests or Closing to start messaging.
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>

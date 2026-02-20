@@ -63,7 +63,7 @@ function RequestCard({ request, level, onLevelChange, onApprove, onReject, onMes
 }
 
 export default function SellerRequestsPage() {
-  const { accessRequests, decideAccess, listings, users } = useMarket();
+  const { accessRequests, decideAccess, listings, userCache } = useMarket();
   const navigate = useNavigate();
   const location = useLocation();
   const [levels, setLevels] = useState({});
@@ -76,7 +76,7 @@ export default function SellerRequestsPage() {
     .map((r) => ({
       ...r,
       listingName: listings.find((l) => l.id === r.listingId)?.anonymizedName || r.listingId,
-      buyerHandle: Object.values(users).find((u) => u.id === r.buyerId)?.handle || r.buyerId
+      buyerHandle: userCache[r.buyerId]?.handle || r.buyerId?.slice(0, 8) || r.buyerId
     }));
 
   const pending = enriched.filter((r) => r.sellerDecision === 'pending');
@@ -90,7 +90,13 @@ export default function SellerRequestsPage() {
       onLevelChange: (val) => setLevels((prev) => ({ ...prev, [request.id]: val })),
       onApprove: () => decideAccess({ requestId: request.id, decision: 'approved', accessLevel: level }),
       onReject: () => decideAccess({ requestId: request.id, decision: 'rejected' }),
-      onMessage: () => navigate('/app/messages', { state: { listingId: request.listingId, buyerId: request.buyerId } })
+      onMessage: () => navigate('/app/messages', {
+        state: {
+          listingId: request.listingId,
+          buyerId: request.buyerId,
+          sellerId: listings.find((l) => l.id === request.listingId)?.sellerId,
+        }
+      })
     };
   }
 

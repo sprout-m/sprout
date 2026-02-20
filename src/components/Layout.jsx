@@ -35,16 +35,26 @@ const roleLanding = {
 };
 
 export default function Layout() {
-  const { activeUser, setActiveUser, users } = useMarket();
+  const { user, logoutUser } = useMarket();
   const navigate = useNavigate();
   const location = useLocation();
-  const routes = useMemo(() => roleRoutes[activeUser.role] || roleRoutes.buyer, [activeUser.role]);
+
+  const role = user?.role || 'buyer';
+  const routes = useMemo(() => roleRoutes[role] || roleRoutes.buyer, [role]);
 
   useEffect(() => {
     if (location.pathname.startsWith('/app/listing/')) return;
-    const allowed = routes.some((route) => location.pathname === route.to || location.pathname.startsWith(`${route.to}/`));
-    if (!allowed) navigate(roleLanding[activeUser.role], { replace: true });
-  }, [activeUser.role, location.pathname, navigate, routes]);
+    const allowed = routes.some(
+      (route) =>
+        location.pathname === route.to || location.pathname.startsWith(`${route.to}/`)
+    );
+    if (!allowed) navigate(roleLanding[role], { replace: true });
+  }, [role, location.pathname, navigate, routes]);
+
+  function handleLogout() {
+    logoutUser();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <div className="app-shell">
@@ -76,22 +86,19 @@ export default function Layout() {
           </nav>
 
           <div className="topbar-actions">
-            <label htmlFor="role-switch">View as</label>
-            <select
-              id="role-switch"
-              value={activeUser.role}
-              onChange={(e) => setActiveUser(users[e.target.value])}
-            >
-              <option value="buyer">Buyer</option>
-              <option value="seller">Seller</option>
-              <option value="operator">Operator</option>
-            </select>
             <div className="topbar-user">
               <span className="topbar-user-avatar">
-                {activeUser.handle.charAt(0).toUpperCase()}
+                {(user?.handle || '?').charAt(0).toUpperCase()}
               </span>
-              <span className="topbar-user-handle">{activeUser.handle}</span>
+              <span className="topbar-user-handle">{user?.handle}</span>
             </div>
+            <button
+              className="ghost"
+              style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
+              onClick={handleLogout}
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </header>

@@ -129,13 +129,20 @@ const SELLER_STEPS = [
 ];
 
 export default function OnboardingPage() {
-  const { setActiveUser, users } = useMarket();
+  const { registerUser } = useMarket();
   const navigate = useNavigate();
 
   const [role, setRole] = useState(null);
-  const [phase, setPhase] = useState('role');
+  const [phase, setPhase] = useState('role'); // 'role' | 'survey' | 'auth'
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
+
+  // Auth phase state
+  const [authHandle, setAuthHandle] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   const steps = role === 'buyer' ? BUYER_STEPS : SELLER_STEPS;
   const totalSteps = steps.length;
@@ -143,6 +150,7 @@ export default function OnboardingPage() {
 
   const canAdvance = () => {
     if (phase === 'role') return role !== null;
+    if (phase === 'auth') return authHandle.trim() && authEmail.trim() && authPassword.length >= 8;
     if (!currentStep) return false;
     const ans = answers[step];
     if (currentStep.type === 'multi') return Array.isArray(ans) && ans.length > 0;
@@ -161,15 +169,31 @@ export default function OnboardingPage() {
       setStep(0);
       return;
     }
-    if (step < totalSteps - 1) {
-      setStep((s) => s + 1);
-    } else {
-      setActiveUser(users[role]);
-      navigate('/app');
+    if (phase === 'survey') {
+      if (step < totalSteps - 1) {
+        setStep((s) => s + 1);
+      } else {
+        // Pre-fill handle from survey name answers
+        const nameAnswer =
+          role === 'buyer'
+            ? answers[4] // "What's your name?" step
+            : answers[0]; // "What is your business called?"
+        setAuthHandle(typeof nameAnswer === 'string' ? nameAnswer : '');
+        setPhase('auth');
+      }
+      return;
+    }
+    if (phase === 'auth') {
+      handleRegister();
     }
   };
 
   const handleBack = () => {
+    if (phase === 'auth') {
+      setPhase('survey');
+      setStep(totalSteps - 1);
+      return;
+    }
     if (phase === 'survey' && step > 0) {
       setStep((s) => s - 1);
     } else {
@@ -177,6 +201,24 @@ export default function OnboardingPage() {
       setStep(0);
     }
   };
+
+  async function handleRegister() {
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      await registerUser({
+        email: authEmail,
+        handle: authHandle,
+        password: authPassword,
+        role,
+      });
+      navigate('/app', { replace: true });
+    } catch (err) {
+      setAuthError(err.message || 'Registration failed');
+    } finally {
+      setAuthLoading(false);
+    }
+  }
 
   const setSingle = (value) => setAnswers((prev) => ({ ...prev, [step]: value }));
   const setText = (value) => setAnswers((prev) => ({ ...prev, [step]: value }));
@@ -221,7 +263,68 @@ export default function OnboardingPage() {
 
       {/* ── Main ── */}
       <main className="ob-main">
-        {phase === 'role' ? (
+        {phase === 'auth' ? (
+          <div className="ob-screen" style={{ maxWidth: '400px' }}>
+            <h1 className="ob-heading">Create your account</h1>
+            <p className="ob-sub-label">Almost done — set up your login details.</p>
+
+            <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
+              <div className="ob-field">
+                <label className="ob-field-label">Display name</label>
+                <input
+                  className="ob-field-input"
+                  type="text"
+                  placeholder="How you appear on Meridian"
+                  value={authHandle}
+                  onChange={(e) => setAuthHandle(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="ob-field">
+                <label className="ob-field-label">Email</label>
+                <input
+                  className="ob-field-input"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                />
+              </div>
+              <div className="ob-field">
+                <label className="ob-field-label">Password</label>
+                <input
+                  className="ob-field-input"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="At least 8 characters"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && canAdvance()) handleRegister(); }}
+                />
+              </div>
+              {authError && (
+                <p style={{ color: 'var(--danger, #e55)', fontSize: '0.8125rem' }}>{authError}</p>
+              )}
+            </div>
+
+            <div className="ob-role-footer" style={{ marginTop: '1.5rem' }}>
+              <button className="ob-btn-back" onClick={handleBack}>← Back</button>
+              <button
+                className="ob-btn-next"
+                disabled={!canAdvance() || authLoading}
+                onClick={handleRegister}
+              >
+                {authLoading ? 'Creating account…' : 'Create account →'}
+              </button>
+            </div>
+
+            <p style={{ marginTop: '1rem', fontSize: '0.8125rem', color: 'var(--muted)' }}>
+              Already have an account?{' '}
+              <Link to="/login" style={{ color: 'var(--accent, #6366f1)' }}>Sign in</Link>
+            </p>
+          </div>
+        ) : phase === 'role' ? (
           /* Role selection */
           <div className="ob-screen">
             <h1 className="ob-heading">What do you want to do on Meridian?</h1>
@@ -424,7 +527,7 @@ export default function OnboardingPage() {
           <div className="ob-footer-nav">
             <button className="ob-btn-back" onClick={handleBack}>← Back</button>
             <button className="ob-btn-next" disabled={!canAdvance()} onClick={handleNext}>
-              {step === totalSteps - 1 ? 'Finish →' : 'Next →'}
+              {step === totalSteps - 1 ? 'Continue →' : 'Next →'}
             </button>
           </div>
         </footer>
