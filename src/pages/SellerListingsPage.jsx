@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
+import { useWallet } from '../context/WalletContext';
 import StatusPill from '../components/StatusPill';
 
 const CATEGORIES = ['SaaS', 'Ecommerce', 'Media', 'Agency', 'Marketplace', 'Other'];
@@ -253,9 +254,18 @@ function CreateListingModal({ onClose, onCreated }) {
 
 export default function SellerListingsPage() {
   const { listings, accessRequests, offers, user, updateListing } = useMarket();
+  const { isConnected, connecting, connect } = useWallet();
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+
+  async function handleNewListing() {
+    if (!isConnected) {
+      const acct = await connect();
+      if (!acct) return;
+    }
+    setShowCreate(true);
+  }
 
   async function toggleStatus(listing) {
     setTogglingId(listing.id);
@@ -287,7 +297,9 @@ export default function SellerListingsPage() {
           <h2>Listings</h2>
           <p>Manage listing status, document readiness, and in-flight demand.</p>
         </div>
-        <button onClick={() => setShowCreate(true)}>+ New Listing</button>
+        <button onClick={handleNewListing} disabled={connecting}>
+          {connecting ? 'Connecting…' : !isConnected ? 'Connect Wallet' : '+ New Listing'}
+        </button>
       </div>
 
       <div className="market-stats">

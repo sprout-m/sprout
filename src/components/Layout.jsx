@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
+import { useWallet } from '../context/WalletContext';
 
 const roleRoutes = {
   buyer: [
@@ -37,6 +38,7 @@ const roleLanding = {
 
 export default function Layout() {
   const { user, logoutUser } = useMarket();
+  const { isConnected, connecting, accountId, connect, disconnect } = useWallet();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -88,6 +90,25 @@ export default function Layout() {
           </nav>
 
           <div className="topbar-actions">
+            {isConnected ? (
+              <button
+                className="ghost"
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}
+                onClick={disconnect}
+                title={accountId}
+              >
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+                {accountId.length > 12 ? `${accountId.slice(0, 6)}…${accountId.slice(-4)}` : accountId}
+              </button>
+            ) : (
+              <button
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
+                onClick={connect}
+                disabled={connecting}
+              >
+                {connecting ? 'Connecting…' : 'Connect Wallet'}
+              </button>
+            )}
             <div className="topbar-user">
               <span className="topbar-user-avatar">
                 {(user?.handle || '?').charAt(0).toUpperCase()}

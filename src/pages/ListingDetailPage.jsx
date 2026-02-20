@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import RequestAccessModal from '../components/RequestAccessModal';
 import StatusPill from '../components/StatusPill';
 import { useMarket } from '../context/MarketContext';
+import { useWallet } from '../context/WalletContext';
 
 const lockedTabs = ['Overview', 'Metrics', 'Process', 'Q&A'];
 const unlockedTabs = ['Overview', 'Financials', 'Documents', 'Offers', 'Activity'];
@@ -10,6 +11,7 @@ const unlockedTabs = ['Overview', 'Financials', 'Documents', 'Offers', 'Activity
 export default function ListingDetailPage() {
   const { listingId } = useParams();
   const { listings, accessRequests, offers, activeUser, requestAccess, submitOffer } = useMarket();
+  const { isConnected, connecting, connect } = useWallet();
   const listing = listings.find((l) => l.id === listingId);
   const myOffer = offers.find((o) => o.listingId === listingId);
 
@@ -36,6 +38,14 @@ export default function ListingDetailPage() {
   useEffect(() => {
     if (!tabs.includes(activeTab)) setActiveTab(tabs[0]);
   }, [tabs, activeTab]);
+
+  async function handleRequestAccess() {
+    if (!isConnected) {
+      const acct = await connect();
+      if (!acct) return;
+    }
+    setShowModal(true);
+  }
 
   if (!listing) return <p>Listing not found.</p>;
 
@@ -337,8 +347,8 @@ export default function ListingDetailPage() {
             </div>
           </div>
 
-          <button className="cta-panel-btn" onClick={() => setShowModal(true)} disabled={Boolean(request)}>
-            {request ? 'Request Submitted' : 'Request Access →'}
+          <button className="cta-panel-btn" onClick={handleRequestAccess} disabled={Boolean(request) || connecting}>
+            {request ? 'Request Submitted' : connecting ? 'Connecting…' : !isConnected ? 'Connect Wallet →' : 'Request Access →'}
           </button>
 
           {request && (
