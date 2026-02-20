@@ -9,7 +9,7 @@ const steps = [
 ];
 
 export default function EscrowRoomPage() {
-  const { escrows, offers, listings, depositEscrow, transferOwnership, openDispute } = useMarket();
+  const { escrows, offers, listings, user, depositEscrow, transferOwnership, openDispute } = useMarket();
   const navigate = useNavigate();
 
   const getOffer = (id) => offers.find((o) => o.offerId === id);
@@ -49,6 +49,9 @@ export default function EscrowRoomPage() {
 
         const stepDone = [deposited, transferred, transferred];
 
+        const isBuyer = user?.id === offer.buyerId;
+        const isSeller = user?.id === getListing(offer.listingId)?.sellerId;
+
         return (
           <article key={escrow.escrowId} className="card" style={{ marginBottom: '0.75rem' }}>
             <div className="card-top" style={{ marginBottom: '1rem' }}>
@@ -86,36 +89,42 @@ export default function EscrowRoomPage() {
               </div>
 
               <div style={{ display: 'grid', gap: '0.5rem', minWidth: '160px' }}>
-                <button
-                  disabled={escrow.status !== 'awaitingDeposit'}
-                  onClick={() => depositEscrow(escrow.escrowId)}
-                >
-                  Deposit USDC
-                </button>
-                <button
-                  className="ghost"
-                  disabled={escrow.status !== 'funded'}
-                  onClick={() => transferOwnership(escrow.escrowId)}
-                >
-                  Transfer Ownership
-                </button>
-                <button
-                  className="ghost"
-                  disabled={escrow.status === 'completed' || escrow.status === 'disputed'}
-                  onClick={async () => {
-                    await openDispute(escrow.escrowId);
-                    const listing = getListing(offer.listingId);
-                    navigate('/app/messages', {
-                      state: {
-                        listingId: offer.listingId,
-                        buyerId: offer.buyerId,
-                        sellerId: listing?.sellerId,
-                      }
-                    });
-                  }}
-                >
-                  {escrow.status === 'disputed' ? 'Dispute Opened' : 'Open Dispute'}
-                </button>
+                {isBuyer && (
+                  <button
+                    disabled={escrow.status !== 'awaitingDeposit'}
+                    onClick={() => depositEscrow(escrow.escrowId)}
+                  >
+                    Deposit USDC
+                  </button>
+                )}
+                {isSeller && (
+                  <button
+                    className="ghost"
+                    disabled={escrow.status !== 'funded'}
+                    onClick={() => transferOwnership(escrow.escrowId)}
+                  >
+                    Transfer Ownership
+                  </button>
+                )}
+                {(isBuyer || isSeller) && (
+                  <button
+                    className="ghost"
+                    disabled={escrow.status === 'completed' || escrow.status === 'disputed'}
+                    onClick={async () => {
+                      await openDispute(escrow.escrowId);
+                      const listing = getListing(offer.listingId);
+                      navigate('/app/messages', {
+                        state: {
+                          listingId: offer.listingId,
+                          buyerId: offer.buyerId,
+                          sellerId: listing?.sellerId,
+                        }
+                      });
+                    }}
+                  >
+                    {escrow.status === 'disputed' ? 'Dispute Opened' : 'Open Dispute'}
+                  </button>
+                )}
               </div>
             </div>
 
