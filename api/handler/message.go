@@ -40,12 +40,13 @@ func (h *Handler) ListThreads(c *gin.Context) {
 }
 
 type startThreadBody struct {
-	ListingID uuid.UUID `json:"listing_id" binding:"required"`
-	SellerID  uuid.UUID `json:"seller_id"  binding:"required"`
+	ListingID uuid.UUID  `json:"listing_id" binding:"required"`
+	SellerID  *uuid.UUID `json:"seller_id"` // provided by buyer
+	BuyerID   *uuid.UUID `json:"buyer_id"`  // provided by seller
 }
 
-// StartThread opens a new message thread between the authenticated buyer and a seller.
-// If a thread for this (listing, buyer, seller) triple already exists, returns it.
+// StartThread opens a new message thread between a buyer and a seller.
+// Buyers provide seller_id; sellers provide buyer_id. Upserts on conflict.
 func (h *Handler) StartThread(c *gin.Context) {
 	claims := middleware.GetClaims(c)
 
@@ -55,14 +56,28 @@ func (h *Handler) StartThread(c *gin.Context) {
 		return
 	}
 
-	// Build a title from the listing name.
+	var buyerID, sellerID uuid.UUID
+	if req.BuyerID != nil {
+		// Caller is the seller (or operator acting as seller).
+		sellerID = claims.UserID
+		buyerID = *req.BuyerID
+	} else if req.SellerID != nil {
+		// Caller is the buyer.
+		buyerID = claims.UserID
+		sellerID = *req.SellerID
+	} else {
+		fail(c, http.StatusBadRequest, "seller_id or buyer_id is required")
+		return
+	}
+
+	// Build a title from the listing name and participant handles.
 	var listingName, sellerHandle, buyerHandle string
 	h.db.QueryRow(context.Background(),
 		`SELECT anonymized_name FROM listings WHERE id = $1`, req.ListingID).Scan(&listingName)
 	h.db.QueryRow(context.Background(),
-		`SELECT handle FROM users WHERE id = $1`, claims.UserID).Scan(&buyerHandle)
+		`SELECT handle FROM users WHERE id = $1`, buyerID).Scan(&buyerHandle)
 	h.db.QueryRow(context.Background(),
-		`SELECT handle FROM users WHERE id = $1`, req.SellerID).Scan(&sellerHandle)
+		`SELECT handle FROM users WHERE id = $1`, sellerID).Scan(&sellerHandle)
 
 	title := listingName + " · " + buyerHandle + " <> " + sellerHandle
 
@@ -72,7 +87,7 @@ func (h *Handler) StartThread(c *gin.Context) {
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (listing_id, buyer_id, seller_id) DO UPDATE SET updated_at = NOW()
 		RETURNING id, listing_id, buyer_id, seller_id, COALESCE(title,''), created_at, updated_at
-	`, req.ListingID, claims.UserID, req.SellerID, title).
+	`, req.ListingID, buyerID, sellerID, title).
 		Scan(&t.ID, &t.ListingID, &t.BuyerID, &t.SellerID, &t.Title, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to create thread")
