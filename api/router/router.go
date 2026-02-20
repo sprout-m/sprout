@@ -63,10 +63,11 @@ func New(cfg *config.Config, h *handler.Handler) *gin.Engine {
 		// Escrow & deal closing
 		protected.GET("/escrows", h.MyEscrows)
 		protected.GET("/escrows/:id", h.GetEscrow)
-		protected.POST("/escrows/:id/deposit", h.ConfirmDeposit)    // buyer
-		protected.POST("/escrows/:id/release", h.ScheduleRelease)      // operator
+		protected.POST("/escrows/:id/deposit", h.ConfirmDeposit)     // buyer
+		protected.POST("/escrows/:id/provision", h.ProvisionEscrow)  // any party — retries Hedera setup
+		protected.POST("/escrows/:id/release", h.ScheduleRelease)    // operator
 		protected.POST("/escrows/:id/transfer-nft", h.TransferNFT)   // seller
-		protected.POST("/escrows/:id/dispute", h.OpenDispute)         // buyer or seller
+		protected.POST("/escrows/:id/dispute", h.OpenDispute)        // buyer or seller
 		protected.GET("/escrows/:id/events", h.GetDealEvents)        // audit trail
 
 		// Messages

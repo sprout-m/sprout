@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
@@ -15,6 +16,7 @@ type requestAccessBody struct {
 	NDASigned       bool    `json:"nda_signed"         binding:"required"`
 	ProofMethod     string  `json:"proof_method"       binding:"required,oneof=wallet deposit"`
 	ProofAmountUSDC float64 `json:"proof_amount_usdc"  binding:"required,gt=0"`
+	ProofTxID       string  `json:"proof_tx_id"`
 }
 
 // RequestAccess — buyer submits proof-of-funds and NDA to gain data room access.
@@ -31,8 +33,14 @@ func (h *Handler) RequestAccess(c *gin.Context) {
 		return
 	}
 
-	// Wallet-based proof: hit the Hedera mirror node to verify the balance.
+	// Deposit-based proof: frontend signed a real on-chain USDC transfer and
+	// sent back the transaction ID — treat that as verified.
 	proofStatus := "pending"
+	if req.ProofMethod == "deposit" && req.ProofTxID != "" {
+		proofStatus = "verified"
+	}
+
+	// Wallet-based proof: hit the Hedera mirror node to verify the balance.
 	if req.ProofMethod == "wallet" {
 		var hederaAccountID string
 		_ = h.db.QueryRow(context.Background(),
@@ -57,21 +65,28 @@ func (h *Handler) RequestAccess(c *gin.Context) {
 
 	var ar model.AccessRequest
 	err := h.db.QueryRow(context.Background(), `
-		INSERT INTO access_requests (listing_id, buyer_id, nda_signed, proof_of_funds_status, proof_amount_usdc, proof_method)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (listing_id, buyer_id) DO NOTHING
+		INSERT INTO access_requests (listing_id, buyer_id, nda_signed, proof_of_funds_status, proof_amount_usdc, proof_method, proof_tx_id)
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7,''))
+		ON CONFLICT (listing_id, buyer_id) DO UPDATE
+		  SET proof_of_funds_status = EXCLUDED.proof_of_funds_status,
+		      proof_amount_usdc     = EXCLUDED.proof_amount_usdc,
+		      proof_method          = EXCLUDED.proof_method,
+		      proof_tx_id           = EXCLUDED.proof_tx_id
+		WHERE access_requests.seller_decision = 'pending'
 		RETURNING id, listing_id, buyer_id, nda_signed, proof_of_funds_status,
 		          COALESCE(proof_amount_usdc,0), COALESCE(proof_method,''),
-		          seller_decision, COALESCE(access_level,''), requested_at, decided_at
-	`, listingID, claims.UserID, req.NDASigned, proofStatus, req.ProofAmountUSDC, req.ProofMethod).
+		          COALESCE(proof_tx_id,''), seller_decision, COALESCE(access_level,''),
+		          requested_at, decided_at
+	`, listingID, claims.UserID, req.NDASigned, proofStatus, req.ProofAmountUSDC, req.ProofMethod, req.ProofTxID).
 		Scan(&ar.ID, &ar.ListingID, &ar.BuyerID, &ar.NDASignied, &ar.ProofOfFundsStatus,
-			&ar.ProofAmountUSDC, &ar.ProofMethod, &ar.SellerDecision, &ar.AccessLevel,
+			&ar.ProofAmountUSDC, &ar.ProofMethod, &ar.ProofTxID, &ar.SellerDecision, &ar.AccessLevel,
 			&ar.RequestedAt, &ar.DecidedAt)
 	if err == pgx.ErrNoRows {
-		fail(c, http.StatusConflict, "access already requested for this listing")
+		fail(c, http.StatusConflict, "access request already decided by seller")
 		return
 	}
 	if err != nil {
+		log.Printf("RequestAccess db error: %v", err)
 		fail(c, http.StatusInternalServerError, "failed to create access request")
 		return
 	}
@@ -102,7 +117,8 @@ func (h *Handler) ListAccessRequests(c *gin.Context) {
 	rows, err := h.db.Query(context.Background(), `
 		SELECT id, listing_id, buyer_id, nda_signed, proof_of_funds_status,
 		       COALESCE(proof_amount_usdc,0), COALESCE(proof_method,''),
-		       seller_decision, COALESCE(access_level,''), requested_at, decided_at
+		       COALESCE(proof_tx_id,''), seller_decision, COALESCE(access_level,''),
+		       requested_at, decided_at
 		FROM access_requests WHERE listing_id = $1
 		ORDER BY requested_at DESC
 	`, listingID)
@@ -116,7 +132,7 @@ func (h *Handler) ListAccessRequests(c *gin.Context) {
 	for rows.Next() {
 		var ar model.AccessRequest
 		if err := rows.Scan(&ar.ID, &ar.ListingID, &ar.BuyerID, &ar.NDASignied,
-			&ar.ProofOfFundsStatus, &ar.ProofAmountUSDC, &ar.ProofMethod,
+			&ar.ProofOfFundsStatus, &ar.ProofAmountUSDC, &ar.ProofMethod, &ar.ProofTxID,
 			&ar.SellerDecision, &ar.AccessLevel, &ar.RequestedAt, &ar.DecidedAt); err != nil {
 			continue
 		}
@@ -133,7 +149,8 @@ func (h *Handler) MyAccessRequests(c *gin.Context) {
 	rows, err := h.db.Query(context.Background(), `
 		SELECT id, listing_id, buyer_id, nda_signed, proof_of_funds_status,
 		       COALESCE(proof_amount_usdc,0), COALESCE(proof_method,''),
-		       seller_decision, COALESCE(access_level,''), requested_at, decided_at
+		       COALESCE(proof_tx_id,''), seller_decision, COALESCE(access_level,''),
+		       requested_at, decided_at
 		FROM access_requests WHERE buyer_id = $1
 		ORDER BY requested_at DESC
 	`, claims.UserID)
@@ -147,7 +164,7 @@ func (h *Handler) MyAccessRequests(c *gin.Context) {
 	for rows.Next() {
 		var ar model.AccessRequest
 		if err := rows.Scan(&ar.ID, &ar.ListingID, &ar.BuyerID, &ar.NDASignied,
-			&ar.ProofOfFundsStatus, &ar.ProofAmountUSDC, &ar.ProofMethod,
+			&ar.ProofOfFundsStatus, &ar.ProofAmountUSDC, &ar.ProofMethod, &ar.ProofTxID,
 			&ar.SellerDecision, &ar.AccessLevel, &ar.RequestedAt, &ar.DecidedAt); err != nil {
 			continue
 		}
@@ -201,10 +218,11 @@ func (h *Handler) DecideAccess(c *gin.Context) {
 		WHERE id = $4
 		RETURNING id, listing_id, buyer_id, nda_signed, proof_of_funds_status,
 		          COALESCE(proof_amount_usdc,0), COALESCE(proof_method,''),
-		          seller_decision, COALESCE(access_level,''), requested_at, decided_at
+		          COALESCE(proof_tx_id,''), seller_decision, COALESCE(access_level,''),
+		          requested_at, decided_at
 	`, req.Decision, req.AccessLevel, now, requestID).
 		Scan(&ar.ID, &ar.ListingID, &ar.BuyerID, &ar.NDASignied, &ar.ProofOfFundsStatus,
-			&ar.ProofAmountUSDC, &ar.ProofMethod, &ar.SellerDecision, &ar.AccessLevel,
+			&ar.ProofAmountUSDC, &ar.ProofMethod, &ar.ProofTxID, &ar.SellerDecision, &ar.AccessLevel,
 			&ar.RequestedAt, &ar.DecidedAt)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "update failed")

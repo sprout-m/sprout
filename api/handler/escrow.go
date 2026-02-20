@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,52 +17,107 @@ import (
 // initEscrow is called in a goroutine when an offer is accepted.
 // It creates the on-chain escrow account and HCS topic, then writes both
 // IDs back to the escrows row.
-func (h *Handler) initEscrow(offerID, listingID, buyerID uuid.UUID, amountUSDC float64) {
+func (h *Handler) initEscrow(offerID, listingID, buyerID uuid.UUID, amountUSDC float64) error {
 	ctx := context.Background()
+	tag := fmt.Sprintf("initEscrow(offer=%s)", offerID)
 
-	// Look up buyer and seller Hedera account IDs.
 	var buyerHederaID, sellerHederaID string
 	if err := h.db.QueryRow(ctx, `
-		SELECT u.hedera_account_id FROM users u
+		SELECT COALESCE(u.hedera_account_id,'') FROM users u
 		JOIN offers o ON o.buyer_id = u.id
 		WHERE o.id = $1
 	`, offerID).Scan(&buyerHederaID); err != nil || buyerHederaID == "" {
-		return // buyer hasn't linked a wallet yet — escrow stays pending
+		log.Printf("%s: buyer has no linked Hedera wallet", tag)
+		return fmt.Errorf("buyer has not linked a Hedera wallet")
 	}
 
 	if err := h.db.QueryRow(ctx, `
-		SELECT u.hedera_account_id FROM users u
+		SELECT COALESCE(u.hedera_account_id,'') FROM users u
 		JOIN listings l ON l.seller_id = u.id
 		WHERE l.id = $1
 	`, listingID).Scan(&sellerHederaID); err != nil || sellerHederaID == "" {
-		return
+		log.Printf("%s: seller has no linked Hedera wallet", tag)
+		return fmt.Errorf("seller has not linked a Hedera wallet")
 	}
 
-	// Fetch public keys from the mirror node for both parties.
 	buyerPubKey, err := h.hedera.GetAccountPublicKey(buyerHederaID)
 	if err != nil {
-		return
+		log.Printf("%s: GetAccountPublicKey(buyer): %v", tag, err)
+		return fmt.Errorf("could not fetch buyer public key: %w", err)
 	}
 	sellerPubKey, err := h.hedera.GetAccountPublicKey(sellerHederaID)
 	if err != nil {
-		return
+		log.Printf("%s: GetAccountPublicKey(seller): %v", tag, err)
+		return fmt.Errorf("could not fetch seller public key: %w", err)
 	}
 
-	dealID := offerID.String()
-	result, err := h.hedera.CreateEscrow(dealID, buyerPubKey, sellerPubKey)
+	result, err := h.hedera.CreateEscrow(offerID.String(), buyerPubKey, sellerPubKey)
 	if err != nil {
+		log.Printf("%s: CreateEscrow: %v", tag, err)
+		return fmt.Errorf("on-chain escrow creation failed: %w", err)
+	}
+
+	if _, err := h.db.Exec(ctx, `
+		UPDATE escrows
+		SET hedera_account_id = $1, hcs_topic_id = $2, updated_at = NOW()
+		WHERE offer_id = $3
+	`, result.HederaAccountID, result.HCSTopicID, offerID); err != nil {
+		log.Printf("%s: update hedera IDs: %v", tag, err)
+		return fmt.Errorf("failed to save escrow IDs: %w", err)
+	}
+
+	return nil
+}
+
+// ProvisionEscrow retries the Hedera escrow account setup for a deal that
+// was created before both parties had linked their wallets.
+func (h *Handler) ProvisionEscrow(c *gin.Context) {
+	claims := middleware.GetClaims(c)
+	escrowID, ok2 := parseUUID(c, "id")
+	if !ok2 {
 		return
 	}
 
-	// Upsert the escrow row with the on-chain IDs.
-	h.db.Exec(ctx, `
-		INSERT INTO escrows (offer_id, hedera_account_id, hcs_topic_id, amount_usdc)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (offer_id) DO UPDATE
-		SET hedera_account_id = EXCLUDED.hedera_account_id,
-		    hcs_topic_id      = EXCLUDED.hcs_topic_id,
-		    updated_at        = NOW()
-	`, offerID, result.HederaAccountID, result.HCSTopicID, amountUSDC)
+	var offerID, listingID, buyerID uuid.UUID
+	var amountUSDC float64
+	var hederaAccountID string
+
+	err := h.db.QueryRow(context.Background(), `
+		SELECT e.offer_id, o.listing_id, o.buyer_id, e.amount_usdc,
+		       COALESCE(e.hedera_account_id,'')
+		FROM escrows e
+		JOIN offers o   ON o.id = e.offer_id
+		JOIN listings l ON l.id = o.listing_id
+		WHERE e.id = $1 AND (o.buyer_id = $2 OR l.seller_id = $2 OR $3 = 'operator')
+	`, escrowID, claims.UserID, claims.Role).
+		Scan(&offerID, &listingID, &buyerID, &amountUSDC, &hederaAccountID)
+	if err != nil {
+		fail(c, http.StatusNotFound, "escrow not found")
+		return
+	}
+
+	if hederaAccountID != "" {
+		ok(c, gin.H{"hedera_account_id": hederaAccountID, "already_provisioned": true})
+		return
+	}
+
+	if err := h.initEscrow(offerID, listingID, buyerID, amountUSDC); err != nil {
+		fail(c, http.StatusConflict, err.Error())
+		return
+	}
+
+	// Return the updated escrow.
+	var e model.Escrow
+	h.db.QueryRow(context.Background(), `
+		SELECT e.id, e.offer_id, COALESCE(e.hedera_account_id,''), COALESCE(e.hcs_topic_id,''),
+		       COALESCE(e.schedule_id,''), COALESCE(e.buyer_deposit_tx,''), COALESCE(e.seller_transfer_tx,''),
+		       e.amount_usdc, e.status, e.created_at, e.updated_at
+		FROM escrows e WHERE e.id = $1
+	`, escrowID).Scan(&e.ID, &e.OfferID, &e.HederaAccountID, &e.HCSTopicID,
+		&e.ScheduleID, &e.BuyerDepositTx, &e.SellerTransferTx,
+		&e.AmountUSDC, &e.Status, &e.CreatedAt, &e.UpdatedAt)
+
+	ok(c, e)
 }
 
 // MyEscrows returns all escrows the authenticated user is a party to.

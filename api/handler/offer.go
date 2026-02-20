@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -159,9 +160,22 @@ func (h *Handler) UpdateOfferStatus(c *gin.Context) {
 	}
 	o.Terms = json.RawMessage(termsBytes)
 
-	// On acceptance, spin up the Hedera escrow account.
+	// On acceptance, create the escrow row immediately so buyer and seller can see
+	// the Closing entry right away, then asynchronously provision the Hedera account.
 	if req.Status == "accepted" {
-		go h.initEscrow(o.ID, o.ListingID, o.BuyerID, amountUSDC)
+		if _, err := h.db.Exec(context.Background(), `
+			INSERT INTO escrows (offer_id, amount_usdc)
+			VALUES ($1, $2)
+			ON CONFLICT (offer_id) DO NOTHING
+		`, o.ID, amountUSDC); err != nil {
+			log.Printf("UpdateOfferStatus: escrow insert failed: %v", err)
+		}
+
+		go func() {
+			if err := h.initEscrow(o.ID, o.ListingID, o.BuyerID, amountUSDC); err != nil {
+				log.Printf("initEscrow background: %v", err)
+			}
+		}()
 
 		// Mark the listing as under offer.
 		h.db.Exec(context.Background(),
