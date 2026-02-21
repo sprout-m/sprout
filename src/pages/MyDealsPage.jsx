@@ -46,7 +46,9 @@ export default function MyDealsPage() {
             ) : (
               sellerRequests.map((req) => (
                 <div className="line-item" key={req.id}>
-                  <span style={{ flex: 1, fontWeight: 500 }}>{listingName(req.listingId)}</span>
+                  <Link to={`/app/listing/${req.listingId}`} style={{ flex: 1, fontWeight: 500 }}>
+                    {listingName(req.listingId)}
+                  </Link>
                   <StatusPill status={req.sellerDecision} />
                 </div>
               ))
@@ -59,7 +61,9 @@ export default function MyDealsPage() {
             ) : (
               sellerOffers.map((offer) => (
                 <div className="line-item" key={offer.offerId}>
-                  <span style={{ flex: 1, fontWeight: 500 }}>{listingName(offer.listingId)}</span>
+                  <Link to={`/app/listing/${offer.listingId}`} style={{ flex: 1, fontWeight: 500 }}>
+                    {listingName(offer.listingId)}
+                  </Link>
                   <span style={{ fontSize: '0.8125rem', fontWeight: 700, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>
                     {offer.amountUSDC.toLocaleString()} USDC
                   </span>
@@ -103,7 +107,9 @@ export default function MyDealsPage() {
           ) : (
             myRequests.map((req) => (
               <div className="line-item" key={req.id}>
-                <span style={{ flex: 1, fontWeight: 500 }}>{listingName(req.listingId)}</span>
+                <Link to={`/app/listing/${req.listingId}`} style={{ flex: 1, fontWeight: 500 }}>
+                  {listingName(req.listingId)}
+                </Link>
                 <StatusPill status={req.sellerDecision} />
                 {req.sellerDecision === 'approved' && (
                   <button
@@ -131,7 +137,9 @@ export default function MyDealsPage() {
           ) : (
             myOffers.map((offer) => (
               <div className="line-item" key={offer.offerId}>
-                <span style={{ flex: 1, fontWeight: 500 }}>{listingName(offer.listingId)}</span>
+                <Link to={`/app/listing/${offer.listingId}`} style={{ flex: 1, fontWeight: 500 }}>
+                  {listingName(offer.listingId)}
+                </Link>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>
                   {offer.amountUSDC.toLocaleString()} USDC
                 </span>
