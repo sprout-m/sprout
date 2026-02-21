@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import { useWallet } from '../context/WalletContext';
+import { listingsApi } from '../api/client';
 import StatusPill from '../components/StatusPill';
 
 const steps = [
@@ -56,9 +57,42 @@ export default function EscrowRoomPage() {
   const [associatingId,  setAssociatingId]  = useState(null);
   const [associateError, setAssociateError] = useState('');
 
+  const [listingNamesById, setListingNamesById] = useState({});
+
   const getOffer = (id) => offers.find((o) => o.offerId === id);
   const getListing = (listingId) => listings.find((l) => l.id === listingId);
-  const getListingName = (listingId) => getListing(listingId)?.anonymizedName || listingId;
+  const getListingName = (listingId) =>
+    getListing(listingId)?.anonymizedName || listingNamesById[listingId] || listingId;
+
+  const missingListingIds = useMemo(() => {
+    const ids = new Set();
+    escrows.forEach((esc) => {
+      const offer = offers.find((o) => o.offerId === esc.offerId);
+      const id = offer?.listingId;
+      if (!id) return;
+      if (!listings.some((l) => l.id === id) && !listingNamesById[id]) ids.add(id);
+    });
+    return Array.from(ids);
+  }, [escrows, offers, listings, listingNamesById]);
+
+  useEffect(() => {
+    if (!missingListingIds.length) return;
+    let cancelled = false;
+    Promise.all(
+      missingListingIds.map(async (id) => {
+        try {
+          const detail = await listingsApi.get(id);
+          return [id, detail?.anonymizedName || id];
+        } catch {
+          return [id, id];
+        }
+      })
+    ).then((pairs) => {
+      if (cancelled) return;
+      setListingNamesById((prev) => ({ ...prev, ...Object.fromEntries(pairs) }));
+    });
+    return () => { cancelled = true; };
+  }, [missingListingIds]);
 
   if (!escrows.length) {
     return (
