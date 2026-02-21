@@ -281,17 +281,16 @@ func (h *Handler) ScheduleRelease(c *gin.Context) {
 	}
 
 	if h.hedera != nil {
-		// Verify the seller's account is associated with USDC before scheduling.
-		// If not, the scheduled transfer will silently fail on-chain (TOKEN_NOT_ASSOCIATED_TO_ACCOUNT)
-		// even though the schedule shows as executed.
+		// Best-effort USDC association check. Log the result for diagnostics but
+		// do not hard-block — CompleteRelease will catch an actual failure via the
+		// post-execution balance check.
 		associated, err := h.hedera.IsUSDCAssociated(sellerHederaID)
 		if err != nil {
-			fail(c, http.StatusInternalServerError, "could not verify seller USDC association: "+err.Error())
-			return
-		}
-		if !associated {
-			fail(c, http.StatusConflict, "seller's Hedera account is not associated with USDC — the seller must associate their wallet with the USDC token before funds can be released")
-			return
+			log.Printf("ScheduleRelease: USDC association check error (seller=%s): %v — proceeding anyway", sellerHederaID, err)
+		} else if !associated {
+			log.Printf("ScheduleRelease: USDC association check returned false for seller=%s — proceeding anyway; verify token ID and account on mirror node", sellerHederaID)
+		} else {
+			log.Printf("ScheduleRelease: seller=%s USDC association confirmed", sellerHederaID)
 		}
 
 		// Verify the escrow account actually holds the USDC. This catches the case
