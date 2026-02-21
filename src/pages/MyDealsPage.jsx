@@ -155,23 +155,6 @@ export default function MyDealsPage() {
               >
                 <span style={{ flex: 1, fontWeight: 500 }}>{listingName(req.listingId)}</span>
                 <StatusPill status={req.sellerDecision} />
-                {req.sellerDecision === 'approved' && (
-                  <button
-                    className="ghost small-link"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/app/messages', {
-                        state: {
-                          listingId: req.listingId,
-                          sellerId: listings.find((l) => l.id === req.listingId)?.sellerId,
-                          buyerId: activeUser.id,
-                        },
-                      });
-                    }}
-                  >
-                    Message Seller
-                  </button>
-                )}
               </div>
             ))
           )}
