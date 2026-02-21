@@ -74,7 +74,14 @@ const hederaServices = [
   },
 ];
 
-const councilMembers = ['Google', 'IBM', 'Boeing', 'LG Electronics', 'Deutsche Telekom', 'Dell Technologies'];
+const hcsEvents = [
+  { event: 'ESCROW_CREATED', trigger: 'Escrow provisioned (offer accepted)', payload: 'escrow_account' },
+  { event: 'ESCROW_FUNDED', trigger: 'Buyer confirms USDC deposit', payload: 'transaction_id' },
+  { event: 'RELEASE_SCHEDULED', trigger: 'Buyer/operator initiates release', payload: 'schedule_id' },
+  { event: 'NFT_TRANSFERRED', trigger: 'Seller transfers listing NFT to buyer', payload: 'to, serial' },
+  { event: 'DISPUTE_OPENED', trigger: 'Buyer or seller raises a dispute', payload: 'raised_by' },
+  { event: 'DEAL_CLOSED', trigger: 'completeRelease confirms on-chain execution', payload: 'schedule_id' },
+];
 
 const features = [
   {
@@ -210,9 +217,9 @@ export default function LandingPage() {
 
           {/* Left: copy */}
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">Private Acquisition Marketplace</p>
+            <p className="lp-eyebrow">Acquisition Marketplace</p>
             <h1 className="lp-h1">
-              The private marketplace for online acquisitions
+              Marketplace for online acquisitions
             </h1>
             <p className="lp-hero-sub">
               Meridian connects vetted buyers with verified sellers through structured due diligence,
@@ -311,15 +318,25 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Governing Council trust strip */}
-          <div className="lp-council-strip">
-            <p className="lp-council-label">Governing council includes</p>
-            <div className="lp-council-names">
-              {councilMembers.map((m) => (
-                <span key={m}>{m}</span>
-              ))}
-              <span className="lp-council-more">+ 23 others</span>
-            </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Trigger</th>
+                  <th>Payload</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hcsEvents.map((row) => (
+                  <tr key={row.event}>
+                    <td><code>{row.event}</code></td>
+                    <td>{row.trigger}</td>
+                    <td><code>{row.payload}</code></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -333,7 +350,7 @@ export default function LandingPage() {
               <h2 className="lp-section-h2">Built for serious M&amp;A</h2>
             </div>
             <p className="lp-section-desc">
-              Not a broker, not a listings aggregator. Meridian is infrastructure for structured private acquisitions.
+              Not a broker, not a listings aggregator. Meridian is infrastructure for structured acquisitions.
             </p>
           </div>
           <div className="lp-feature-grid">
