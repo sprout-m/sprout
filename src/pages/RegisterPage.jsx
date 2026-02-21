@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
+import { useWallet } from '../context/WalletContext';
 
 export default function RegisterPage() {
   const { registerUser } = useMarket();
+  const { isConnected, connecting, accountId, connect } = useWallet();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -25,7 +27,11 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await registerUser({ email, handle, password, role });
+      if (!isConnected || !accountId) {
+        setError('Connect your wallet to continue');
+        return;
+      }
+      await registerUser({ email, handle, password, role, hederaAccountId: accountId });
       navigate('/app', { replace: true });
     } catch (err) {
       setError(err.message || 'Registration failed');
@@ -89,6 +95,24 @@ export default function RegisterPage() {
             </div>
 
             <div className="ob-field">
+              <label className="ob-field-label">Wallet (required)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="ghost"
+                  style={{ fontSize: '0.8125rem', padding: '0.375rem 0.625rem' }}
+                  onClick={connect}
+                  disabled={connecting}
+                >
+                  {connecting ? 'Connecting…' : (isConnected ? 'Reconnect Wallet' : 'Connect Wallet')}
+                </button>
+                <span style={{ fontSize: '0.75rem', color: isConnected ? 'var(--ok)' : 'var(--muted)' }}>
+                  {isConnected && accountId ? `Connected: ${accountId}` : 'No wallet connected'}
+                </span>
+              </div>
+            </div>
+
+            <div className="ob-field">
               <label className="ob-field-label">Password</label>
               <input
                 className="ob-field-input"
@@ -121,7 +145,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               className="ob-btn-next"
-              disabled={loading || !email || !handle || !password || !confirmPassword}
+              disabled={loading || !email || !handle || !password || !confirmPassword || !isConnected || !accountId}
             >
               {loading ? 'Creating account…' : 'Create account →'}
             </button>

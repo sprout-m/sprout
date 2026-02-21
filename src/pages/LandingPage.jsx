@@ -74,15 +74,6 @@ const hederaServices = [
   },
 ];
 
-const hcsEvents = [
-  { event: 'ESCROW_CREATED', trigger: 'Escrow provisioned (offer accepted)', payload: 'escrow_account' },
-  { event: 'ESCROW_FUNDED', trigger: 'Buyer confirms USDC deposit', payload: 'transaction_id' },
-  { event: 'RELEASE_SCHEDULED', trigger: 'Buyer/operator initiates release', payload: 'schedule_id' },
-  { event: 'NFT_TRANSFERRED', trigger: 'Seller transfers listing NFT to buyer', payload: 'to, serial' },
-  { event: 'DISPUTE_OPENED', trigger: 'Buyer or seller raises a dispute', payload: 'raised_by' },
-  { event: 'DEAL_CLOSED', trigger: 'completeRelease confirms on-chain execution', payload: 'schedule_id' },
-];
-
 const features = [
   {
     title: 'Operator-Vetted Listings',
@@ -318,25 +309,17 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Event</th>
-                  <th>Trigger</th>
-                  <th>Payload</th>
-                </tr>
-              </thead>
-              <tbody>
-                {hcsEvents.map((row) => (
-                  <tr key={row.event}>
-                    <td><code>{row.event}</code></td>
-                    <td>{row.trigger}</td>
-                    <td><code>{row.payload}</code></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="card" style={{ padding: '1rem' }}>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.75 }}>
+              Meridian emits an exact HCS event stream for settlement milestones. When escrow is provisioned after
+              offer acceptance, <code>ESCROW_CREATED</code> is emitted with payload <code>escrow_account</code>. When the
+              buyer confirms the USDC deposit, <code>ESCROW_FUNDED</code> is emitted with payload <code>transaction_id</code>.
+              When the buyer or operator initiates release, <code>RELEASE_SCHEDULED</code> is emitted with payload
+              <code> schedule_id</code>. When the seller transfers the listing NFT to the buyer, <code>NFT_TRANSFERRED</code> is
+              emitted with payload <code>to, serial</code>. If either party raises a dispute, <code>DISPUTE_OPENED</code> is
+              emitted with payload <code>raised_by</code>. Finally, when <code>completeRelease</code> confirms on-chain execution,
+              <code> DEAL_CLOSED</code> is emitted with payload <code>schedule_id</code>.
+            </p>
           </div>
         </div>
       </section>
