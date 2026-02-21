@@ -35,7 +35,7 @@ function RequestCard({
           {request.ndaSigned ? '✓ NDA Signed' : '! NDA Missing'}
         </span>
         <span className={`req-badge ${request.proofOfFundsStatus === 'verified' ? 'req-badge--ok' : ''}`}>
-          {request.proofAmountUSDC.toLocaleString()} USDC
+          {request.proofAmountUSDC?.toLocaleString() ?? '—'} USDC
           {request.proofOfFundsStatus === 'verified' ? ' · Verified' : ' · Pending'}
         </span>
         {isApproved && request.accessLevel && (
