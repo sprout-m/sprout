@@ -9,7 +9,10 @@ const ACCESS_LEVEL_OPTIONS = [
   { value: 'Shortlist', label: 'Shortlist - Full access (includes Offers + Activity)' },
 ];
 
-function RequestCard({ request, level, onLevelChange, onApprove, onReject, onUpdateLevel, onMessage }) {
+function RequestCard({
+  request, level, onLevelChange, onApprove, onReject, onUpdateLevel, onMessage,
+  updatingLevel, levelFeedback, canUpdateLevel
+}) {
   const isPending = request.sellerDecision === 'pending';
   const isApproved = request.sellerDecision === 'approved';
 
@@ -61,7 +64,14 @@ function RequestCard({ request, level, onLevelChange, onApprove, onReject, onUpd
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
-              <button onClick={onUpdateLevel}>Update Level</button>
+              <button onClick={onUpdateLevel} disabled={updatingLevel || !canUpdateLevel}>
+                {updatingLevel ? 'Updating…' : 'Update Level'}
+              </button>
+              {levelFeedback && (
+                <span className={`req-action-feedback req-action-feedback--${levelFeedback.type}`}>
+                  {levelFeedback.message}
+                </span>
+              )}
               <button
                 className="ghost"
                 style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
@@ -82,6 +92,8 @@ export default function SellerRequestsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [levels, setLevels] = useState({});
+  const [updatingLevels, setUpdatingLevels] = useState({});
+  const [levelFeedback, setLevelFeedback] = useState({});
 
   const filterListingId = location.state?.listingId ?? null;
   const filterListing = filterListingId ? listings.find((l) => l.id === filterListingId) : null;
@@ -100,11 +112,41 @@ export default function SellerRequestsPage() {
 
   function makeHandlers(request) {
     const level = levels[request.id] || request.accessLevel || 'Level 1';
+    const currentLevel = request.accessLevel || 'Level 1';
+    const canUpdateLevel = level !== currentLevel;
+
     return {
       level,
-      onLevelChange: (val) => setLevels((prev) => ({ ...prev, [request.id]: val })),
+      canUpdateLevel,
+      updatingLevel: !!updatingLevels[request.id],
+      levelFeedback: levelFeedback[request.id] || null,
+      onLevelChange: (val) => {
+        setLevels((prev) => ({ ...prev, [request.id]: val }));
+        setLevelFeedback((prev) => ({ ...prev, [request.id]: null }));
+      },
       onApprove: () => decideAccess({ requestId: request.id, decision: 'approved', accessLevel: level }),
-      onUpdateLevel: () => decideAccess({ requestId: request.id, decision: 'approved', accessLevel: level }),
+      onUpdateLevel: async () => {
+        if (!canUpdateLevel) return;
+        setUpdatingLevels((prev) => ({ ...prev, [request.id]: true }));
+        setLevelFeedback((prev) => ({ ...prev, [request.id]: null }));
+        try {
+          await decideAccess({ requestId: request.id, decision: 'approved', accessLevel: level });
+          setLevelFeedback((prev) => ({
+            ...prev,
+            [request.id]: { type: 'success', message: `Updated to ${level}` },
+          }));
+          setTimeout(() => {
+            setLevelFeedback((prev) => ({ ...prev, [request.id]: null }));
+          }, 2200);
+        } catch (err) {
+          setLevelFeedback((prev) => ({
+            ...prev,
+            [request.id]: { type: 'error', message: err?.message || 'Update failed' },
+          }));
+        } finally {
+          setUpdatingLevels((prev) => ({ ...prev, [request.id]: false }));
+        }
+      },
       onReject: () => decideAccess({ requestId: request.id, decision: 'rejected' }),
       onMessage: () => navigate('/app/messages', {
         state: {

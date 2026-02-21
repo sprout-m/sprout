@@ -1775,6 +1775,28 @@ tr:last-child td {
   width: auto;
 }
 
+.req-action-feedback {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.1875rem 0.4375rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+.req-action-feedback--success {
+  color: var(--ok);
+  border-color: var(--ok-border);
+  background: var(--ok-bg);
+}
+
+.req-action-feedback--error {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+}
+
 .filter-banner {
   display: flex;
   align-items: center;

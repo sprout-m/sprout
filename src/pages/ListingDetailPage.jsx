@@ -72,6 +72,7 @@ export default function ListingDetailPage() {
 
   // Seller — document upload state
   const [savingDocs, setSavingDocs] = useState(false);
+  const [docViewError, setDocViewError] = useState('');
 
   const timeline = useMemo(
     () => ['Request Access + NDA', 'Proof of Funds', 'Seller Approval', 'Submit Offer', 'USDC Escrow + Transfer'],
@@ -117,6 +118,45 @@ export default function ListingDetailPage() {
       if (!acct) return;
     }
     setShowModal(true);
+  }
+
+  function handleViewDocument(folderName, fileName) {
+    setDocViewError('');
+    const title = `${listing?.anonymizedName || 'Listing'} - ${fileName}`;
+    const html = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>${title}</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #f5f7fb; color: #0f172a; }
+      .wrap { max-width: 860px; margin: 32px auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
+      h1 { font-size: 20px; margin: 0 0 8px; }
+      .meta { color: #64748b; font-size: 13px; margin-bottom: 16px; }
+      .box { border: 1px dashed #cbd5e1; border-radius: 10px; padding: 14px; background: #f8fafc; font-size: 14px; line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>${fileName}</h1>
+      <div class="meta">Folder: ${folderName} · Listing: ${listing?.anonymizedName || 'N/A'}</div>
+      <div class="box">
+        This environment stores document metadata only (filename/folder) for demo flows.
+        <br /><br />
+        File content retrieval is not configured in this build yet.
+      </div>
+    </div>
+  </body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      setDocViewError('Could not open document preview. Check popup blocker settings.');
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }
 
   if (!listing && loadingDetail) return <p>Loading listing…</p>;
@@ -377,7 +417,13 @@ export default function ListingDetailPage() {
                             ) : (
                               <>
                                 <span style={{ color: 'var(--muted-light)', fontSize: '0.75rem' }}>Feb 11, 2026</span>
-                                <button className="ghost" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>View</button>
+                                <button
+                                  className="ghost"
+                                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                                  onClick={() => handleViewDocument(folderName, file)}
+                                >
+                                  View
+                                </button>
                               </>
                             )}
                           </div>
@@ -402,6 +448,9 @@ export default function ListingDetailPage() {
                   })}
                   {!isSeller && !hasDocs && (
                     <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>No documents uploaded yet.</p>
+                  )}
+                  {!isSeller && docViewError && (
+                    <p style={{ color: 'var(--danger)', fontSize: '0.8125rem' }}>{docViewError}</p>
                   )}
                 </div>
               );
