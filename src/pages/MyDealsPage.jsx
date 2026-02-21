@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
 
@@ -15,6 +15,7 @@ function DealCard({ title, children, count }) {
 }
 
 export default function MyDealsPage() {
+  const navigate = useNavigate();
   const { activeUser, accessRequests, offers, escrows, listings } = useMarket();
 
   const myRequests = accessRequests.filter((r) => r.buyerId === activeUser.id);
@@ -104,6 +105,21 @@ export default function MyDealsPage() {
               <div className="line-item" key={req.id}>
                 <span style={{ flex: 1, fontWeight: 500 }}>{listingName(req.listingId)}</span>
                 <StatusPill status={req.sellerDecision} />
+                {req.sellerDecision === 'approved' && (
+                  <button
+                    className="ghost small-link"
+                    onClick={() =>
+                      navigate('/app/messages', {
+                        state: {
+                          listingId: req.listingId,
+                          sellerId: listings.find((l) => l.id === req.listingId)?.sellerId,
+                          buyerId: activeUser.id,
+                        },
+                      })}
+                  >
+                    Message Seller
+                  </button>
+                )}
               </div>
             ))
           )}

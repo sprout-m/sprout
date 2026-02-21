@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import RequestAccessModal from '../components/RequestAccessModal';
 import StatusPill from '../components/StatusPill';
 import { listingsApi } from '../api/client';
@@ -33,6 +33,7 @@ const CATEGORY_COLORS = {
 
 export default function ListingDetailPage() {
   const { listingId } = useParams();
+  const navigate = useNavigate();
   const { listings, accessRequests, offers, activeUser, requestAccess, submitOffer, updateListing, refreshAccessRequests } = useMarket();
   const { isConnected, connecting, connect } = useWallet();
   const [listingDetail, setListingDetail] = useState(null);
@@ -656,6 +657,22 @@ export default function ListingDetailPage() {
                     <span>Proof of Funds</span>
                     <strong style={{ textTransform: 'capitalize' }}>{request.proofOfFundsStatus}</strong>
                   </div>
+                  {accessLevel && (
+                    <button
+                      className="ghost"
+                      style={{ marginTop: '0.625rem', width: '100%' }}
+                      onClick={() =>
+                        navigate('/app/messages', {
+                          state: {
+                            listingId,
+                            sellerId: listing?.sellerId,
+                            buyerId: activeUser?.id,
+                          },
+                        })}
+                    >
+                      Message Seller
+                    </button>
+                  )}
                 </div>
               )}
             </>
