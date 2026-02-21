@@ -33,7 +33,7 @@ const CATEGORY_COLORS = {
 
 export default function ListingDetailPage() {
   const { listingId } = useParams();
-  const { listings, accessRequests, offers, activeUser, requestAccess, submitOffer, updateListing } = useMarket();
+  const { listings, accessRequests, offers, activeUser, requestAccess, submitOffer, updateListing, refreshAccessRequests } = useMarket();
   const { isConnected, connecting, connect } = useWallet();
   const [listingDetail, setListingDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -81,6 +81,11 @@ export default function ListingDetailPage() {
   useEffect(() => {
     if (!tabs.includes(activeTab)) setActiveTab(tabs[0]);
   }, [tabs, activeTab]);
+
+  useEffect(() => {
+    if (!activeUser || isSeller) return;
+    refreshAccessRequests();
+  }, [activeUser?.id, isSeller, listingId]);
 
   useEffect(() => {
     let cancelled = false;

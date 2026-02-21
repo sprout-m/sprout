@@ -174,6 +174,32 @@ export function MarketProvider({ children }) {
     return ar;
   }
 
+  async function refreshAccessRequests() {
+    if (!user) return [];
+
+    if (user.role === 'buyer') {
+      const myAccess = await accessApi.mine().catch(() => []);
+      setAccessRequests(myAccess);
+      return myAccess;
+    }
+
+    if (user.role === 'seller') {
+      const myListings = listings.length
+        ? listings
+        : await listingsApi.mine().catch(() => []);
+      if (!myListings.length) {
+        setAccessRequests([]);
+        return [];
+      }
+      const nested = await Promise.all(myListings.map((l) => accessApi.forListing(l.id).catch(() => [])));
+      const all = nested.flat();
+      setAccessRequests(all);
+      return all;
+    }
+
+    return [];
+  }
+
   // ── Offer actions ─────────────────────────────────────────────────────────
   async function submitOffer({ listingId, amountUSDC, terms, notes }) {
     const o = await offersApi.submit(listingId, {
@@ -351,6 +377,7 @@ export function MarketProvider({ children }) {
     updateListing,
     requestAccess,
     decideAccess,
+    refreshAccessRequests,
     submitOffer,
     updateOfferStatus,
     provisionEscrow,
