@@ -1,4 +1,6 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { listingsApi } from '../api/client';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
 
@@ -17,6 +19,7 @@ function DealCard({ title, children, count }) {
 export default function MyDealsPage() {
   const navigate = useNavigate();
   const { activeUser, accessRequests, offers, escrows, listings } = useMarket();
+  const [listingNamesById, setListingNamesById] = useState({});
 
   const myRequests = accessRequests.filter((r) => r.buyerId === activeUser.id);
   const myOffers = offers.filter((o) => o.buyerId === activeUser.id);
@@ -25,7 +28,41 @@ export default function MyDealsPage() {
   const sellerOffers = offers;
   const matchedEscrows = escrows.filter((esc) => listingOfferIds.includes(esc.offerId));
 
-  const listingName = (id) => listings.find((l) => l.id === id)?.anonymizedName || id;
+  const listingName = (id) =>
+    listingNamesById[id] || listings.find((l) => l.id === id)?.anonymizedName || 'Untitled listing';
+
+  const missingListingIds = useMemo(() => {
+    const ids = new Set();
+    [...accessRequests, ...offers].forEach((item) => {
+      const id = item.listingId;
+      if (!id) return;
+      const hasInListings = listings.some((l) => l.id === id);
+      const hasInMap = Boolean(listingNamesById[id]);
+      if (!hasInListings && !hasInMap) ids.add(id);
+    });
+    return Array.from(ids);
+  }, [accessRequests, offers, listings, listingNamesById]);
+
+  useEffect(() => {
+    if (!missingListingIds.length) return;
+    let cancelled = false;
+    Promise.all(
+      missingListingIds.map(async (id) => {
+        try {
+          const detail = await listingsApi.get(id);
+          return [id, detail?.anonymizedName || 'Untitled listing'];
+        } catch {
+          return [id, 'Untitled listing'];
+        }
+      })
+    ).then((pairs) => {
+      if (cancelled) return;
+      setListingNamesById((prev) => ({ ...prev, ...Object.fromEntries(pairs) }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [missingListingIds]);
 
   if (activeUser.role !== 'buyer') {
     return (
@@ -46,10 +83,9 @@ export default function MyDealsPage() {
             ) : (
               sellerRequests.map((req) => (
                 <div className="line-item" key={req.id}>
-                  <Link to={`/app/listing/${req.listingId}`} style={{ flex: 1, fontWeight: 500 }}>
-                    {listingName(req.listingId)}
-                  </Link>
+                  <span style={{ flex: 1, fontWeight: 500 }}>{listingName(req.listingId)}</span>
                   <StatusPill status={req.sellerDecision} />
+                  <Link to={`/app/listing/${req.listingId}`} className="ghost small-link">Open</Link>
                 </div>
               ))
             )}
@@ -61,13 +97,12 @@ export default function MyDealsPage() {
             ) : (
               sellerOffers.map((offer) => (
                 <div className="line-item" key={offer.offerId}>
-                  <Link to={`/app/listing/${offer.listingId}`} style={{ flex: 1, fontWeight: 500 }}>
-                    {listingName(offer.listingId)}
-                  </Link>
+                  <span style={{ flex: 1, fontWeight: 500 }}>{listingName(offer.listingId)}</span>
                   <span style={{ fontSize: '0.8125rem', fontWeight: 700, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>
                     {offer.amountUSDC.toLocaleString()} USDC
                   </span>
                   <StatusPill status={offer.status} />
+                  <Link to={`/app/listing/${offer.listingId}`} className="ghost small-link">Open</Link>
                 </div>
               ))
             )}
@@ -107,10 +142,9 @@ export default function MyDealsPage() {
           ) : (
             myRequests.map((req) => (
               <div className="line-item" key={req.id}>
-                <Link to={`/app/listing/${req.listingId}`} style={{ flex: 1, fontWeight: 500 }}>
-                  {listingName(req.listingId)}
-                </Link>
+                <span style={{ flex: 1, fontWeight: 500 }}>{listingName(req.listingId)}</span>
                 <StatusPill status={req.sellerDecision} />
+                <Link to={`/app/listing/${req.listingId}`} className="ghost small-link">Open</Link>
                 {req.sellerDecision === 'approved' && (
                   <button
                     className="ghost small-link"
@@ -137,13 +171,12 @@ export default function MyDealsPage() {
           ) : (
             myOffers.map((offer) => (
               <div className="line-item" key={offer.offerId}>
-                <Link to={`/app/listing/${offer.listingId}`} style={{ flex: 1, fontWeight: 500 }}>
-                  {listingName(offer.listingId)}
-                </Link>
+                <span style={{ flex: 1, fontWeight: 500 }}>{listingName(offer.listingId)}</span>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>
                   {offer.amountUSDC.toLocaleString()} USDC
                 </span>
                 <StatusPill status={offer.status} />
+                <Link to={`/app/listing/${offer.listingId}`} className="ghost small-link">Open</Link>
               </div>
             ))
           )}
