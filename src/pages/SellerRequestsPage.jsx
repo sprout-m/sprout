@@ -9,7 +9,7 @@ const ACCESS_LEVEL_OPTIONS = [
   { value: 'Shortlist', label: 'Shortlist - Full access (includes Offers + Activity)' },
 ];
 
-function RequestCard({ request, level, onLevelChange, onApprove, onReject, onMessage }) {
+function RequestCard({ request, level, onLevelChange, onApprove, onReject, onUpdateLevel, onMessage }) {
   const isPending = request.sellerDecision === 'pending';
   const isApproved = request.sellerDecision === 'approved';
 
@@ -41,7 +41,7 @@ function RequestCard({ request, level, onLevelChange, onApprove, onReject, onMes
       </div>
 
       {(isPending || isApproved) && (
-        <div className={`req-card-actions${isApproved ? ' req-card-actions--decided' : ''}`}>
+        <div className="req-card-actions">
           {isPending ? (
             <>
               <span className="req-action-label">Grant level</span>
@@ -54,13 +54,22 @@ function RequestCard({ request, level, onLevelChange, onApprove, onReject, onMes
               <button className="ghost" onClick={onReject}>Reject</button>
             </>
           ) : (
-            <button
-              className="ghost"
-              style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
-              onClick={onMessage}
-            >
-              Message Buyer
-            </button>
+            <>
+              <span className="req-action-label">Access level</span>
+              <select value={level} onChange={(e) => onLevelChange(e.target.value)}>
+                {ACCESS_LEVEL_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <button onClick={onUpdateLevel}>Update Level</button>
+              <button
+                className="ghost"
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}
+                onClick={onMessage}
+              >
+                Message Buyer
+              </button>
+            </>
           )}
         </div>
       )}
@@ -90,11 +99,12 @@ export default function SellerRequestsPage() {
   const hasBoth = pending.length > 0 && decided.length > 0;
 
   function makeHandlers(request) {
-    const level = levels[request.id] || 'Level 1';
+    const level = levels[request.id] || request.accessLevel || 'Level 1';
     return {
       level,
       onLevelChange: (val) => setLevels((prev) => ({ ...prev, [request.id]: val })),
       onApprove: () => decideAccess({ requestId: request.id, decision: 'approved', accessLevel: level }),
+      onUpdateLevel: () => decideAccess({ requestId: request.id, decision: 'approved', accessLevel: level }),
       onReject: () => decideAccess({ requestId: request.id, decision: 'rejected' }),
       onMessage: () => navigate('/app/messages', {
         state: {
