@@ -45,7 +45,7 @@ function RangeSlider({ label, min, max, step, value, onValueChange, format }) {
         </span>
       </div>
       <Slider.Root className="rdx-slider" min={min} max={max} step={step} value={value}
-        onValueChange={onValueChange} minStepsBetweenThumbs={1}>
+        onValueChange={onValueChange} minStepsBetweenThumbs={0}>
         <Slider.Track className="rdx-track"><Slider.Range className="rdx-range" /></Slider.Track>
         <Slider.Thumb className="rdx-thumb" aria-label={`${label} low`} />
         <Slider.Thumb className="rdx-thumb" aria-label={`${label} high`} />
@@ -80,10 +80,10 @@ const EMPTY_FORM = {
   anonymizedName: '',
   category: '',
   location: '',
-  asking:   [250_000,  2_000_000],
-  revenue:  [100_000,    750_000],
-  profit:   [ 30_000,    200_000],
-  ageYears: 3,
+  asking:   [0, 0],
+  revenue:  [0, 0],
+  profit:   [0, 0],
+  ageYears: 0,
   teaserDescription: '',
   ndaRequired: false,
   industryTags: [],
@@ -230,13 +230,13 @@ export default function CreateListingPage() {
         {/* Step 1 — Financials */}
         {step === 1 && (
           <div style={{ display: 'grid', gap: '1.75rem' }}>
-            <RangeSlider label="Asking range" min={50_000} max={10_000_000} step={50_000}
+            <RangeSlider label="Asking range" min={0} max={10_000_000} step={50_000}
               value={form.asking} onValueChange={(v) => set('asking', v)} format={fmtDollars} />
-            <RangeSlider label="Revenue range" min={10_000} max={5_000_000} step={10_000}
+            <RangeSlider label="Revenue range" min={0} max={5_000_000} step={10_000}
               value={form.revenue} onValueChange={(v) => set('revenue', v)} format={fmtDollars} />
             <RangeSlider label="Profit range" min={0} max={2_000_000} step={10_000}
               value={form.profit} onValueChange={(v) => set('profit', v)} format={fmtDollars} />
-            <SingleSlider label="Business age" min={1} max={20} step={1}
+            <SingleSlider label="Business age" min={0} max={20} step={1}
               value={form.ageYears} onValueChange={(v) => set('ageYears', v)}
               format={(v) => v === 1 ? '1 year' : `${v} years`} />
           </div>
