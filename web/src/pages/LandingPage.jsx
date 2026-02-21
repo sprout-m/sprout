@@ -387,7 +387,7 @@ export default function LandingPage() {
             alt="Meridian"
             style={{ height: '28px', filter: 'brightness(0) invert(1)', opacity: 0.4 }}
           />
-          <p>© 2025 Meridian Marketplace. Structured M&amp;A for online businesses.</p>
+          <p>© 2026 Meridian Directory. Structured M&amp;A for online businesses.</p>
           <a
             href="https://hedera.com"
             target="_blank"

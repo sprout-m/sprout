@@ -68,7 +68,7 @@ export default function Layout() {
             <Link to="/app">
               <img
                 src="/LOGO.png"
-                alt="Meridian Marketplace"
+                alt="Meridian"
                 style={{ height: '40px', width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' }}
               />
             </Link>
