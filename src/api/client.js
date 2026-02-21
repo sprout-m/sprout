@@ -58,7 +58,7 @@ export function normalizeAccessRequest(r) {
     proofTxId: r.proof_tx_id || null,
     // backend uses 'denied'; pages expect 'rejected'
     sellerDecision: r.seller_decision === 'denied' ? 'rejected' : r.seller_decision,
-    accessLevel: r.access_level ?? null,
+    accessLevel: r.access_level || null,
     requestedAt: r.requested_at,
     decidedAt: r.decided_at ?? null,
   };

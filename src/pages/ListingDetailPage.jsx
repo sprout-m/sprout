@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import RequestAccessModal from '../components/RequestAccessModal';
 import StatusPill from '../components/StatusPill';
+import { listingsApi } from '../api/client';
 import { useMarket } from '../context/MarketContext';
 import { useWallet } from '../context/WalletContext';
 
@@ -34,13 +35,18 @@ export default function ListingDetailPage() {
   const { listingId } = useParams();
   const { listings, accessRequests, offers, activeUser, requestAccess, submitOffer, updateListing } = useMarket();
   const { isConnected, connecting, connect } = useWallet();
-  const listing = listings.find((l) => l.id === listingId);
+  const [listingDetail, setListingDetail] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const baseListing = listings.find((l) => l.id === listingId);
+  const listing = listingDetail || baseListing;
   const myOffer = offers.find((o) => o.listingId === listingId);
 
   const isSeller = listing?.sellerId === activeUser?.id;
   const request = !isSeller && accessRequests.find((r) => r.listingId === listingId && r.buyerId === activeUser.id);
   // accessLevel: null = no access, 'Level 1' / 'Level 2' / 'Shortlist'
-  const accessLevel = isSeller ? 'Shortlist' : (request?.sellerDecision === 'approved' ? request.accessLevel : null);
+  const accessLevel = isSeller
+    ? 'Shortlist'
+    : (request?.sellerDecision === 'approved' ? (request.accessLevel || 'Level 1') : null);
   const unlocked = !!accessLevel;
 
   const { state: navState } = useLocation();
@@ -76,6 +82,30 @@ export default function ListingDetailPage() {
     if (!tabs.includes(activeTab)) setActiveTab(tabs[0]);
   }, [tabs, activeTab]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!listingId) return undefined;
+
+    setLoadingDetail(true);
+    listingsApi.get(listingId)
+      .then((detail) => {
+        if (cancelled) return;
+        setListingDetail(detail);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setListingDetail(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingDetail(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [listingId, activeUser?.id]);
+
   async function handleRequestAccess() {
     if (!isConnected) {
       const acct = await connect();
@@ -84,6 +114,7 @@ export default function ListingDetailPage() {
     setShowModal(true);
   }
 
+  if (!listing && loadingDetail) return <p>Loading listing…</p>;
   if (!listing) return <p>Listing not found.</p>;
 
   const accentColor = CATEGORY_COLORS[listing.category] || CATEGORY_COLORS.Other;
@@ -187,7 +218,7 @@ export default function ListingDetailPage() {
                     e.preventDefault();
                     setSavingFin(true);
                     try {
-                      await updateListing(listingId, {
+                      const updated = await updateListing(listingId, {
                         full_financials: {
                           ttmRevenue: finForm.ttmRevenue,
                           ttmProfit:  finForm.ttmProfit,
@@ -196,6 +227,7 @@ export default function ListingDetailPage() {
                           churn:      finForm.churn,
                         },
                       });
+                      setListingDetail(updated);
                       setEditingFinancials(false);
                     } finally {
                       setSavingFin(false);
@@ -295,7 +327,8 @@ export default function ListingDetailPage() {
                 try {
                   const updated = { ...folders };
                   updated[folderName] = [...(updated[folderName] || []), file.name];
-                  await updateListing(listingId, { dataroom_folders: updated });
+                  const next = await updateListing(listingId, { dataroom_folders: updated });
+                  setListingDetail(next);
                 } finally {
                   setSavingDocs(false);
                 }
@@ -307,7 +340,8 @@ export default function ListingDetailPage() {
                   const updated = { ...folders };
                   updated[folderName] = (updated[folderName] || []).filter((f) => f !== fileName);
                   if (!updated[folderName].length) delete updated[folderName];
-                  await updateListing(listingId, { dataroom_folders: updated });
+                  const next = await updateListing(listingId, { dataroom_folders: updated });
+                  setListingDetail(next);
                 } finally {
                   setSavingDocs(false);
                 }
