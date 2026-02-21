@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
 
-function OfferCard({ offer, listingName, pof, onShortlist, onAccept, onReject }) {
+function OfferCard({ offer, listingName, pof, onShortlist, onAccept, onReject, onMessage, canMessage }) {
   const isActive = offer.status === 'submitted' || offer.status === 'shortlisted';
   const isAccepted = offer.status === 'accepted';
 
@@ -43,11 +43,19 @@ function OfferCard({ offer, listingName, pof, onShortlist, onAccept, onReject })
               )}
               <button onClick={onAccept}>Accept</button>
               <button className="ghost" onClick={onReject}>Reject</button>
+              {canMessage && (
+                <button className="ghost" onClick={onMessage}>Message Buyer</button>
+              )}
             </>
           ) : (
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ok)' }}>
-              Escrow opened — go to Closing
-            </span>
+            <>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ok)' }}>
+                Escrow opened — go to Closing
+              </span>
+              {canMessage && (
+                <button className="ghost" onClick={onMessage}>Message Buyer</button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -64,8 +72,14 @@ export default function SellerOffersBoardPage() {
   const filterListing = filterListingId ? listings.find((l) => l.id === filterListingId) : null;
 
   const listingName = (id) => listings.find((l) => l.id === id)?.anonymizedName || id;
+  const sellerIdForListing = (id) => listings.find((l) => l.id === id)?.sellerId;
   const getPof = (listingId, buyerId) =>
     accessRequests.find((r) => r.listingId === listingId && r.buyerId === buyerId);
+  const canMessageBuyer = (pof) => {
+    if (!pof) return true;
+    if (pof.sellerDecision !== 'approved') return false;
+    return ['Level 1', 'Level 2', 'Shortlist'].includes(pof.accessLevel);
+  };
 
   const filtered = filterListingId ? offers.filter((o) => o.listingId === filterListingId) : offers;
   const active = filtered.filter((o) => o.status === 'submitted' || o.status === 'shortlisted');
@@ -76,6 +90,14 @@ export default function SellerOffersBoardPage() {
     onShortlist: () => updateOfferStatus({ offerId: offer.offerId, status: 'shortlisted' }),
     onAccept: () => updateOfferStatus({ offerId: offer.offerId, status: 'accepted' }),
     onReject: () => updateOfferStatus({ offerId: offer.offerId, status: 'rejected' }),
+    onMessage: () =>
+      navigate('/app/messages', {
+        state: {
+          listingId: offer.listingId,
+          buyerId: offer.buyerId,
+          sellerId: sellerIdForListing(offer.listingId),
+        },
+      }),
   });
 
   return (
@@ -104,29 +126,37 @@ export default function SellerOffersBoardPage() {
           {active.length > 0 && (
             <div className="req-group">
               {hasBoth && <div className="req-section-label">Needs Action · {active.length}</div>}
-              {active.map((o) => (
+              {active.map((o) => {
+                const pof = getPof(o.listingId, o.buyerId);
+                return (
                 <OfferCard
                   key={o.offerId}
                   offer={o}
                   listingName={listingName(o.listingId)}
-                  pof={getPof(o.listingId, o.buyerId)}
+                  pof={pof}
+                  canMessage={canMessageBuyer(pof)}
                   {...handlers(o)}
                 />
-              ))}
+                );
+              })}
             </div>
           )}
           {decided.length > 0 && (
             <div className="req-group">
               {hasBoth && <div className="req-section-label">Decided · {decided.length}</div>}
-              {decided.map((o) => (
+              {decided.map((o) => {
+                const pof = getPof(o.listingId, o.buyerId);
+                return (
                 <OfferCard
                   key={o.offerId}
                   offer={o}
                   listingName={listingName(o.listingId)}
-                  pof={getPof(o.listingId, o.buyerId)}
+                  pof={pof}
+                  canMessage={canMessageBuyer(pof)}
                   {...handlers(o)}
                 />
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
