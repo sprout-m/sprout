@@ -631,7 +631,7 @@ export default function ListingDetailPage() {
                   <div>
                     <p className="cta-step-label">Seller Approval</p>
                     <p className="cta-step-sub">
-                      {accessLevel ? `Granted: ${accessLevel}` : 'Seller reviews your profile'}
+                      {accessLevel ? 'Approved' : 'Seller reviews your profile'}
                     </p>
                   </div>
                 </div>
@@ -647,12 +647,6 @@ export default function ListingDetailPage() {
                     <span>Decision</span>
                     <strong style={{ textTransform: 'capitalize' }}>{request.sellerDecision}</strong>
                   </div>
-                  {accessLevel && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginTop: '0.3125rem' }}>
-                      <span>Access Level</span>
-                      <strong>{accessLevel}</strong>
-                    </div>
-                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginTop: '0.3125rem' }}>
                     <span>Proof of Funds</span>
                     <strong style={{ textTransform: 'capitalize' }}>{request.proofOfFundsStatus}</strong>
