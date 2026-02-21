@@ -596,7 +596,6 @@ export default function ListingDetailPage() {
           ) : (
             <>
               <div className="ld-access-header" style={{ borderColor: accentColor }}>
-                <StatusPill status={accessLevel || request?.sellerDecision || 'locked'} />
                 <h4>Access Requirements</h4>
                 <p>
                   {accessLevel
@@ -644,10 +643,6 @@ export default function ListingDetailPage() {
               {request && (
                 <div className="callout">
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                    <span>Decision</span>
-                    <strong style={{ textTransform: 'capitalize' }}>{request.sellerDecision}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginTop: '0.3125rem' }}>
                     <span>Proof of Funds</span>
                     <strong style={{ textTransform: 'capitalize' }}>{request.proofOfFundsStatus}</strong>
                   </div>
