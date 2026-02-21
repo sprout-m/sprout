@@ -53,7 +53,7 @@ const hederaServices = [
   },
   {
     title: 'Consensus Service (HCS)',
-    desc: 'Every LOI action, NDA approval, and closing milestone committed as an immutable, ordered message — a tamper-proof audit trail from first contact to signed close.',
+    desc: 'We write six settlement checkpoints to HCS in order: escrow created and funded, release scheduled, NFT transferred, dispute opened, and deal closed.',
     icon: (
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
         <path d="M4 5h12M4 9h9M4 13h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -309,22 +309,6 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="card" style={{ padding: '1rem', display: 'grid', gap: '0.625rem' }}>
-            <p style={{ margin: 0, fontSize: '0.6875rem', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-              HCS Events Emitted
-            </p>
-            <div className="callout" style={{ display: 'grid', gap: '0.5rem' }}>
-              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6 }}>
-                <strong>Escrow:</strong> <code>ESCROW_CREATED</code> (<code>escrow_account</code>) and <code>ESCROW_FUNDED</code> (<code>transaction_id</code>).
-              </p>
-              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6 }}>
-                <strong>Release:</strong> <code>RELEASE_SCHEDULED</code> (<code>schedule_id</code>) and <code>NFT_TRANSFERRED</code> (<code>to, serial</code>).
-              </p>
-              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6 }}>
-                <strong>Finalization:</strong> <code>DISPUTE_OPENED</code> (<code>raised_by</code>) and <code>DEAL_CLOSED</code> (<code>schedule_id</code>).
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 
