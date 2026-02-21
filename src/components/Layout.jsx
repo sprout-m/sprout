@@ -5,7 +5,7 @@ import { useWallet } from '../context/WalletContext';
 
 const roleRoutes = {
   buyer: [
-    { to: '/app', label: 'Marketplace' },
+    { to: '/app', label: 'Directory' },
     { to: '/app/my-deals', label: 'My Deals' },
     { to: '/app/escrow', label: 'Closing' },
     { to: '/app/messages', label: 'Messages' },

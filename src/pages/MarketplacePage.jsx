@@ -55,6 +55,11 @@ export default function MarketplacePage() {
 
   return (
     <section>
+      <div className="page-header">
+        <h2>Directory</h2>
+        <p>Browse listings, apply filters, and request access from sellers.</p>
+      </div>
+
       <div className={`market-layout${sidebarOpen ? '' : ' market-layout--filters-collapsed'}`}>
         <div className={`filter-sidebar-wrap${sidebarOpen ? '' : ' filter-sidebar-wrap--closed'}`}>
           <aside className="card filter-sidebar">
