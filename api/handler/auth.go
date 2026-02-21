@@ -13,11 +13,10 @@ import (
 )
 
 type registerRequest struct {
-	Email           string `json:"email"             binding:"required,email"`
-	Handle          string `json:"handle"            binding:"required,min=2"`
-	Password        string `json:"password"          binding:"required,min=8"`
-	Role            string `json:"role"              binding:"required,oneof=buyer seller"`
-	HederaAccountID string `json:"hedera_account_id" binding:"required"`
+	Email    string `json:"email"    binding:"required,email"`
+	Handle   string `json:"handle"   binding:"required,min=2"`
+	Password string `json:"password" binding:"required,min=8"`
+	Role     string `json:"role"     binding:"required,oneof=buyer seller"`
 }
 
 type loginRequest struct {
@@ -37,17 +36,6 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	if h.hedera == nil {
-		fail(c, http.StatusServiceUnavailable, "wallet verification is unavailable")
-		return
-	}
-
-	pubKey, err := h.hedera.GetAccountPublicKey(req.HederaAccountID)
-	if err != nil {
-		fail(c, http.StatusBadRequest, "could not verify Hedera account: "+err.Error())
-		return
-	}
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to hash password")
@@ -56,10 +44,10 @@ func (h *Handler) Register(c *gin.Context) {
 
 	var user model.User
 	err = h.db.QueryRow(context.Background(), `
-		INSERT INTO users (email, handle, role, hedera_account_id, hedera_public_key, password_hash)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO users (email, handle, role, password_hash)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, email, handle, role, COALESCE(hedera_account_id,''), COALESCE(hedera_public_key,''), created_at, updated_at
-	`, req.Email, req.Handle, req.Role, req.HederaAccountID, pubKey, string(hash)).
+	`, req.Email, req.Handle, req.Role, string(hash)).
 		Scan(&user.ID, &user.Email, &user.Handle, &user.Role,
 			&user.HederaAccountID, &user.HederaPublicKey, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
