@@ -116,13 +116,12 @@ export function MarketProvider({ children }) {
     cacheUser(u);
   }
 
-  async function registerUser({ email, handle, password, role, hederaAccountId }) {
+  async function registerUser({ email, handle, password, role }) {
     const { token, user: u } = await auth.register({
       email,
       handle,
       password,
       role,
-      hedera_account_id: hederaAccountId,
     });
     setToken(token);
     setUser(u);

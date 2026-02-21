@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useMarket } from '../context/MarketContext';
 import { useWallet } from '../context/WalletContext';
 
@@ -14,11 +15,14 @@ function ProfileRow({ label, value, mono = false }) {
 export default function ProfilePage() {
   const { activeUser, linkWallet } = useMarket();
   const { accountId, isConnected, connecting, connect, disconnect } = useWallet();
+  const location = useLocation();
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState('');
 
   const network = import.meta.env.VITE_HEDERA_NETWORK || 'testnet';
   const hasLinkedWallet = Boolean(activeUser?.hederaAccountId);
+  const walletRequired = activeUser?.role !== 'operator' && !hasLinkedWallet;
+  const cameFromWalletGate = Boolean(location.state?.requireWallet);
 
   async function handleConnect() {
     setLinkError('');
@@ -97,6 +101,13 @@ export default function ProfilePage() {
         {/* Right: Wallet */}
         <article className="card compact">
           <p className="card-section-label">Hedera Wallet</p>
+          {walletRequired && (
+            <p style={{ fontSize: '0.8125rem', color: 'var(--danger, #e55)', marginBottom: '0.75rem' }}>
+              {cameFromWalletGate
+                ? 'Link your wallet to continue using Meridian.'
+                : 'Wallet link required for escrow and settlement actions.'}
+            </p>
+          )}
 
           {hasLinkedWallet && (
             <>

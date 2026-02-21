@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { useMarket } from './context/MarketContext';
 import Layout from './components/Layout';
 import EscrowRoomPage from './pages/EscrowRoomPage';
@@ -28,8 +28,15 @@ function LegacyListingRedirect() {
 // session is being restored from localStorage.
 function RequireAuth({ children }) {
   const { user, initializing } = useMarket();
+  const location = useLocation();
   if (initializing) return null;
   if (!user) return <Navigate to="/login" replace />;
+  const requiresWallet = user.role !== 'operator';
+  const walletLinked = Boolean(user.hederaAccountId);
+  const onProfile = location.pathname === '/app/profile';
+  if (requiresWallet && !walletLinked && !onProfile) {
+    return <Navigate to="/app/profile" replace state={{ requireWallet: true }} />;
+  }
   return children;
 }
 
