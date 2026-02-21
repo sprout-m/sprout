@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { listingsApi } from '../api/client';
 import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
@@ -59,9 +59,7 @@ export default function MyDealsPage() {
       if (cancelled) return;
       setListingNamesById((prev) => ({ ...prev, ...Object.fromEntries(pairs) }));
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [missingListingIds]);
 
   if (activeUser.role !== 'buyer') {
@@ -82,10 +80,13 @@ export default function MyDealsPage() {
               <p className="empty-state">No requests yet</p>
             ) : (
               sellerRequests.map((req) => (
-                <div className="line-item" key={req.id}>
+                <div
+                  key={req.id}
+                  className="line-item clickable-row"
+                  onClick={() => navigate(`/app/listing/${req.listingId}`)}
+                >
                   <span style={{ flex: 1, fontWeight: 500 }}>{listingName(req.listingId)}</span>
                   <StatusPill status={req.sellerDecision} />
-                  <Link to={`/app/listing/${req.listingId}`} className="ghost small-link">Open</Link>
                 </div>
               ))
             )}
@@ -96,13 +97,16 @@ export default function MyDealsPage() {
               <p className="empty-state">No offers yet</p>
             ) : (
               sellerOffers.map((offer) => (
-                <div className="line-item" key={offer.offerId}>
+                <div
+                  key={offer.offerId}
+                  className="line-item clickable-row"
+                  onClick={() => navigate(`/app/listing/${offer.listingId}`)}
+                >
                   <span style={{ flex: 1, fontWeight: 500 }}>{listingName(offer.listingId)}</span>
                   <span style={{ fontSize: '0.8125rem', fontWeight: 700, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>
                     {offer.amountUSDC.toLocaleString()} USDC
                   </span>
                   <StatusPill status={offer.status} />
-                  <Link to={`/app/listing/${offer.listingId}`} className="ghost small-link">Open</Link>
                 </div>
               ))
             )}
@@ -113,12 +117,15 @@ export default function MyDealsPage() {
               <p className="empty-state">No active escrows</p>
             ) : (
               matchedEscrows.map((esc) => (
-                <div className="line-item" key={esc.escrowId}>
+                <div
+                  key={esc.escrowId}
+                  className="line-item clickable-row"
+                  onClick={() => navigate('/app/escrow')}
+                >
                   <span style={{ flex: 1, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
                     {esc.amountUSDC.toLocaleString()} USDC
                   </span>
                   <StatusPill status={esc.status} />
-                  <Link to="/app/escrow" className="ghost small-link">Open</Link>
                 </div>
               ))
             )}
@@ -141,21 +148,26 @@ export default function MyDealsPage() {
             <p className="empty-state">No requests submitted yet</p>
           ) : (
             myRequests.map((req) => (
-              <div className="line-item" key={req.id}>
+              <div
+                key={req.id}
+                className="line-item clickable-row"
+                onClick={() => navigate(`/app/listing/${req.listingId}`)}
+              >
                 <span style={{ flex: 1, fontWeight: 500 }}>{listingName(req.listingId)}</span>
                 <StatusPill status={req.sellerDecision} />
-                <Link to={`/app/listing/${req.listingId}`} className="ghost small-link">Open</Link>
                 {req.sellerDecision === 'approved' && (
                   <button
                     className="ghost small-link"
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
                       navigate('/app/messages', {
                         state: {
                           listingId: req.listingId,
                           sellerId: listings.find((l) => l.id === req.listingId)?.sellerId,
                           buyerId: activeUser.id,
                         },
-                      })}
+                      });
+                    }}
                   >
                     Message Seller
                   </button>
@@ -170,13 +182,16 @@ export default function MyDealsPage() {
             <p className="empty-state">No offers submitted yet</p>
           ) : (
             myOffers.map((offer) => (
-              <div className="line-item" key={offer.offerId}>
+              <div
+                key={offer.offerId}
+                className="line-item clickable-row"
+                onClick={() => navigate(`/app/listing/${offer.listingId}`)}
+              >
                 <span style={{ flex: 1, fontWeight: 500 }}>{listingName(offer.listingId)}</span>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, fontFeatureSettings: "'tnum'", whiteSpace: 'nowrap' }}>
                   {offer.amountUSDC.toLocaleString()} USDC
                 </span>
                 <StatusPill status={offer.status} />
-                <Link to={`/app/listing/${offer.listingId}`} className="ghost small-link">Open</Link>
               </div>
             ))
           )}
@@ -187,12 +202,15 @@ export default function MyDealsPage() {
             <p className="empty-state">No active escrows</p>
           ) : (
             escrows.map((esc) => (
-              <div className="line-item" key={esc.escrowId}>
+              <div
+                key={esc.escrowId}
+                className="line-item clickable-row"
+                onClick={() => navigate('/app/escrow')}
+              >
                 <span style={{ flex: 1, fontWeight: 700, fontFeatureSettings: "'tnum'" }}>
                   {esc.amountUSDC.toLocaleString()} USDC
                 </span>
                 <StatusPill status={esc.status} />
-                <Link to="/app/escrow" className="ghost small-link">Open</Link>
               </div>
             ))
           )}
