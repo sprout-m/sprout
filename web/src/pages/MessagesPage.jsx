@@ -34,6 +34,13 @@ export default function MessagesPage() {
     setActiveThreadId(messageThreads[0].threadId);
   }, [activeThreadId, messageThreads]);
 
+  // Pre-load messages for all threads so sidebar previews are populated
+  useEffect(() => {
+    messageThreads.forEach((t) => {
+      if (!t.messages) loadThreadMessages(t.threadId);
+    });
+  }, [messageThreads.length]);
+
   // Load messages when the active thread changes
   useEffect(() => {
     if (!activeThreadId) return;
