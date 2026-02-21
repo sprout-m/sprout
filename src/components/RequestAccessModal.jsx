@@ -75,8 +75,29 @@ export default function RequestAccessModal({ onClose, onSubmit }) {
           <section className="step-section">
             <h4>Step 1 - NDA</h4>
             <div className="nda-preview">
-              <p>Mutual NDA summary: no disclosure, no outreach to employees/customers, no reverse engineering.</p>
-              <p>Term: 24 months. Jurisdiction: Delaware. Electronic signatures accepted.</p>
+              <p><strong>Mutual NDA Summary</strong></p>
+              <p>
+                By requesting access, both parties agree that all non-public business, financial, legal,
+                technical, and customer information shared in Meridian is Confidential Information.
+              </p>
+              <ul style={{ margin: 0, paddingLeft: '1.1rem', display: 'grid', gap: '0.25rem' }}>
+                <li>Use is limited to evaluating a potential acquisition of this listing.</li>
+                <li>No disclosure to third parties except advisors under equivalent confidentiality duties.</li>
+                <li>No contacting employees, contractors, customers, or vendors without written seller consent.</li>
+                <li>No reverse engineering, scraping, or republishing data-room materials.</li>
+                <li>No circumvention of Meridian to negotiate directly with protected counterparties.</li>
+                <li>Reasonable safeguards must be used to prevent unauthorized access or sharing.</li>
+                <li>On request or termination of discussions, confidential materials must be returned or destroyed.</li>
+                <li>Breach may result in access revocation, account restrictions, and injunctive/equitable relief.</li>
+              </ul>
+              <p>
+                Exclusions: public information, independently developed information, or information lawfully
+                received from third parties not under confidentiality restrictions.
+              </p>
+              <p>
+                Term: 24 months from signature. Governing law: Delaware. Electronic signatures and typed names
+                are binding and enforceable.
+              </p>
             </div>
             <label className="check-row">
               <input type="checkbox" checked={ndaChecked} onChange={(e) => setNdaChecked(e.target.checked)} />
