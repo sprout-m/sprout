@@ -226,7 +226,7 @@ export default function EscrowRoomPage() {
                           : 'Deposit USDC'}
                     </button>
                     {depositError && depositingId === null && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                      <p className="err-msg">
                         {depositError}
                       </p>
                     )}
@@ -259,7 +259,7 @@ export default function EscrowRoomPage() {
                       {associatingId === escrow.escrowId ? 'Associating…' : 'Associate USDC'}
                     </button>
                     {associateError && associatingId === null && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                      <p className="err-msg">
                         {associateError}
                       </p>
                     )}
@@ -294,7 +294,7 @@ export default function EscrowRoomPage() {
                           : 'Transfer Listing NFT'}
                     </button>
                     {transferError && transferringId === null && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                      <p className="err-msg">
                         {transferError}
                       </p>
                     )}
@@ -320,7 +320,7 @@ export default function EscrowRoomPage() {
                       {provisioningId === escrow.escrowId ? 'Setting up…' : 'Setup Escrow Account'}
                     </button>
                     {provisionError && provisioningId === null && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                      <p className="err-msg">
                         {provisionError}
                       </p>
                     )}
@@ -354,7 +354,7 @@ export default function EscrowRoomPage() {
                       {releasingId === escrow.escrowId ? 'Releasing…' : 'Release Funds to Seller'}
                     </button>
                     {releaseError && releasingId === null && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                      <p className="err-msg">
                         {releaseError}
                       </p>
                     )}
@@ -384,7 +384,7 @@ export default function EscrowRoomPage() {
                       {releasingId === escrow.escrowId ? 'Confirming…' : 'Confirm Release'}
                     </button>
                     {releaseError && releasingId === null && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                      <p className="err-msg">
                         {releaseError}
                       </p>
                     )}
@@ -416,7 +416,7 @@ export default function EscrowRoomPage() {
                       {releasingId === escrow.escrowId ? 'Releasing…' : 'Release to Seller'}
                     </button>
                     {releaseError && releasingId === null && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.25rem' }}>
+                      <p className="err-msg">
                         {releaseError}
                       </p>
                     )}

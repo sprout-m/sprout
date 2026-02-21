@@ -152,7 +152,7 @@ export default function RequestAccessModal({ onClose, onSubmit }) {
             )}
 
             {depositError && (
-              <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.5rem' }}>
+              <p className="err-msg">
                 {depositError}
               </p>
             )}
@@ -196,7 +196,7 @@ export default function RequestAccessModal({ onClose, onSubmit }) {
                   <li>PoF amount: {Number(proofAmountUSDC).toLocaleString()} USDC</li>
                 </ul>
                 {depositError && (
-                  <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.5rem' }}>
+                  <p className="err-msg">
                     {depositError}
                   </p>
                 )}

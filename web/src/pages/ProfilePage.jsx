@@ -165,7 +165,7 @@ export default function ProfilePage() {
           </div>
 
           {linkError && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--danger, #e55)', marginTop: '0.5rem' }}>{linkError}</p>
+            <p className="err-msg">{linkError}</p>
           )}
         </article>
       </div>
