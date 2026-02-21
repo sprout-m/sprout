@@ -24,7 +24,7 @@ Meridian Directory is a marketplace platform that handles the complete lifecycle
 
 | | |
 |---|---|
-| ![Listings board](docs/screenshots/listings.png) | ![Listing detail](docs/screenshots/listing-detail.png) |
+| ![Listings board](docs/screenshots/listings.png) | ![Listing detail](docs/screenshots/listing.png) |
 | **Listings board** | **Listing detail & data room** |
 
 | | |
@@ -34,7 +34,7 @@ Meridian Directory is a marketplace platform that handles the complete lifecycle
 
 | | |
 |---|---|
-| ![NFT certificate](docs/screenshots/nft.png) | ![HCS audit trail](docs/screenshots/hcs.png) |
+| ![NFT certificate](docs/screenshots/nft.svg) | ![HCS audit trail](docs/screenshots/hcs.png) |
 | **Acquisition certificate NFT** | **On-chain audit trail** |
 
 ---
