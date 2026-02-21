@@ -4,8 +4,8 @@ import { useMarket } from '../context/MarketContext';
 import StatusPill from '../components/StatusPill';
 
 const ACCESS_LEVEL_OPTIONS = [
-  { value: 'Level 1', label: 'Level 1 - Overview + Financials' },
-  { value: 'Level 2', label: 'Level 2 - Overview + Financials + Documents' },
+  { value: 'Level 1', label: 'Level 1 - Overview + Financials + Offers' },
+  { value: 'Level 2', label: 'Level 2 - Overview + Financials + Documents + Offers' },
   { value: 'Shortlist', label: 'Shortlist - Full access (includes Offers + Activity)' },
 ];
 

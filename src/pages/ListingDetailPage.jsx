@@ -10,16 +10,16 @@ const lockedTabs = ['Overview', 'Metrics', 'Process', 'Q&A'];
 const unlockedTabs = ['Overview', 'Financials', 'Documents', 'Offers', 'Activity'];
 
 const ACCESS_TABS = {
-  'Level 1':   ['Overview', 'Financials'],
-  'Level 2':   ['Overview', 'Financials', 'Documents'],
+  'Level 1':   ['Overview', 'Financials', 'Offers'],
+  'Level 2':   ['Overview', 'Financials', 'Documents', 'Offers'],
   'Shortlist': ['Overview', 'Financials', 'Documents', 'Offers', 'Activity'],
 };
 
 // What the access level label means to display in the sidebar
 const ACCESS_LEVEL_DESC = {
-  'Level 1':   'Financials only',
-  'Level 2':   'Financials + Documents',
-  'Shortlist': 'Full access — can submit offer',
+  'Level 1':   'Financials + Offers',
+  'Level 2':   'Financials + Documents + Offers',
+  'Shortlist': 'Full access — includes Activity',
 };
 
 const CATEGORY_COLORS = {
