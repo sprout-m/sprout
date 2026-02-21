@@ -60,7 +60,7 @@ export default function ListingDetailPage() {
   const [offerAmount, setOfferAmount] = useState(0);
   const [dealType, setDealType] = useState('asset sale');
   const [diligencePeriod, setDiligencePeriod] = useState(14);
-  const [closeWindow, setCloseWindow] = useState('30 days');
+  const [closeWindow, setCloseWindow] = useState(30);
   const [offerNotes, setOfferNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [offerError, setOfferError] = useState('');
@@ -516,7 +516,7 @@ export default function ListingDetailPage() {
                       await submitOffer({
                         listingId,
                         amountUSDC: offerAmount,
-                        terms: { dealType, diligencePeriod: `${diligencePeriod} days`, closeWindow },
+                        terms: { dealType, diligencePeriod: `${diligencePeriod} days`, closeWindow: `${closeWindow} days` },
                         notes: offerNotes,
                       });
                     } catch (err) {
@@ -542,11 +542,11 @@ export default function ListingDetailPage() {
                   <div className="card-grid two">
                     <div className="form-field">
                       <label className="form-label">Diligence Period (days)</label>
-                      <input type="number" value={diligencePeriod} onChange={(e) => setDiligencePeriod(e.target.value)} />
+                      <input type="number" min="1" value={diligencePeriod} onChange={(e) => setDiligencePeriod(e.target.value)} />
                     </div>
                     <div className="form-field">
-                      <label className="form-label">Close Window</label>
-                      <input value={closeWindow} onChange={(e) => setCloseWindow(e.target.value)} />
+                      <label className="form-label">Close Window (days)</label>
+                      <input type="number" min="1" value={closeWindow} onChange={(e) => setCloseWindow(e.target.value)} />
                     </div>
                   </div>
                   <div className="form-field">
