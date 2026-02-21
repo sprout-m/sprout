@@ -597,11 +597,9 @@ export default function ListingDetailPage() {
             <>
               <div className="ld-access-header" style={{ borderColor: accentColor }}>
                 <h4>Access Requirements</h4>
-                <p>
-                  {accessLevel
-                    ? ACCESS_LEVEL_DESC[accessLevel]
-                    : 'Complete all steps to request access from the seller.'}
-                </p>
+                {!accessLevel && (
+                  <p>Complete all steps to request access from the seller.</p>
+                )}
               </div>
 
               <div className="access-checklist">
@@ -640,29 +638,21 @@ export default function ListingDetailPage() {
                 {request ? 'Request Submitted' : connecting ? 'Connecting…' : !isConnected ? 'Connect Wallet →' : 'Request Access →'}
               </button>
 
-              {request && (
-                <div className="callout">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                    <span>Proof of Funds</span>
-                    <strong style={{ textTransform: 'capitalize' }}>{request.proofOfFundsStatus}</strong>
-                  </div>
-                  {accessLevel && (
-                    <button
-                      className="ghost"
-                      style={{ marginTop: '0.625rem', width: '100%' }}
-                      onClick={() =>
-                        navigate('/app/messages', {
-                          state: {
-                            listingId,
-                            sellerId: listing?.sellerId,
-                            buyerId: activeUser?.id,
-                          },
-                        })}
-                    >
-                      Message Seller
-                    </button>
-                  )}
-                </div>
+              {accessLevel && (
+                <button
+                  className="ghost"
+                  style={{ width: '100%' }}
+                  onClick={() =>
+                    navigate('/app/messages', {
+                      state: {
+                        listingId,
+                        sellerId: listing?.sellerId,
+                        buyerId: activeUser?.id,
+                      },
+                    })}
+                >
+                  Message Seller
+                </button>
               )}
             </>
           )}
