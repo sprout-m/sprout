@@ -309,17 +309,21 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="card" style={{ padding: '1rem' }}>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.75 }}>
-              Meridian emits an exact HCS event stream for settlement milestones. When escrow is provisioned after
-              offer acceptance, <code>ESCROW_CREATED</code> is emitted with payload <code>escrow_account</code>. When the
-              buyer confirms the USDC deposit, <code>ESCROW_FUNDED</code> is emitted with payload <code>transaction_id</code>.
-              When the buyer or operator initiates release, <code>RELEASE_SCHEDULED</code> is emitted with payload
-              <code> schedule_id</code>. When the seller transfers the listing NFT to the buyer, <code>NFT_TRANSFERRED</code> is
-              emitted with payload <code>to, serial</code>. If either party raises a dispute, <code>DISPUTE_OPENED</code> is
-              emitted with payload <code>raised_by</code>. Finally, when <code>completeRelease</code> confirms on-chain execution,
-              <code> DEAL_CLOSED</code> is emitted with payload <code>schedule_id</code>.
+          <div className="card" style={{ padding: '1rem', display: 'grid', gap: '0.625rem' }}>
+            <p style={{ margin: 0, fontSize: '0.6875rem', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+              HCS Events Emitted
             </p>
+            <div className="callout" style={{ display: 'grid', gap: '0.5rem' }}>
+              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6 }}>
+                <strong>Escrow:</strong> <code>ESCROW_CREATED</code> (<code>escrow_account</code>) and <code>ESCROW_FUNDED</code> (<code>transaction_id</code>).
+              </p>
+              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6 }}>
+                <strong>Release:</strong> <code>RELEASE_SCHEDULED</code> (<code>schedule_id</code>) and <code>NFT_TRANSFERRED</code> (<code>to, serial</code>).
+              </p>
+              <p style={{ margin: 0, fontSize: '0.8125rem', lineHeight: 1.6 }}>
+                <strong>Finalization:</strong> <code>DISPUTE_OPENED</code> (<code>raised_by</code>) and <code>DEAL_CLOSED</code> (<code>schedule_id</code>).
+              </p>
+            </div>
           </div>
         </div>
       </section>
