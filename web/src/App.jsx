@@ -1,43 +1,38 @@
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
-import { useMarket } from './context/MarketContext';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { useApp } from './context/AppContext';
 import Layout from './components/Layout';
-import EscrowRoomPage from './pages/EscrowRoomPage';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import ListingDetailPage from './pages/ListingDetailPage';
+import FunderDashboardPage from './pages/FunderDashboardPage';
+import CreateProjectPage from './pages/CreateProjectPage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
+import OrganizerDashboardPage from './pages/OrganizerDashboardPage';
+import ProofSubmissionPage from './pages/ProofSubmissionPage';
+import VerifierDashboardPage from './pages/VerifierDashboardPage';
+import ApprovalPanelPage from './pages/ApprovalPanelPage';
+import AuditTimelinePage from './pages/AuditTimelinePage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import MarketplacePage from './pages/MarketplacePage';
-import MessagesPage from './pages/MessagesPage';
-import MyDealsPage from './pages/MyDealsPage';
-import ProfilePage from './pages/ProfilePage';
-import CreateListingPage from './pages/CreateListingPage';
-import SellerListingsPage from './pages/SellerListingsPage';
-import SellerOffersBoardPage from './pages/SellerOffersBoardPage';
-import SellerRequestsPage from './pages/SellerRequestsPage';
-import OperatorDashboardPage from './pages/OperatorDashboardPage';
-import OperatorUsersPage from './pages/OperatorUsersPage';
-import OperatorListingsPage from './pages/OperatorListingsPage';
-import OperatorDisputesPage from './pages/OperatorDisputesPage';
 
-function LegacyListingRedirect() {
-  const { listingId } = useParams();
-  return <Navigate to={`/app/listing/${listingId}`} replace />;
-}
-
-// Redirects to /login when not authenticated; shows a blank screen while the
-// session is being restored from localStorage.
 function RequireAuth({ children }) {
-  const { user, initializing } = useMarket();
+  const { user, initializing } = useApp();
   const location = useLocation();
   if (initializing) return null;
-  if (!user) return <Navigate to="/login" replace />;
-  const requiresWallet = user.role !== 'operator';
-  const walletLinked = Boolean(user.hederaAccountId);
-  const onProfile = location.pathname === '/app/profile';
-  if (requiresWallet && !walletLinked && !onProfile) {
-    return <Navigate to="/app/profile" replace state={{ requireWallet: true }} />;
-  }
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
   return children;
+}
+
+function RoleHome() {
+  const { user } = useApp();
+  if (!user) return <Navigate to="/login" replace />;
+  switch (user.role) {
+    case 'funder':  return <Navigate to="/app/funder" replace />;
+    case 'organizer': return <Navigate to="/app/organizer" replace />;
+    case 'verifier':  return <Navigate to="/app/verifier" replace />;
+    case 'admin':     return <Navigate to="/app/admin" replace />;
+    default:          return <Navigate to="/app/funder" replace />;
+  }
 }
 
 export default function App() {
@@ -45,9 +40,9 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/listing/:listingId" element={<LegacyListingRedirect />} />
         <Route
           path="/app"
           element={
@@ -56,21 +51,28 @@ export default function App() {
             </RequireAuth>
           }
         >
-          <Route index element={<MarketplacePage />} />
-          <Route path="listing/:listingId" element={<ListingDetailPage />} />
-          <Route path="my-deals" element={<MyDealsPage />} />
-          <Route path="seller/listings" element={<SellerListingsPage />} />
-          <Route path="seller/listings/new" element={<CreateListingPage />} />
-          <Route path="seller/requests" element={<SellerRequestsPage />} />
-          <Route path="seller/offers" element={<SellerOffersBoardPage />} />
-          <Route path="escrow" element={<EscrowRoomPage />} />
-          <Route path="messages" element={<MessagesPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="operator" element={<OperatorDashboardPage />} />
-          <Route path="operator/users" element={<OperatorUsersPage />} />
-          <Route path="operator/listings" element={<OperatorListingsPage />} />
-          <Route path="operator/disputes" element={<OperatorDisputesPage />} />
-          <Route path="*" element={<Navigate to="/app" replace />} />
+          <Route index element={<RoleHome />} />
+
+          {/* Funder */}
+          <Route path="funder" element={<FunderDashboardPage />} />
+          <Route path="projects/new" element={<CreateProjectPage />} />
+
+          {/* Shared — all roles */}
+          <Route path="projects/:id" element={<ProjectDetailPage />} />
+          <Route path="projects/:id/audit" element={<AuditTimelinePage />} />
+
+          {/* Organizer */}
+          <Route path="organizer" element={<OrganizerDashboardPage />} />
+          <Route path="milestones/:id/proof" element={<ProofSubmissionPage />} />
+
+          {/* Verifier */}
+          <Route path="verifier" element={<VerifierDashboardPage />} />
+          <Route path="milestones/:id/review" element={<ApprovalPanelPage />} />
+
+          {/* Admin */}
+          <Route path="admin" element={<AdminDashboardPage />} />
+
+          <Route path="*" element={<RoleHome />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -1,7 +1,6 @@
 package hedera
 
 import (
-	"errors"
 	"os"
 )
 
@@ -22,17 +21,7 @@ func LoadConfig() (*Config, error) {
 		USDCTokenID:        os.Getenv("HEDERA_USDC_TOKEN_ID"),
 	}
 
-	if cfg.OperatorAccountID == "" {
-		return nil, errors.New("HEDERA_OPERATOR_ACCOUNT_ID is required")
-	}
-	if cfg.OperatorPrivateKey == "" {
-		return nil, errors.New("HEDERA_OPERATOR_PRIVATE_KEY is required")
-	}
-	// HEDERA_PLATFORM_PUBLIC_KEY is no longer required — derived from OperatorPrivateKey at runtime.
-	if cfg.USDCTokenID == "" {
-		return nil, errors.New("HEDERA_USDC_TOKEN_ID is required")
-	}
-
+	// Credentials are optional — if absent the service runs in stub mode (no on-chain ops).
 	return cfg, nil
 }
 

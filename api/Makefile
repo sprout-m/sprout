@@ -1,4 +1,4 @@
-.PHONY: up down db-reset setup run build
+.PHONY: up down db-reset deps run build
 
 # ── Infrastructure ────────────────────────────────────────────────────────────
 
@@ -11,18 +11,20 @@ up:
 down:
 	docker compose down
 
-## Drop and recreate the meridian database (wipes all data)
+## Drop and recreate the sprout database (wipes all data)
 db-reset:
-	docker compose exec postgres psql -U meridian -c "DROP DATABASE IF EXISTS meridian;"
-	docker compose exec postgres psql -U meridian -c "CREATE DATABASE meridian;"
+	docker compose exec postgres psql -U sprout -c "DROP DATABASE IF EXISTS sprout;"
+	docker compose exec postgres psql -U sprout -c "CREATE DATABASE sprout;"
 	@echo "Database reset. Run 'make run' to re-apply schema."
 
 # ── Application ───────────────────────────────────────────────────────────────
 
-## One-time setup: deploy test USDC + NFT collection, create + seed test accounts.
-## Copy the printed token IDs into your .env before running 'make run'.
-setup:
-	go run ./cmd/setup
+## Fetch all Go dependencies (including AWS SDK)
+deps:
+	go get github.com/aws/aws-sdk-go-v2
+	go get github.com/aws/aws-sdk-go-v2/config
+	go get github.com/aws/aws-sdk-go-v2/service/kms
+	go mod tidy
 
 ## Run the API server (loads .env automatically)
 run:

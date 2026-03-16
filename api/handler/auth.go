@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,7 +15,7 @@ type registerRequest struct {
 	Email    string `json:"email"    binding:"required,email"`
 	Handle   string `json:"handle"   binding:"required,min=2"`
 	Password string `json:"password" binding:"required,min=8"`
-	Role     string `json:"role"     binding:"required,oneof=buyer seller"`
+	Role     string `json:"role"     binding:"required,oneof=funder organizer verifier admin"`
 }
 
 type loginRequest struct {
@@ -46,10 +45,9 @@ func (h *Handler) Register(c *gin.Context) {
 	err = h.db.QueryRow(context.Background(), `
 		INSERT INTO users (email, handle, role, password_hash)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, email, handle, role, COALESCE(hedera_account_id,''), COALESCE(hedera_public_key,''), created_at, updated_at
+		RETURNING id, email, handle, role, created_at
 	`, req.Email, req.Handle, req.Role, string(hash)).
-		Scan(&user.ID, &user.Email, &user.Handle, &user.Role,
-			&user.HederaAccountID, &user.HederaPublicKey, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.CreatedAt)
 	if err != nil {
 		fail(c, http.StatusConflict, "email already registered")
 		return
@@ -72,20 +70,18 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 
 	var user model.User
+	var passwordHash string
 	err := h.db.QueryRow(context.Background(), `
-		SELECT id, email, handle, role, COALESCE(hedera_account_id,''), COALESCE(hedera_public_key,''),
-		       password_hash, created_at, updated_at
+		SELECT id, email, handle, role, password_hash, created_at
 		FROM users WHERE email = $1
 	`, req.Email).
-		Scan(&user.ID, &user.Email, &user.Handle, &user.Role,
-			&user.HederaAccountID, &user.HederaPublicKey,
-			&user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &passwordHash, &user.CreatedAt)
 	if err != nil {
 		fail(c, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
 		fail(c, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
@@ -99,17 +95,15 @@ func (h *Handler) Login(c *gin.Context) {
 	ok(c, authResponse{Token: token, User: user})
 }
 
-// Me returns the profile of the authenticated user.
 func (h *Handler) Me(c *gin.Context) {
 	claims := middleware.GetClaims(c)
 
 	var user model.User
 	err := h.db.QueryRow(context.Background(), `
-		SELECT id, email, handle, role, COALESCE(hedera_account_id,''), COALESCE(hedera_public_key,''), created_at, updated_at
+		SELECT id, email, handle, role, created_at
 		FROM users WHERE id = $1
 	`, claims.UserID).
-		Scan(&user.ID, &user.Email, &user.Handle, &user.Role,
-			&user.HederaAccountID, &user.HederaPublicKey, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.CreatedAt)
 	if err != nil {
 		fail(c, http.StatusNotFound, "user not found")
 		return
@@ -118,44 +112,6 @@ func (h *Handler) Me(c *gin.Context) {
 	ok(c, user)
 }
 
-// LinkWallet associates a Hedera account ID and public key with the user's profile.
-// The frontend calls this after the user connects their HashPack wallet.
-type linkWalletRequest struct {
-	HederaAccountID string `json:"hedera_account_id" binding:"required"`
-}
-
-func (h *Handler) LinkWallet(c *gin.Context) {
-	claims := middleware.GetClaims(c)
-
-	var req linkWalletRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	// Fetch the public key from the mirror node so we store the real Ed25519 key.
-	pubKey, err := h.hedera.GetAccountPublicKey(req.HederaAccountID)
-	if err != nil {
-		fail(c, http.StatusBadRequest, "could not verify Hedera account: "+err.Error())
-		return
-	}
-
-	var updatedAt time.Time
-	_, err = h.db.Exec(context.Background(), `
-		UPDATE users SET hedera_account_id = $1, hedera_public_key = $2, updated_at = NOW()
-		WHERE id = $3
-		RETURNING updated_at
-	`, req.HederaAccountID, pubKey, claims.UserID)
-	if err != nil {
-		fail(c, http.StatusInternalServerError, "failed to link wallet")
-		return
-	}
-	_ = updatedAt
-
-	ok(c, gin.H{"hedera_account_id": req.HederaAccountID, "hedera_public_key": pubKey})
-}
-
-// UpdateProfile allows a user to change their handle.
 type updateProfileRequest struct {
 	Handle string `json:"handle" binding:"required,min=2"`
 }
@@ -171,12 +127,11 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 
 	var user model.User
 	err := h.db.QueryRow(context.Background(), `
-		UPDATE users SET handle = $1, updated_at = NOW()
+		UPDATE users SET handle = $1
 		WHERE id = $2
-		RETURNING id, email, handle, role, COALESCE(hedera_account_id,''), COALESCE(hedera_public_key,''), created_at, updated_at
+		RETURNING id, email, handle, role, created_at
 	`, req.Handle, claims.UserID).
-		Scan(&user.ID, &user.Email, &user.Handle, &user.Role,
-			&user.HederaAccountID, &user.HederaPublicKey, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.CreatedAt)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "update failed")
 		return
@@ -185,7 +140,7 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	ok(c, user)
 }
 
-// helper to parse UUID from path param
+// parseUUID extracts a UUID path parameter.
 func parseUUID(c *gin.Context, param string) (uuid.UUID, bool) {
 	id, err := uuid.Parse(c.Param(param))
 	if err != nil {

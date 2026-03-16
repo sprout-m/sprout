@@ -1,5 +1,5 @@
 const BASE = import.meta.env.VITE_API_URL || '';
-const TOKEN_KEY = 'meridian_token';
+const TOKEN_KEY = 'sprout_token';
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -25,110 +25,74 @@ async function apiFetch(path, options = {}) {
   return body?.data ?? body;
 }
 
-// ── Normalizers ─────────────────────────────────────────────────────────────
+async function publicApiFetch(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
 
-export function normalizeListing(l) {
+  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  const body = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(body?.error || `HTTP ${res.status}`);
+  }
+  return body?.data ?? body;
+}
+
+// ── Normalizers ──────────────────────────────────────────────────────────────
+
+export function normalizeUser(u) {
+  return { ...u, createdAt: u.created_at };
+}
+
+export function normalizeProject(p) {
   return {
-    ...l,
-    sellerId: l.seller_id,
-    anonymizedName: l.anonymized_name,
-    industryTags: l.industry_tags || [],
-    askingRange: l.asking_range,
-    revenueRange: l.revenue_range,
-    profitRange: l.profit_range,
-    teaserDescription: l.teaser_description,
-    ndaRequired: l.nda_required,
-    escrowType: l.escrow_type,
-    fullFinancials: l.full_financials ?? null,
-    dataroomFolders: l.dataroom_folders ?? null,
-    createdAt: l.created_at,
-    updatedAt: l.updated_at,
+    ...p,
+    funderId: p.funder_id,
+    organizerId: p.organizer_id,
+    totalAmount: p.total_amount,
+    amountFunded: p.amount_funded || 0,
+    amountReleased: p.amount_released,
+    hcsTopicId: p.hcs_topic_id,
+    hederaEscrowAccount: p.hedera_escrow_account,
+    createdAt: p.created_at,
   };
 }
 
-export function normalizeAccessRequest(r) {
-  return {
-    ...r,
-    listingId: r.listing_id,
-    buyerId: r.buyer_id,
-    ndaSigned: r.nda_signed,
-    proofOfFundsStatus: r.proof_of_funds_status,
-    proofAmountUSDC: r.proof_amount_usdc,
-    proofMethod: r.proof_method,
-    proofTxId: r.proof_tx_id || null,
-    // backend uses 'denied'; pages expect 'rejected'
-    sellerDecision: r.seller_decision === 'denied' ? 'rejected' : r.seller_decision,
-    accessLevel: r.access_level || null,
-    requestedAt: r.requested_at,
-    decidedAt: r.decided_at ?? null,
-  };
-}
-
-export function normalizeOffer(o) {
-  return {
-    ...o,
-    offerId: o.id,
-    listingId: o.listing_id,
-    buyerId: o.buyer_id,
-    amountUSDC: o.amount_usdc,
-    terms: o.terms ?? null,
-    createdAt: o.created_at,
-    updatedAt: o.updated_at,
-  };
-}
-
-export function normalizeEscrow(e) {
-  return {
-    ...e,
-    escrowId: e.id,
-    offerId: e.offer_id,
-    hederaAccountId: e.hedera_account_id,
-    hcsTopicId: e.hcs_topic_id,
-    scheduleId: e.schedule_id,
-    buyerDepositTx: e.buyer_deposit_tx || null,
-    sellerTransferTx: e.seller_transfer_tx || null,
-    amountUSDC: e.amount_usdc,
-    createdAt: e.created_at,
-    updatedAt: e.updated_at,
-  };
-}
-
-export function normalizeThread(t) {
-  return {
-    ...t,
-    threadId: t.id,
-    listingId: t.listing_id,
-    buyerId: t.buyer_id,
-    sellerId: t.seller_id,
-    buyerHandle: t.buyer_handle ?? '',
-    sellerHandle: t.seller_handle ?? '',
-    createdAt: t.created_at,
-    updatedAt: t.updated_at,
-    messages: [],
-  };
-}
-
-export function normalizeMessage(m) {
+export function normalizeMilestone(m) {
   return {
     ...m,
-    threadId: m.thread_id,
-    senderId: m.sender_id,
-    senderHandle: m.sender_handle ?? '',
-    senderType: m.sender_type,
-    text: m.body,
+    projectId: m.project_id,
+    orderIndex: m.order_index,
     createdAt: m.created_at,
   };
 }
 
-export function normalizeUser(u) {
+export function normalizeProof(p) {
   return {
-    ...u,
-    hederaAccountId: u.hedera_account_id,
-    createdAt: u.created_at,
+    ...p,
+    milestoneId: p.milestone_id,
+    organizerId: p.organizer_id,
+    textUpdate: p.text_update,
+    imageUrls: p.image_urls || [],
+    docUrls: p.doc_urls || [],
+    fileHashes: p.file_hashes || [],
+    submittedAt: p.submitted_at,
   };
 }
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+export function normalizeApproval(a) {
+  return {
+    ...a,
+    milestoneId: a.milestone_id,
+    verifierId: a.verifier_id,
+    approvalPayload: a.approval_payload,
+    kmsKeyId: a.kms_key_id,
+    kmsSignature: a.kms_signature,
+    hederaTxId: a.hedera_tx_id,
+    decidedAt: a.decided_at,
+  };
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const auth = {
   register: (data) =>
@@ -143,72 +107,53 @@ export const auth = {
     })),
   me: () => apiFetch('/api/v1/users/me').then(normalizeUser),
   updateProfile: (data) =>
-    apiFetch('/api/v1/users/me', { method: 'PATCH', body: JSON.stringify(data) }).then(normalizeUser),
-  linkWallet: (data) =>
-    apiFetch('/api/v1/users/me/wallet', { method: 'POST', body: JSON.stringify(data) }),
+    apiFetch('/api/v1/users/me', { method: 'PUT', body: JSON.stringify(data) }).then(normalizeUser),
 };
 
-// ── Listings ─────────────────────────────────────────────────────────────────
+// ── Projects ──────────────────────────────────────────────────────────────────
 
-export const listingsApi = {
-  list: () => apiFetch('/api/v1/listings').then((l) => l.map(normalizeListing)),
-  mine: () => apiFetch('/api/v1/seller/listings').then((l) => l.map(normalizeListing)),
-  get: (id) => apiFetch(`/api/v1/listings/${id}`).then(normalizeListing),
+export const projectsApi = {
+  list: () => apiFetch('/api/v1/projects').then((l) => l.map(normalizeProject)),
+  listPublic: () => publicApiFetch('/api/v1/projects').then((l) => l.map(normalizeProject)),
+  myProjects: () => apiFetch('/api/v1/users/me/projects').then((l) => l.map(normalizeProject)),
+  get: (id) =>
+    apiFetch(`/api/v1/projects/${id}`).then((d) => ({
+      project: normalizeProject(d.project),
+      milestones: (d.milestones || []).map(normalizeMilestone),
+    })),
   create: (data) =>
-    apiFetch('/api/v1/listings', { method: 'POST', body: JSON.stringify(data) }).then(normalizeListing),
-  update: (id, data) =>
-    apiFetch(`/api/v1/listings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }).then(normalizeListing),
+    apiFetch('/api/v1/projects', { method: 'POST', body: JSON.stringify(data) }).then((d) => ({
+      project: normalizeProject(d.project),
+      milestones: (d.milestones || []).map(normalizeMilestone),
+    })),
+  milestones: (id) =>
+    apiFetch(`/api/v1/projects/${id}/milestones`).then((l) => l.map(normalizeMilestone)),
+  audit: (id) => apiFetch(`/api/v1/projects/${id}/audit`),
 };
 
-// ── Access requests ───────────────────────────────────────────────────────────
+// ── Investments ───────────────────────────────────────────────────────────────
 
-export const accessApi = {
-  request: (listingId, data) =>
-    apiFetch(`/api/v1/listings/${listingId}/access`, { method: 'POST', body: JSON.stringify(data) }).then(
-      normalizeAccessRequest
-    ),
-  forListing: (listingId) =>
-    apiFetch(`/api/v1/listings/${listingId}/access`).then((l) => l.map(normalizeAccessRequest)),
-  mine: () => apiFetch('/api/v1/access/mine').then((l) => l.map(normalizeAccessRequest)),
-  decide: (requestId, data) =>
-    apiFetch(`/api/v1/access/${requestId}`, { method: 'PATCH', body: JSON.stringify(data) }).then(
-      normalizeAccessRequest
-    ),
+export const investmentsApi = {
+  fund: (projectId, data) =>
+    apiFetch(`/api/v1/projects/${projectId}/invest`, { method: 'POST', body: JSON.stringify(data) }),
+  myInvestments: () => apiFetch('/api/v1/users/me/investments'),
 };
 
-// ── Offers ────────────────────────────────────────────────────────────────────
+// ── Milestones ────────────────────────────────────────────────────────────────
 
-export const offersApi = {
-  submit: (listingId, data) =>
-    apiFetch(`/api/v1/listings/${listingId}/offers`, { method: 'POST', body: JSON.stringify(data) }).then(
-      normalizeOffer
-    ),
-  forListing: (listingId) =>
-    apiFetch(`/api/v1/listings/${listingId}/offers`).then((l) => l.map(normalizeOffer)),
-  mine: () => apiFetch('/api/v1/offers/mine').then((l) => l.map(normalizeOffer)),
-  updateStatus: (offerId, data) =>
-    apiFetch(`/api/v1/offers/${offerId}/status`, { method: 'PATCH', body: JSON.stringify(data) }).then(normalizeOffer),
-};
-
-// ── Escrows ───────────────────────────────────────────────────────────────────
-
-export const escrowsApi = {
-  mine: () => apiFetch('/api/v1/escrows').then((l) => l.map(normalizeEscrow)),
-  get: (id) => apiFetch(`/api/v1/escrows/${id}`).then(normalizeEscrow),
-  provision: (id) =>
-    apiFetch(`/api/v1/escrows/${id}/provision`, { method: 'POST' }).then((r) =>
-      r.already_provisioned ? r : normalizeEscrow(r)
-    ),
-  confirmDeposit: (id, txId) =>
-    apiFetch(`/api/v1/escrows/${id}/deposit`, {
-      method: 'POST',
-      body: JSON.stringify({ transaction_id: txId }),
-    }).then(normalizeEscrow),
-  scheduleRelease: (id) => apiFetch(`/api/v1/escrows/${id}/release`, { method: 'POST' }),
-  completeRelease: (id) => apiFetch(`/api/v1/escrows/${id}/complete-release`, { method: 'POST' }).then(normalizeEscrow),
-  transferNFT: (id) => apiFetch(`/api/v1/escrows/${id}/transfer-nft`, { method: 'POST' }),
-  openDispute: (id) => apiFetch(`/api/v1/escrows/${id}/dispute`, { method: 'POST' }),
-  getEvents: (id) => apiFetch(`/api/v1/escrows/${id}/events`),
+export const milestonesApi = {
+  get: (id) =>
+    apiFetch(`/api/v1/milestones/${id}`).then((d) => ({
+      milestone: normalizeMilestone(d.milestone),
+      proof: d.proof ? normalizeProof(d.proof) : null,
+      approval: d.approval ? normalizeApproval(d.approval) : null,
+    })),
+  submitProof: (id, data) =>
+    apiFetch(`/api/v1/milestones/${id}/proof`, { method: 'POST', body: JSON.stringify(data) }).then(normalizeProof),
+  approve: (id, data) =>
+    apiFetch(`/api/v1/milestones/${id}/approve`, { method: 'POST', body: JSON.stringify(data) }),
+  reject: (id, data) =>
+    apiFetch(`/api/v1/milestones/${id}/reject`, { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -216,25 +161,5 @@ export const escrowsApi = {
 export const adminApi = {
   stats: () => apiFetch('/api/v1/admin/stats'),
   users: () => apiFetch('/api/v1/admin/users'),
-  allListings: () => apiFetch('/api/v1/admin/listings'),
-  verifyListing: (id, verified) =>
-    apiFetch(`/api/v1/admin/listings/${id}/verify`, { method: 'PATCH', body: JSON.stringify({ verified }) }),
-  disputes: () => apiFetch('/api/v1/admin/disputes'),
-  resolveDispute: (id, resolution) =>
-    apiFetch(`/api/v1/admin/disputes/${id}/resolve`, { method: 'POST', body: JSON.stringify({ resolution }) }),
-};
-
-// ── Threads ───────────────────────────────────────────────────────────────────
-
-export const threadsApi = {
-  list: () => apiFetch('/api/v1/threads').then((l) => l.map(normalizeThread)),
-  start: (data) =>
-    apiFetch('/api/v1/threads', { method: 'POST', body: JSON.stringify(data) }).then(normalizeThread),
-  getMessages: (threadId) =>
-    apiFetch(`/api/v1/threads/${threadId}`).then((msgs) => msgs.map(normalizeMessage)),
-  send: (threadId, body) =>
-    apiFetch(`/api/v1/threads/${threadId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ body }),
-    }).then(normalizeMessage),
+  allProjects: () => apiFetch('/api/v1/admin/projects').then((l) => l.map(normalizeProject)),
 };

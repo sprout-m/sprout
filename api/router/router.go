@@ -16,7 +16,7 @@ func New(cfg *config.Config, h *handler.Handler) *gin.Engine {
 	r.Use(corsMiddleware())
 
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok", "time": time.Now().UTC()})
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "app": "sprout", "time": time.Now().UTC()})
 	})
 
 	api := r.Group("/api/v1")
@@ -28,12 +28,10 @@ func New(cfg *config.Config, h *handler.Handler) *gin.Engine {
 		auth.POST("/login", h.Login)
 	}
 
-	// Public listing browse (teaser only, no token required).
-	api.GET("/listings", h.ListListings)
-
-	// NFT metadata & image — must be public so wallets and explorers can fetch them.
-	api.GET("/nft/metadata/:id", h.NFTMetadata)
-	api.GET("/nft/image/:id", h.NFTImage)
+	// Public project browsing (marketplace)
+	api.GET("/projects", h.ListProjects)
+	api.GET("/projects/:id", h.GetProject)
+	api.GET("/projects/:id/milestones", h.ListMilestones)
 
 	// --- Protected ---
 	protected := api.Group("")
@@ -41,55 +39,37 @@ func New(cfg *config.Config, h *handler.Handler) *gin.Engine {
 	{
 		// User profile
 		protected.GET("/users/me", h.Me)
-		protected.PATCH("/users/me", h.UpdateProfile)
-		protected.POST("/users/me/wallet", h.LinkWallet)
+		protected.PUT("/users/me", h.UpdateProfile)
 
-		// Seller's own listings (all statuses, no conflict with /:id)
-		protected.GET("/seller/listings", h.MyListings)
+		// My projects (organizer) + my investments (funder)
+		protected.GET("/users/me/projects", h.ListMyProjects)
+		protected.GET("/users/me/investments", h.ListMyInvestments)
 
-		// Listings — authenticated users get gated detail access
-		protected.GET("/listings/:id", h.GetListing)
-		protected.POST("/listings", h.CreateListing)
-		protected.PATCH("/listings/:id", h.UpdateListing)
+		// Project creation (organizer)
+		protected.POST("/projects", h.CreateProject)
 
-		// Access requests
-		protected.POST("/listings/:id/access", h.RequestAccess)
-		protected.GET("/listings/:id/access", h.ListAccessRequests) // seller
-		protected.GET("/access/mine", h.MyAccessRequests)           // buyer
-		protected.PATCH("/access/:id", h.DecideAccess)              // seller
+		// Investment (funder)
+		protected.POST("/projects/:id/invest", h.FundProject)
 
-		// Offers
-		protected.POST("/listings/:id/offers", h.SubmitOffer)
-		protected.GET("/listings/:id/offers", h.ListOffersForListing) // seller
-		protected.GET("/offers/mine", h.MyOffers)                     // buyer
-		protected.PATCH("/offers/:id/status", h.UpdateOfferStatus)    // seller
+		// Milestones
+		protected.GET("/milestones/:id", h.GetMilestone)
 
-		// Escrow & deal closing
-		protected.GET("/escrows", h.MyEscrows)
-		protected.GET("/escrows/:id", h.GetEscrow)
-		protected.POST("/escrows/:id/deposit", h.ConfirmDeposit)     // buyer
-		protected.POST("/escrows/:id/provision", h.ProvisionEscrow)  // any party — retries Hedera setup
-		protected.POST("/escrows/:id/release", h.ScheduleRelease)          // buyer or operator
-		protected.POST("/escrows/:id/complete-release", h.CompleteRelease) // buyer (on-chain verify) or operator (force)
-		protected.POST("/escrows/:id/transfer-nft", h.TransferNFT)   // seller
-		protected.POST("/escrows/:id/dispute", h.OpenDispute)        // buyer or seller
-		protected.GET("/escrows/:id/events", h.GetDealEvents)        // audit trail
+		// Proof (organizer)
+		protected.POST("/milestones/:id/proof", h.SubmitProof)
 
-		// Messages
-		protected.GET("/threads", h.ListThreads)
-		protected.POST("/threads", h.StartThread)
-		protected.GET("/threads/:id", h.GetThread)
-		protected.POST("/threads/:id/messages", h.SendMessage)
+		// Approvals (verifier)
+		protected.POST("/milestones/:id/approve", h.ApproveMilestone)
+		protected.POST("/milestones/:id/reject", h.RejectMilestone)
 
-		// Admin (operator-only, role enforced inside each handler)
+		// Audit
+		protected.GET("/projects/:id/audit", h.GetAuditTimeline)
+
+		// Admin
 		admin := protected.Group("/admin")
 		{
 			admin.GET("/stats", h.AdminStats)
 			admin.GET("/users", h.AdminListUsers)
-			admin.GET("/listings", h.AdminAllListings)
-			admin.PATCH("/listings/:id/verify", h.AdminVerifyListing)
-			admin.GET("/disputes", h.AdminListDisputes)
-			admin.POST("/disputes/:id/resolve", h.AdminResolveDispute)
+			admin.GET("/projects", h.AdminAllProjects)
 		}
 	}
 
@@ -99,7 +79,7 @@ func New(cfg *config.Config, h *handler.Handler) *gin.Engine {
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type")
 
 		if c.Request.Method == http.MethodOptions {

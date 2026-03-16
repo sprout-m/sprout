@@ -1,197 +1,169 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
-import { useMarket } from '../context/MarketContext';
-import StatusPill from '../components/StatusPill';
+import { projectsApi } from '../api/client';
+import { useApp } from '../context/AppContext';
 
-const ALL_CATEGORIES = ['SaaS', 'Ecommerce', 'Media', 'Agency', 'Marketplace'];
-
-const CATEGORY_COLORS = {
-  SaaS:        '#6366f1',
-  Ecommerce:   '#10b981',
-  Media:       '#a855f7',
-  Agency:      '#f97316',
-  Marketplace: '#06b6d4',
-  Other:       '#94a3b8',
+const statusColor = {
+  active:    { bg: 'rgba(34,197,94,0.15)',   text: '#4ade80' },
+  completed: { bg: 'rgba(99,102,241,0.15)',  text: '#818cf8' },
+  paused:    { bg: 'rgba(245,158,11,0.15)',  text: '#fbbf24' },
+  pending:   { bg: 'rgba(148,163,184,0.15)', text: '#94a3b8' },
 };
 
+function truncate(str, n) {
+  if (!str) return '';
+  return str.length > n ? str.slice(0, n) + '…' : str;
+}
+
 export default function MarketplacePage() {
-  const { listings, accessRequests, activeUser } = useMarket();
+  const { user } = useApp();
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const myRequest = (listingId) =>
-    accessRequests.find((r) => r.listingId === listingId && r.buyerId === activeUser.id) ?? null;
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [search, setSearch] = useState('');
-  const [categories, setCategories] = useState(new Set());
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  useEffect(() => {
+    projectsApi.listPublic()
+      .then(setProjects)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const toggleCategory = (cat) => {
-    setCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      return next;
-    });
-  };
-
-  const categoryCounts = useMemo(() => {
-    const counts = {};
-    for (const cat of ALL_CATEGORIES) {
-      counts[cat] = listings.filter((l) => l.category === cat).length;
-    }
-    return counts;
-  }, [listings]);
-
-  const filtered = useMemo(() => {
-    return listings.filter((listing) => {
-      const text = `${listing.anonymizedName} ${listing.category} ${listing.industryTags.join(' ')}`.toLowerCase();
-      const searchMatch = text.includes(search.toLowerCase());
-      const categoryMatch = categories.size === 0 || categories.has(listing.category);
-      const verifiedMatch = !verifiedOnly || listing.verified;
-      return searchMatch && categoryMatch && verifiedMatch;
-    });
-  }, [listings, search, categories, verifiedOnly]);
-
-  const hasActiveFilters = categories.size > 0 || verifiedOnly || search.length > 0;
+  const projectLink = (id) => user ? `/app/projects/${id}` : `/projects/${id}`;
 
   return (
-    <section>
-      <div className="page-header">
-        <h2>Directory</h2>
-        <p>Browse listings, apply filters, and request access from sellers.</p>
-      </div>
-
-      <div className={`market-layout${sidebarOpen ? '' : ' market-layout--filters-collapsed'}`}>
-        <div className={`filter-sidebar-wrap${sidebarOpen ? '' : ' filter-sidebar-wrap--closed'}`}>
-          <aside className="card filter-sidebar">
-            <p className="filter-sidebar-heading">Filters</p>
-
-            <input
-              placeholder="Search keyword or tag…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-
-            <div className="filter-group">
-              <p className="filter-group-label">Category</p>
-              <div className="filter-check-list">
-                {ALL_CATEGORIES.map((cat) => (
-                  <label key={cat} className="check-row">
-                    <input
-                      type="checkbox"
-                      checked={categories.has(cat)}
-                      onChange={() => toggleCategory(cat)}
-                    />
-                    <span style={{ flex: 1 }}>{cat}</span>
-                    <span className="filter-count">{categoryCounts[cat]}</span>
-                  </label>
-                ))}
+    <div style={{ minHeight: '100vh', background: 'var(--bg, #0f1923)', color: 'var(--text, #f1f5f9)' }}>
+      {/* Header */}
+      <div style={{ background: 'linear-gradient(135deg, #0f2d1a 0%, #0f1923 60%)', borderBottom: '1px solid rgba(34,197,94,0.15)', padding: '3rem 1.5rem 2.5rem' }}>
+        <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, color: '#f1f5f9' }}>
+                Sustainability Projects
+              </h1>
+              <p style={{ margin: '0.5rem 0 0', color: 'var(--muted, #94a3b8)', fontSize: '1rem', maxWidth: '480px' }}>
+                Fund real-world impact. Every milestone is verified on-chain before funds are released.
+              </p>
+            </div>
+            {!user && (
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <Link to="/login">
+                  <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#f1f5f9', padding: '0.5rem 1.25rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>
+                    Sign In
+                  </button>
+                </Link>
+                <Link to="/register">
+                  <button style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                    Get Started
+                  </button>
+                </Link>
               </div>
-            </div>
-
-            <div className="filter-group">
-              <p className="filter-group-label">Options</p>
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={verifiedOnly}
-                  onChange={(e) => setVerifiedOnly(e.target.checked)}
-                />
-                Operator-verified only
-              </label>
-            </div>
-          </aside>
-        </div>
-
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
-            <button className="ghost filter-toggle-btn" onClick={() => setSidebarOpen((o) => !o)}>
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <rect x="1" y="2.5" width="12" height="1.25" rx="0.625" fill="currentColor" />
-                <rect x="1" y="6.375" width="8" height="1.25" rx="0.625" fill="currentColor" />
-                <rect x="1" y="10.25" width="5" height="1.25" rx="0.625" fill="currentColor" />
-              </svg>
-              {sidebarOpen ? 'Hide filters' : 'Show filters'}
-              {hasActiveFilters && <span className="filter-toggle-dot" />}
-            </button>
-
-            <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-              {filtered.length} {filtered.length === 1 ? 'listing' : 'listings'}
-            </span>
-
-            {hasActiveFilters && (
-              <button
-                className="ghost"
-                style={{ fontSize: '0.6875rem', padding: '0.1875rem 0.5rem', marginLeft: 'auto' }}
-                onClick={() => { setSearch(''); setCategories(new Set()); setVerifiedOnly(false); }}
-              >
-                Clear filters
-              </button>
+            )}
+            {user && (
+              <Link to="/app">
+                <button style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                  Go to Dashboard
+                </button>
+              </Link>
             )}
           </div>
-
-          {filtered.length === 0 ? (
-            <div className="card" style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
-              No listings match your filters.
-            </div>
-          ) : (
-            <div className="listings-grid">
-              {filtered.map((listing) => {
-                const req = myRequest(listing.id);
-                const decision = req?.sellerDecision ?? null;
-                return (
-                  <article
-                    key={listing.id}
-                    className="listing-card"
-                    style={{ '--card-accent': CATEGORY_COLORS[listing.category] || CATEGORY_COLORS.Other }}
-                  >
-                    <div className="listing-card-head">
-                      <span className="cat-label">{listing.category}</span>
-                      <StatusPill status={listing.status} />
-                    </div>
-
-                    <div>
-                      <h3 className="listing-card-title">{listing.anonymizedName}</h3>
-                      <p className="listing-card-teaser">{listing.teaserDescription}</p>
-                    </div>
-
-                    <div className="listing-metrics">
-                      <div className="metric">
-                        <span>TTM Revenue</span>
-                        <strong>{listing.revenueRange}</strong>
-                      </div>
-                      <div className="metric">
-                        <span>TTM Profit</span>
-                        <strong>{listing.profitRange}</strong>
-                      </div>
-                      <div className="metric">
-                        <span>Asking Price</span>
-                        <strong>{listing.askingRange}</strong>
-                      </div>
-                    </div>
-
-                    <div className="listing-card-footer">
-                      <div className="listing-card-tags">
-                        {listing.verified && <span className="tag">Vetted</span>}
-                        {listing.ndaRequired && <span className="tag">NDA</span>}
-                        <span className="tag">{listing.escrowType}</span>
-                        {listing.location && <span className="tag">{listing.location}</span>}
-                      </div>
-                      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {decision === 'pending' && <StatusPill status="pending" />}
-                        {decision === 'approved' && <StatusPill status="approved" />}
-                        {decision === 'rejected' && <StatusPill status="rejected" />}
-                        <Link className="button-link" to={`/app/listing/${listing.id}`}>
-                          View
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
         </div>
       </div>
-    </section>
+
+      {/* Content */}
+      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+        {loading && (
+          <p style={{ color: 'var(--muted, #94a3b8)', textAlign: 'center', padding: '3rem 0' }}>Loading projects…</p>
+        )}
+
+        {error && (
+          <p style={{ color: '#f87171', textAlign: 'center', padding: '3rem 0' }}>{error}</p>
+        )}
+
+        {!loading && !error && projects.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--muted, #94a3b8)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌱</div>
+            <p style={{ fontSize: '1rem' }}>No projects listed yet. Check back soon.</p>
+          </div>
+        )}
+
+        {!loading && projects.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+            {projects.map((p) => {
+              const colors = statusColor[p.status] || statusColor.pending;
+              const funded = p.amountFunded || 0;
+              const goal = p.totalAmount || 0;
+              const pct = goal > 0 ? Math.min(100, (funded / goal) * 100) : 0;
+
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    background: 'var(--surface, #1a2332)',
+                    border: '1px solid var(--border, rgba(255,255,255,0.08))',
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                  }}
+                >
+                  {/* Name + badge */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, lineHeight: 1.3 }}>{p.name}</h3>
+                      {p.category && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted, #94a3b8)', display: 'block', marginTop: '0.2rem' }}>
+                          {p.category}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ background: colors.bg, color: colors.text, padding: '0.2rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'capitalize', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {p.status}
+                    </span>
+                  </div>
+
+                  {/* Description */}
+                  {p.description && (
+                    <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--muted, #94a3b8)', lineHeight: 1.5 }}>
+                      {truncate(p.description, 100)}
+                    </p>
+                  )}
+
+                  {/* Funding progress */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted, #94a3b8)', marginBottom: '0.3rem' }}>
+                      <span style={{ color: '#4ade80', fontWeight: 600 }}>${funded.toLocaleString()} funded</span>
+                      <span>of ${goal.toLocaleString()}</span>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '999px', height: '5px', overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #16a34a, #22c55e)', height: '100%', transition: 'width 0.3s' }} />
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--muted, #94a3b8)', marginTop: '0.25rem', textAlign: 'right' }}>
+                      {Math.round(pct)}% of goal
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
+                    <Link to={projectLink(p.id)} style={{ flex: 1, textDecoration: 'none' }}>
+                      <button style={{ width: '100%', background: 'transparent', border: '1px solid var(--border, rgba(255,255,255,0.15))', color: '#f1f5f9', padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 500 }}>
+                        View Project
+                      </button>
+                    </Link>
+                    {user?.role === 'funder' && p.status === 'active' && (
+                      <Link to={projectLink(p.id)} style={{ flex: 1, textDecoration: 'none' }}>
+                        <button style={{ width: '100%', background: '#16a34a', color: '#fff', border: 'none', padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600 }}>
+                          Fund this project
+                        </button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

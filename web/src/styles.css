@@ -11,12 +11,12 @@
   --line: #E5E7EB;
   --line-strong: #D1D5DB;
 
-  --primary: #0E2140;
-  --primary-hover: #091829;
-  --primary-light: #EEF3FB;
-  --primary-border: #C3D3EC;
+  --primary: #14532d;
+  --primary-hover: #0d3d20;
+  --primary-light: #f0fdf4;
+  --primary-border: #86efac;
 
-  --accent: #2563EB;
+  --accent: #16a34a;
 
   --ok: #065F46;
   --ok-bg: #ECFDF5;
@@ -79,7 +79,7 @@ button, input, select, textarea { font: inherit; }
    Topbar
 ───────────────────────────── */
 .topbar {
-  background: linear-gradient(to bottom, #112550, var(--primary));
+  background: #0d2414;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.12);
 }
@@ -128,7 +128,7 @@ button, input, select, textarea { font: inherit; }
   text-decoration: none;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.65);
   border-radius: var(--radius);
   white-space: nowrap;
   border: 1px solid transparent;
@@ -213,7 +213,7 @@ button, input, select, textarea { font: inherit; }
 }
 
 .topbar-actions select option {
-  background: #1a2f4e;
+  background: #14532d;
   color: #fff;
 }
 
@@ -273,16 +273,16 @@ button, input, select, textarea { font: inherit; }
 
 /* Sign-out and other ghost actions sitting in the dark topbar */
 .topbar-actions button.ghost {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.7);
   border-radius: var(--radius);
 }
 
 .topbar-actions button.ghost:hover {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
   box-shadow: none;
 }
 
@@ -2000,7 +2000,7 @@ tr:last-child td {
 }
 
 .ob-header {
-  background: linear-gradient(to bottom, #112550, var(--primary));
+  background: #0d2414;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.12);
   flex-shrink: 0;
@@ -2579,7 +2579,7 @@ tr:last-child td {
 
 /* ── Nav ── */
 .lp-nav {
-  background: linear-gradient(to bottom, #112550, var(--primary));
+  background: linear-gradient(to bottom, #0f3d1f, var(--primary));
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.12);
   position: sticky;
@@ -2847,7 +2847,7 @@ tr:last-child td {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 130px;
+  height: 60px;
   background: linear-gradient(to bottom, transparent, var(--bg));
   pointer-events: none;
 }

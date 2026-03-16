@@ -1,406 +1,135 @@
 import { Link } from 'react-router-dom';
 
-const previewCards = [
-  {
-    category: 'SaaS',
-    name: 'B2B SaaS – Compliance Ops',
-    teaser: 'Recurring compliance automation with sticky SMB base. Low churn, fully remote team of four.',
-    revenue: '$58k – $72k MRR',
-    margin: '28–34%',
-    age: '4.2 yrs',
-    location: 'United States',
-    ask: '$900k – $1.2M',
-  },
-  {
-    category: 'Ecommerce',
-    name: 'Outdoor Gear Brand',
-    teaser: 'Premium accessories with diversified channel mix and loyal repeat buyer base. Strong Amazon + DTC split.',
-    revenue: '$120k – $160k MRR',
-    margin: '19–26%',
-    age: '6.8 yrs',
-    location: 'Canada',
-    ask: '$650k – $820k',
-  },
-  {
-    category: 'Media',
-    name: 'Niche B2B Newsletter',
-    teaser: 'High-margin newsletter with 42k engaged subscribers, strong sponsor relationships, and consistent open rates.',
-    revenue: '$18k – $24k MRR',
-    margin: '61–72%',
-    age: '3.1 yrs',
-    location: 'United States',
-    ask: '$380k – $520k',
-  },
-];
-
-const hederaStats = [
-  { val: '3–5s', label: 'Finality' },
-  { val: '<$0.001', label: 'Per tx fee' },
-  { val: '10,000+', label: 'TPS' },
-  { val: 'aBFT', label: 'Consensus' },
-];
-
-const hederaServices = [
-  {
-    title: 'Token Service (HTS)',
-    desc: 'Native token transfers with 3–5 second finality and fees under $0.001. No gas auctions, no pricing surprises, and predictable settlement every time.',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M6 7h8M6 13h8M6 10h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Consensus Service (HCS)',
-    desc: 'We write six settlement checkpoints to HCS in order: escrow created and funded, release scheduled, NFT transferred, dispute opened, and deal closed.',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-        <path d="M4 5h12M4 9h9M4 13h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <circle cx="16" cy="14" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M15 14l.75.75 1.5-1.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: 'HashScan Explorer',
-    desc: 'Every transaction ID and HCS topic is publicly verifiable on HashScan. Share a link and any party can independently confirm the record.',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-        <path d="M8.5 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M11 4h5v5M16 4l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-];
-
 const features = [
   {
-    title: 'Operator-Vetted Listings',
-    desc: 'Every listing passes our review before going live. Financials verified, sellers screened, quality signals visible upfront.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M10 2l7 4v4c0 4.5-3 7.5-7 8.5C6 17.5 3 14.5 3 10V6l7-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
+    icon: '🌿',
+    title: 'Milestone-Based Funding',
+    description: 'Funds are locked upfront but only released when each milestone is independently verified.',
   },
   {
-    title: 'NDA-Gated Due Diligence',
-    desc: "Buyers request document access per listing. Sellers review buyer profiles and approve or decline before anything sensitive is shared.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="4" y="9" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M7 9V6.5a3 3 0 0 1 6 0V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <circle cx="10" cy="13.5" r="1" fill="currentColor" />
-      </svg>
-    ),
+    icon: '🔐',
+    title: 'AWS KMS Signing',
+    description: 'Every approval is cryptographically signed by AWS KMS. Private keys never leave the HSM.',
   },
   {
-    title: 'Structured Offer Process',
-    desc: 'LOIs, counteroffers, and deal terms managed end-to-end. A clean, timestamped audit trail for both parties through to signing.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M6 7h8M6 10h6M6 13h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
+    icon: '⛓️',
+    title: 'Hedera Audit Trail',
+    description: 'All events are logged with consensus timestamps on Hedera HCS — tamper-proof by design.',
   },
   {
-    title: 'Deterministic Settlement',
-    desc: 'Closing flows execute through HTS with deterministic finality in seconds. Fewer intermediaries and less settlement risk.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M10 3 L10 7 M10 7 C7 7 4.5 9 4.5 12C4.5 15 7 17 10 17C13 17 15.5 15 15.5 12C15.5 9 13 7 10 7Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M8 12l1.5 1.5L12 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
+    icon: '💸',
+    title: 'Automatic Fund Release',
+    description: 'HBAR transfers to the organizer happen on-chain immediately after a verified approval.',
   },
 ];
 
 const steps = [
-  {
-    title: 'Browse anonymized listings',
-    desc: "Explore verified businesses by category, revenue, and location — no identifying details until you're approved.",
-  },
-  {
-    title: 'Request document access',
-    desc: 'Sign a platform NDA and submit a request. Sellers review your profile before granting access.',
-  },
-  {
-    title: 'Conduct due diligence',
-    desc: 'Access curated folders — P&L statements, legal filings, ops guides, and growth reports — organized by the seller.',
-  },
-  {
-    title: 'Submit and negotiate an offer',
-    desc: 'Make a formal LOI, receive counteroffers, and agree on final terms. Every action is timestamped and auditable.',
-  },
-  {
-    title: 'Close with deterministic settlement',
-    desc: 'Token transfers execute through HTS with 3–5 second finality. Key milestones are committed to HCS and verifiable on HashScan.',
-  },
+  { num: '01', role: 'Funder', action: 'Creates a project with milestones and locks funding into escrow.' },
+  { num: '02', role: 'Organizer', action: 'Completes work, then submits proof — text, images, or documents.' },
+  { num: '03', role: 'Verifier', action: 'Reviews the proof and approves, triggering a KMS signature.' },
+  { num: '04', role: 'Blockchain', action: 'HBAR transfers on-chain. HCS records every event permanently.' },
 ];
-
-function PreviewCard({ card }) {
-  return (
-    <div className="lp-preview-card">
-      <div className="lp-preview-card-head">
-        <span className="cat-label">{card.category}</span>
-        <div style={{ display: 'flex', gap: '0.25rem' }}>
-          <span className="tag">Vetted</span>
-          <span className="tag">NDA</span>
-        </div>
-      </div>
-      <div>
-        <div className="lp-preview-card-title">{card.name}</div>
-        <p className="lp-preview-card-teaser">{card.teaser}</p>
-      </div>
-      <div className="listing-metrics">
-        <div className="metric"><span>Revenue</span><strong>{card.revenue}</strong></div>
-        <div className="metric"><span>Margin</span><strong>{card.margin}</strong></div>
-        <div className="metric"><span>Age</span><strong>{card.age}</strong></div>
-        <div className="metric"><span>Location</span><strong>{card.location}</strong></div>
-      </div>
-      <div className="lp-preview-card-footer">
-        <div>
-          <p className="lp-preview-ask-label">Asking</p>
-          <strong className="lp-preview-ask-val">{card.ask}</strong>
-        </div>
-        <span className="status-pill">Live</span>
-      </div>
-    </div>
-  );
-}
 
 export default function LandingPage() {
   return (
-    <div className="lp">
-      {/* ── Nav ── */}
-      <header className="lp-nav">
-        <div className="lp-container lp-nav-inner">
-          <img
-            src="/LOGO.png"
-            alt="Meridian"
-            style={{ height: '38px', filter: 'brightness(0) invert(1)' }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span className="lp-nav-hedera-badge">
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
-                <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M6 7h8M6 13h8M6 10h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-              Verifiable settlement
-            </span>
-            <Link to="/login" className="lp-btn-primary lp-btn-sm">
-              Sign In
+    <div style={{ minHeight: '100vh', background: '#080f09', color: '#e2f0e4', fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
+
+      {/* Nav */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: '#0d2414', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 1.5rem', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/sidelogo.png" alt="Sprout" style={{ height: '56px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Link to="/login" style={{ color: 'rgba(226,240,228,0.65)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, padding: '0.4rem 0.75rem' }}>
+              Sign in
             </Link>
-            <Link to="/login" className="lp-btn-primary lp-btn-sm">
-              Enter Marketplace →
+            <Link to="/register" style={{ background: '#16a34a', color: '#fff', textDecoration: 'none', padding: '0.45rem 1.125rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, display: 'inline-block' }}>
+              Get started
             </Link>
           </div>
         </div>
       </header>
 
-      {/* ── Hero ── */}
-      <section className="lp-hero">
-        <div className="lp-hero-glow" />
-        <div className="lp-container lp-hero-grid">
+      {/* Hero */}
+      <section style={{ maxWidth: '760px', margin: '0 auto', padding: '6rem 1.5rem 5rem', textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.3)', color: '#4ade80', padding: '0.3rem 1rem', borderRadius: '999px', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '2rem', letterSpacing: '0.01em' }}>
+          <span>🌱</span>
+          <span>Hedera Apex Hackathon 2026 · Sustainability Track</span>
+        </div>
 
-          {/* Left: copy */}
-          <div className="lp-hero-copy">
-            <p className="lp-eyebrow">Acquisition Marketplace</p>
-            <h1 className="lp-h1">
-              Marketplace for online acquisitions
-            </h1>
-            <p className="lp-hero-sub">
-              Meridian connects vetted buyers with verified sellers through structured due diligence,
-              NDA-gated documents, and deterministic settlement rails — delivering 3–5 second finality at
-              a fraction of a cent per transaction.
-            </p>
-            <div className="lp-hero-actions">
-              <Link to="/login" className="lp-btn-primary">Browse Listings →</Link>
-              <a href="#how-it-works" className="lp-btn-outline">How it works</a>
-            </div>
-            <div className="lp-hero-stats">
-              <div className="lp-hero-stat">
-                <strong>$42M+</strong>
-                <span>Transaction volume</span>
-              </div>
-              <div className="lp-hero-stat-div" />
-              <div className="lp-hero-stat">
-                <strong>127</strong>
-                <span>Active listings</span>
-              </div>
-              <div className="lp-hero-stat-div" />
-              <div className="lp-hero-stat">
-                <strong>14 days</strong>
-                <span>Avg. time to close</span>
-              </div>
-            </div>
-          </div>
+        <h1 style={{ fontSize: 'clamp(2.25rem, 5.5vw, 3.5rem)', fontWeight: 800, lineHeight: 1.12, letterSpacing: '-0.03em', marginBottom: '1.5rem', color: '#f0fdf4' }}>
+          Release sustainability funding<br />
+          <span style={{ color: '#4ade80' }}>only when progress is verified</span>
+        </h1>
 
-          {/* Right: product preview */}
-          <div className="lp-hero-preview-wrap">
-            <div className="lp-preview-frame">
-              <div className="lp-preview-frame-bar">
-                <div className="lp-preview-dots">
-                  <span /><span /><span />
-                </div>
-                <span className="lp-preview-url">meridian.market/marketplace</span>
-              </div>
-              <div className="lp-preview-frame-body">
-                {previewCards.map((card) => (
-                  <PreviewCard key={card.name} card={card} />
-                ))}
-              </div>
-            </div>
-          </div>
+        <p style={{ fontSize: '1.125rem', color: 'rgba(226,240,228,0.6)', maxWidth: '560px', margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
+          Sprout is a milestone-based escrow platform for sustainability projects. Funders lock capital, organizers prove impact, verifiers sign approvals — all backed by AWS KMS and Hedera.
+        </p>
 
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link to="/register" style={{ background: '#16a34a', color: '#fff', textDecoration: 'none', padding: '0.8rem 2rem', borderRadius: '10px', fontSize: '1rem', fontWeight: 700, display: 'inline-block' }}>
+            Start a project →
+          </Link>
+          <Link to="/login" style={{ background: 'transparent', color: 'rgba(226,240,228,0.85)', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.14)', padding: '0.8rem 2rem', borderRadius: '10px', fontSize: '1rem', fontWeight: 500, display: 'inline-block' }}>
+            Sign in
+          </Link>
         </div>
       </section>
 
-      {/* ── Hedera Tech Strip ── */}
-      <div className="lp-hedera-strip">
-        <div className="lp-container lp-hedera-strip-inner">
-          <div className="lp-hedera-wordmark">
-            <span className="lp-hedera-powered-label">Settlement network</span>
-            <span className="lp-hedera-wordmark-text">Hedera</span>
-          </div>
-          <div className="lp-hedera-strip-stats">
-            {hederaStats.map(({ val, label }) => (
-              <div key={label} className="lp-hedera-strip-stat">
-                <strong>{val}</strong>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-          <a
-            href="https://hedera.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lp-hedera-learn-link"
-          >
-            Network details →
-          </a>
-        </div>
+      {/* Divider */}
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
       </div>
 
-      {/* ── Hedera Services Section ── */}
-      <section className="lp-section">
-        <div className="lp-container">
-          <div className="lp-section-header">
-            <div>
-              <p className="lp-section-label">Settlement Foundation</p>
-              <h2 className="lp-section-h2">Why this settlement stack works</h2>
-            </div>
-            <p className="lp-section-desc">
-              Built on Hedera SDKs and native services for fast finality and ordered records.
-              Every step is fast, ordered, and independently verifiable.
-            </p>
-          </div>
-
-          <div className="card-grid three">
-            {hederaServices.map((s) => (
-              <article key={s.title} className="card lp-hedera-card">
-                <div className="lp-hedera-card-icon">{s.icon}</div>
-                <h3>{s.title}</h3>
-                <p style={{ color: 'var(--muted)' }}>{s.desc}</p>
-              </article>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── Platform Features Section ── */}
-      <section className="lp-section lp-section--white">
-        <div className="lp-container">
-          <div className="lp-section-header">
-            <div>
-              <p className="lp-section-label">Why Meridian</p>
-              <h2 className="lp-section-h2">Built for serious M&amp;A</h2>
-            </div>
-            <p className="lp-section-desc">
-              Not a broker, not a listings aggregator. Meridian is infrastructure for structured acquisitions.
-            </p>
-          </div>
-          <div className="lp-feature-grid">
-            {features.map((f) => (
-              <div key={f.title} className="lp-feature-card">
-                <div className="lp-feature-icon">{f.icon}</div>
-                <h3>{f.title}</h3>
-                <p>{f.desc}</p>
+      {/* How it works */}
+      <section style={{ maxWidth: '780px', margin: '0 auto', padding: '5rem 1.5rem' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4ade80', marginBottom: '1rem' }}>How it works</p>
+        <h2 style={{ textAlign: 'center', fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#f0fdf4', marginBottom: '3rem' }}>
+          Four steps from promise to proof
+        </h2>
+        <div style={{ display: 'grid', gap: '0.875rem' }}>
+          {steps.map((s) => (
+            <div key={s.num} style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '1.25rem 1.5rem' }}>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.8125rem', fontWeight: 700, color: '#4ade80', opacity: 0.6, flexShrink: 0, paddingTop: '0.125rem', width: '2rem' }}>
+                {s.num}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ── */}
-      <section className="lp-section" id="how-it-works">
-        <div className="lp-container lp-hiw-grid">
-          <div className="lp-hiw-left">
-            <p className="lp-section-label">Process</p>
-            <h2 className="lp-section-h2">From browse<br />to close</h2>
-            <p className="lp-hiw-sub">
-              A structured, end-to-end process designed to protect both buyers and sellers at every step —
-              with deterministic settlement and an independently verifiable audit trail.
-            </p>
-            <Link to="/login" className="lp-btn-dark">Browse Listings →</Link>
-          </div>
-          <div className="lp-steps">
-            {steps.map((step, i) => (
-              <div key={step.title} className="lp-step">
-                <div className="lp-step-indicator">
-                  <div className="lp-step-dot">{i + 1}</div>
-                  {i < steps.length - 1 && <div className="lp-step-line" />}
-                </div>
-                <div className="lp-step-body">
-                  <h3>{step.title}</h3>
-                  <p>{step.desc}</p>
-                </div>
+              <div>
+                <span style={{ fontWeight: 700, color: '#86efac', marginRight: '0.625rem', fontSize: '0.9375rem' }}>{s.role}</span>
+                <span style={{ color: 'rgba(226,240,228,0.65)', fontSize: '0.9375rem', lineHeight: 1.6 }}>{s.action}</span>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ── Final CTA ── */}
-      <section className="lp-final-cta">
-        <div className="lp-final-cta-glow" />
-        <div className="lp-container lp-final-cta-inner">
-          <p className="lp-eyebrow" style={{ marginBottom: '1rem' }}>Get started</p>
-          <h2>Ready to find your next acquisition?</h2>
-          <p>Browse current listings — anonymized, operator-verified, and built for secure closings.</p>
-          <div className="lp-final-cta-actions">
-            <Link to="/login" className="lp-btn-primary lp-btn-lg">Browse Listings →</Link>
-            <a href="#how-it-works" className="lp-btn-outline">Learn how it works</a>
-          </div>
+      {/* Divider */}
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+      </div>
+
+      {/* Features */}
+      <section style={{ maxWidth: '960px', margin: '0 auto', padding: '5rem 1.5rem 7rem' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#4ade80', marginBottom: '1rem' }}>Why Sprout</p>
+        <h2 style={{ textAlign: 'center', fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#f0fdf4', marginBottom: '3rem' }}>
+          Built for accountability
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1.25rem' }}>
+          {features.map((f) => (
+            <div key={f.title} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(134,239,172,0.1)', borderRadius: '14px', padding: '1.75rem 1.5rem' }}>
+              <div style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>{f.icon}</div>
+              <h3 style={{ margin: '0 0 0.625rem', fontWeight: 700, fontSize: '1rem', color: '#f0fdf4', letterSpacing: '-0.01em' }}>{f.title}</h3>
+              <p style={{ margin: 0, color: 'rgba(226,240,228,0.55)', fontSize: '0.875rem', lineHeight: 1.65 }}>{f.description}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="lp-footer">
-        <div className="lp-container lp-footer-inner">
-          <img
-            src="/LOGO.png"
-            alt="Meridian"
-            style={{ height: '28px', filter: 'brightness(0) invert(1)', opacity: 0.4 }}
-          />
-          <p>© 2026 Meridian Directory. Structured M&amp;A for online businesses.</p>
-          <a
-            href="https://hedera.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lp-footer-hedera"
-          >
-            <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M6 7h8M6 13h8M6 10h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            Powered by Hedera
-          </a>
-        </div>
+      {/* Footer */}
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '2rem 1.5rem', textAlign: 'center' }}>
+        <p style={{ margin: 0, color: 'rgba(226,240,228,0.3)', fontSize: '0.8125rem' }}>
+          © 2026 Sprout · Built on Hedera · Secured by AWS KMS
+        </p>
       </footer>
     </div>
   );

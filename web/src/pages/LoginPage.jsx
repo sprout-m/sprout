@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMarket } from '../context/MarketContext';
+import { useApp } from '../context/AppContext';
 
 export default function LoginPage() {
-  const { loginUser } = useMarket();
+  const { loginUser } = useApp();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -29,19 +29,18 @@ export default function LoginPage() {
     <div className="ob-shell">
       <header className="ob-header">
         <div className="ob-header-inner">
-          <Link to="/">
-            <img
-              src="/LOGO.png"
-              alt="Meridian"
-              style={{ height: '36px', filter: 'brightness(0) invert(1)' }}
-            />
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="/sidelogo.png" alt="Sprout" style={{ height: '56px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
           </Link>
         </div>
       </header>
 
       <main className="ob-main">
         <div className="ob-screen" style={{ maxWidth: '400px' }}>
-          <h1 className="ob-heading">Sign in to Meridian</h1>
+          <h1 className="ob-heading">Sign in to Sprout</h1>
+          <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+            Fund impact. Release on proof.
+          </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
             <div className="ob-field">
@@ -86,9 +85,7 @@ export default function LoginPage() {
 
           <p style={{ marginTop: '1.5rem', fontSize: '0.8125rem', color: 'var(--muted)' }}>
             Don't have an account?{' '}
-            <Link to="/register" style={{ color: 'var(--accent, #6366f1)' }}>
-              Create one
-            </Link>
+            <Link to="/register" style={{ color: 'var(--accent, #22c55e)' }}>Create one</Link>
           </p>
         </div>
       </main>

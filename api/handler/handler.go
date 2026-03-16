@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/meridian-mkt/api/config"
+	"github.com/meridian-mkt/api/kms"
 	"github.com/meridian-mkt/api/service"
 )
 
@@ -14,10 +15,11 @@ type Handler struct {
 	db     *pgxpool.Pool
 	cfg    *config.Config
 	hedera *service.HederaService
+	kms    *kms.Service
 }
 
-func New(db *pgxpool.Pool, cfg *config.Config, hedera *service.HederaService) *Handler {
-	return &Handler{db: db, cfg: cfg, hedera: hedera}
+func New(db *pgxpool.Pool, cfg *config.Config, hedera *service.HederaService, kmsSvc *kms.Service) *Handler {
+	return &Handler{db: db, cfg: cfg, hedera: hedera, kms: kmsSvc}
 }
 
 func fail(c *gin.Context, status int, msg string) {

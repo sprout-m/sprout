@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMarket } from '../context/MarketContext';
+import { useApp } from '../context/AppContext';
 
 export default function RegisterPage() {
-  const { registerUser } = useMarket();
+  const { registerUser } = useApp();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [handle, setHandle] = useState('');
-  const [role, setRole] = useState('buyer');
+  const [role, setRole] = useState('funder');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -38,12 +38,8 @@ export default function RegisterPage() {
     <div className="ob-shell">
       <header className="ob-header">
         <div className="ob-header-inner">
-          <Link to="/">
-            <img
-              src="/LOGO.png"
-              alt="Meridian"
-              style={{ height: '36px', filter: 'brightness(0) invert(1)' }}
-            />
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="/sidelogo.png" alt="Sprout" style={{ height: '56px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
           </Link>
         </div>
       </header>
@@ -51,6 +47,9 @@ export default function RegisterPage() {
       <main className="ob-main">
         <div className="ob-screen" style={{ maxWidth: '420px' }}>
           <h1 className="ob-heading">Create your account</h1>
+          <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+            Fund impact. Release on proof.
+          </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
             <div className="ob-field">
@@ -58,7 +57,6 @@ export default function RegisterPage() {
               <input
                 className="ob-field-input"
                 type="email"
-                autoComplete="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -72,7 +70,6 @@ export default function RegisterPage() {
               <input
                 className="ob-field-input"
                 type="text"
-                autoComplete="username"
                 placeholder="yourname"
                 value={handle}
                 onChange={(e) => setHandle(e.target.value)}
@@ -83,8 +80,9 @@ export default function RegisterPage() {
             <div className="ob-field">
               <label className="ob-field-label">Role</label>
               <select className="ob-field-input" value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="buyer">Buyer</option>
-                <option value="seller">Seller</option>
+                <option value="funder">Funder — browse projects and invest capital</option>
+                <option value="organizer">Organizer — create projects and submit proof</option>
+                <option value="verifier">Verifier — review proof and approve fund releases</option>
               </select>
             </div>
 
@@ -93,7 +91,6 @@ export default function RegisterPage() {
               <input
                 className="ob-field-input"
                 type="password"
-                autoComplete="new-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -106,7 +103,6 @@ export default function RegisterPage() {
               <input
                 className="ob-field-input"
                 type="password"
-                autoComplete="new-password"
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -129,9 +125,7 @@ export default function RegisterPage() {
 
           <p style={{ marginTop: '1.5rem', fontSize: '0.8125rem', color: 'var(--muted)' }}>
             Already have an account?{' '}
-            <Link to="/login" style={{ color: 'var(--accent, #6366f1)' }}>
-              Sign in
-            </Link>
+            <Link to="/login" style={{ color: 'var(--accent, #22c55e)' }}>Sign in</Link>
           </p>
         </div>
       </main>

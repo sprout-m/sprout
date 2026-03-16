@@ -10,35 +10,31 @@ import (
 	"github.com/meridian-mkt/api/middleware"
 )
 
-func operatorOnly(c *gin.Context) bool {
+func adminOnly(c *gin.Context) bool {
 	claims := middleware.GetClaims(c)
-	if claims == nil || claims.Role != "operator" {
-		fail(c, http.StatusForbidden, "operator only")
+	if claims == nil || claims.Role != "admin" {
+		fail(c, http.StatusForbidden, "admin only")
 		return false
 	}
 	return true
 }
 
-// ── Stats ────────────────────────────────────────────────────────────────────
+// ── Stats ─────────────────────────────────────────────────────────────────────
 
 type platformStats struct {
 	TotalUsers      int `json:"total_users"`
-	TotalBuyers     int `json:"total_buyers"`
-	TotalSellers    int `json:"total_sellers"`
-	TotalOperators  int `json:"total_operators"`
-	ListingsLive    int `json:"listings_live"`
-	ListingsDraft   int `json:"listings_draft"`
-	OffersTotal     int `json:"offers_total"`
-	OffersPending   int `json:"offers_pending"`
-	OffersAccepted  int `json:"offers_accepted"`
-	EscrowsTotal    int `json:"escrows_total"`
-	EscrowsFunded   int `json:"escrows_funded"`
-	EscrowsDisputed int `json:"escrows_disputed"`
-	EscrowsReleased int `json:"escrows_released"`
+	TotalFunders    int `json:"total_funders"`
+	TotalOrganizers int `json:"total_organizers"`
+	TotalVerifiers  int `json:"total_verifiers"`
+	ProjectsActive  int `json:"projects_active"`
+	ProjectsDone    int `json:"projects_completed"`
+	MilestonesTotal int `json:"milestones_total"`
+	MilestonesApproved int `json:"milestones_approved"`
+	MilestonesPending  int `json:"milestones_pending"`
 }
 
 func (h *Handler) AdminStats(c *gin.Context) {
-	if !operatorOnly(c) {
+	if !adminOnly(c) {
 		return
 	}
 
@@ -47,57 +43,47 @@ func (h *Handler) AdminStats(c *gin.Context) {
 	h.db.QueryRow(context.Background(), `
 		SELECT
 			COUNT(*),
-			COUNT(*) FILTER (WHERE role = 'buyer'),
-			COUNT(*) FILTER (WHERE role = 'seller'),
-			COUNT(*) FILTER (WHERE role = 'operator')
+			COUNT(*) FILTER (WHERE role = 'funder'),
+			COUNT(*) FILTER (WHERE role = 'organizer'),
+			COUNT(*) FILTER (WHERE role = 'verifier')
 		FROM users
-	`).Scan(&s.TotalUsers, &s.TotalBuyers, &s.TotalSellers, &s.TotalOperators)
+	`).Scan(&s.TotalUsers, &s.TotalFunders, &s.TotalOrganizers, &s.TotalVerifiers)
 
 	h.db.QueryRow(context.Background(), `
 		SELECT
-			COUNT(*) FILTER (WHERE status = 'live'),
-			COUNT(*) FILTER (WHERE status = 'draft')
-		FROM listings
-	`).Scan(&s.ListingsLive, &s.ListingsDraft)
-
-	h.db.QueryRow(context.Background(), `
-		SELECT
-			COUNT(*),
-			COUNT(*) FILTER (WHERE status = 'pending'),
-			COUNT(*) FILTER (WHERE status = 'accepted')
-		FROM offers
-	`).Scan(&s.OffersTotal, &s.OffersPending, &s.OffersAccepted)
+			COUNT(*) FILTER (WHERE status = 'active'),
+			COUNT(*) FILTER (WHERE status = 'completed')
+		FROM projects
+	`).Scan(&s.ProjectsActive, &s.ProjectsDone)
 
 	h.db.QueryRow(context.Background(), `
 		SELECT
 			COUNT(*),
-			COUNT(*) FILTER (WHERE status = 'funded'),
-			COUNT(*) FILTER (WHERE status = 'disputed'),
-			COUNT(*) FILTER (WHERE status IN ('released', 'releaseScheduled'))
-		FROM escrows
-	`).Scan(&s.EscrowsTotal, &s.EscrowsFunded, &s.EscrowsDisputed, &s.EscrowsReleased)
+			COUNT(*) FILTER (WHERE status = 'approved'),
+			COUNT(*) FILTER (WHERE status = 'pending')
+		FROM milestones
+	`).Scan(&s.MilestonesTotal, &s.MilestonesApproved, &s.MilestonesPending)
 
 	ok(c, s)
 }
 
-// ── Users ────────────────────────────────────────────────────────────────────
+// ── Users ─────────────────────────────────────────────────────────────────────
 
 type adminUserRow struct {
-	ID              uuid.UUID `json:"id"`
-	Email           string    `json:"email"`
-	Handle          string    `json:"handle"`
-	Role            string    `json:"role"`
-	HederaAccountID string    `json:"hedera_account_id,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	Handle    string    `json:"handle"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (h *Handler) AdminListUsers(c *gin.Context) {
-	if !operatorOnly(c) {
+	if !adminOnly(c) {
 		return
 	}
 
 	rows, err := h.db.Query(context.Background(), `
-		SELECT id, email, handle, role, COALESCE(hedera_account_id, ''), created_at
+		SELECT id, email, handle, role, created_at
 		FROM users
 		ORDER BY created_at DESC
 	`)
@@ -110,7 +96,7 @@ func (h *Handler) AdminListUsers(c *gin.Context) {
 	users := make([]adminUserRow, 0)
 	for rows.Next() {
 		var u adminUserRow
-		if err := rows.Scan(&u.ID, &u.Email, &u.Handle, &u.Role, &u.HederaAccountID, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.Handle, &u.Role, &u.CreatedAt); err != nil {
 			continue
 		}
 		users = append(users, u)
@@ -119,32 +105,30 @@ func (h *Handler) AdminListUsers(c *gin.Context) {
 	ok(c, users)
 }
 
-// ── Listings ─────────────────────────────────────────────────────────────────
+// ── Projects ──────────────────────────────────────────────────────────────────
 
-type adminListingRow struct {
-	ID             uuid.UUID `json:"id"`
-	AnonymizedName string    `json:"anonymized_name"`
-	Category       string    `json:"category"`
-	Status         string    `json:"status"`
-	Verified       bool      `json:"verified"`
-	AskingRange    string    `json:"asking_range"`
-	NDARequired    bool      `json:"nda_required"`
-	SellerID       uuid.UUID `json:"seller_id"`
-	SellerHandle   string    `json:"seller_handle"`
-	CreatedAt      time.Time `json:"created_at"`
+type adminProjectRow struct {
+	ID             uuid.UUID  `json:"id"`
+	Name           string     `json:"name"`
+	Category       string     `json:"category"`
+	Status         string     `json:"status"`
+	TotalAmount    float64    `json:"total_amount"`
+	AmountReleased float64    `json:"amount_released"`
+	FunderHandle   string     `json:"funder_handle"`
+	CreatedAt      time.Time  `json:"created_at"`
 }
 
-func (h *Handler) AdminAllListings(c *gin.Context) {
-	if !operatorOnly(c) {
+func (h *Handler) AdminAllProjects(c *gin.Context) {
+	if !adminOnly(c) {
 		return
 	}
 
 	rows, err := h.db.Query(context.Background(), `
-		SELECT l.id, l.anonymized_name, l.category, l.status, l.verified,
-		       l.asking_range, l.nda_required, l.seller_id, u.handle, l.created_at
-		FROM listings l
-		JOIN users u ON u.id = l.seller_id
-		ORDER BY l.created_at DESC
+		SELECT p.id, p.name, p.category, p.status, p.total_amount, p.amount_released,
+		       u.handle, p.created_at
+		FROM projects p
+		JOIN users u ON u.id = p.funder_id
+		ORDER BY p.created_at DESC
 	`)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "query failed")
@@ -152,147 +136,18 @@ func (h *Handler) AdminAllListings(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	listings := make([]adminListingRow, 0)
+	projects := make([]adminProjectRow, 0)
 	for rows.Next() {
-		var l adminListingRow
+		var p adminProjectRow
 		if err := rows.Scan(
-			&l.ID, &l.AnonymizedName, &l.Category, &l.Status, &l.Verified,
-			&l.AskingRange, &l.NDARequired, &l.SellerID, &l.SellerHandle, &l.CreatedAt,
+			&p.ID, &p.Name, &p.Category, &p.Status,
+			&p.TotalAmount, &p.AmountReleased,
+			&p.FunderHandle, &p.CreatedAt,
 		); err != nil {
 			continue
 		}
-		listings = append(listings, l)
+		projects = append(projects, p)
 	}
 
-	ok(c, listings)
-}
-
-type verifyListingBody struct {
-	Verified bool `json:"verified"`
-}
-
-func (h *Handler) AdminVerifyListing(c *gin.Context) {
-	if !operatorOnly(c) {
-		return
-	}
-	id, ok2 := parseUUID(c, "id")
-	if !ok2 {
-		return
-	}
-
-	var req verifyListingBody
-	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	_, err := h.db.Exec(context.Background(),
-		`UPDATE listings SET verified = $1, updated_at = NOW() WHERE id = $2`,
-		req.Verified, id)
-	if err != nil {
-		fail(c, http.StatusInternalServerError, "update failed")
-		return
-	}
-
-	ok(c, gin.H{"id": id, "verified": req.Verified})
-}
-
-// ── Disputes ─────────────────────────────────────────────────────────────────
-
-type disputeRow struct {
-	ID              uuid.UUID `json:"id"`
-	Status          string    `json:"status"`
-	AmountUSDC      float64   `json:"amount_usdc"`
-	HederaAccountID string    `json:"hedera_account_id"`
-	BuyerID         uuid.UUID `json:"buyer_id"`
-	BuyerHandle     string    `json:"buyer_handle"`
-	BuyerEmail      string    `json:"buyer_email"`
-	SellerID        uuid.UUID `json:"seller_id"`
-	SellerHandle    string    `json:"seller_handle"`
-	SellerEmail     string    `json:"seller_email"`
-	ListingID       uuid.UUID `json:"listing_id"`
-	ListingName     string    `json:"listing_name"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
-}
-
-func (h *Handler) AdminListDisputes(c *gin.Context) {
-	if !operatorOnly(c) {
-		return
-	}
-
-	rows, err := h.db.Query(context.Background(), `
-		SELECT e.id, e.status, e.amount_usdc, COALESCE(e.hedera_account_id, ''),
-		       buyer.id,   buyer.handle,   buyer.email,
-		       seller.id,  seller.handle,  seller.email,
-		       l.id,       l.anonymized_name,
-		       e.created_at, e.updated_at
-		FROM escrows e
-		JOIN offers   o      ON o.id     = e.offer_id
-		JOIN listings l      ON l.id     = o.listing_id
-		JOIN users    buyer  ON buyer.id  = o.buyer_id
-		JOIN users    seller ON seller.id = l.seller_id
-		WHERE e.status = 'disputed'
-		ORDER BY e.updated_at DESC
-	`)
-	if err != nil {
-		fail(c, http.StatusInternalServerError, "query failed")
-		return
-	}
-	defer rows.Close()
-
-	disputes := make([]disputeRow, 0)
-	for rows.Next() {
-		var d disputeRow
-		if err := rows.Scan(
-			&d.ID, &d.Status, &d.AmountUSDC, &d.HederaAccountID,
-			&d.BuyerID, &d.BuyerHandle, &d.BuyerEmail,
-			&d.SellerID, &d.SellerHandle, &d.SellerEmail,
-			&d.ListingID, &d.ListingName,
-			&d.CreatedAt, &d.UpdatedAt,
-		); err != nil {
-			continue
-		}
-		disputes = append(disputes, d)
-	}
-
-	ok(c, disputes)
-}
-
-type resolveDisputeBody struct {
-	Resolution string `json:"resolution" binding:"required,oneof=release refund"`
-	Note       string `json:"note"`
-}
-
-func (h *Handler) AdminResolveDispute(c *gin.Context) {
-	if !operatorOnly(c) {
-		return
-	}
-
-	id, ok2 := parseUUID(c, "id")
-	if !ok2 {
-		return
-	}
-
-	var req resolveDisputeBody
-	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	newStatus := "completed"
-	if req.Resolution == "refund" {
-		newStatus = "refunded"
-	}
-
-	tag, err := h.db.Exec(context.Background(), `
-		UPDATE escrows SET status = $1, updated_at = NOW()
-		WHERE id = $2 AND status = 'disputed'
-	`, newStatus, id)
-	if err != nil || tag.RowsAffected() == 0 {
-		fail(c, http.StatusNotFound, "disputed escrow not found")
-		return
-	}
-
-	ok(c, gin.H{"id": id, "status": newStatus, "resolution": req.Resolution})
+	ok(c, projects)
 }

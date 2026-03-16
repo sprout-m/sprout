@@ -7,13 +7,10 @@ import (
 )
 
 type User struct {
-	ID               uuid.UUID `json:"id"`
-	Email            string    `json:"email"`
-	Handle           string    `json:"handle"`
-	Role             string    `json:"role"`
-	HederaAccountID  string    `json:"hedera_account_id,omitempty"`
-	HederaPublicKey  string    `json:"hedera_public_key,omitempty"`
-	PasswordHash     string    `json:"-"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	Email        string    `json:"email"`
+	Handle       string    `json:"handle"`
+	Role         string    `json:"role"`
+	PasswordHash string    `json:"-"`
+	CreatedAt    time.Time `json:"created_at"`
 }
