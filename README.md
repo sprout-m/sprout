@@ -1,41 +1,22 @@
 <p align="center">
-  <img src="web/public/LOGO.png" alt="Meridian Directory" width="320"/>
+  <img src="web/public/sidelogo.png" alt="Sprout" width="320"/>
 </p>
 
 <p align="center">
-  A private marketplace for online business acquisitions with verified listings, NDA-gated data rooms, and USDC escrow settlement on the Hedera network.
+  A milestone-based escrow platform for sustainability projects — release funding only when progress is independently verified.
 </p>
 
 ---
 
 ## Overview
 
-Meridian Directory is a marketplace platform that handles the complete lifecycle of an online business acquisition:
+Sprout is a trust-minimised funding platform built for the **Hedera Apex Hackathon 2026 — Sustainability Track**.
 
-1. **Sellers** list businesses with anonymised teasers and gated financial data
-2. **Buyers** request access, sign NDAs, and submit offers
-3. **Escrow** accepted offers move into a 2-of-3 threshold Hedera escrow account (buyer + seller + platform), funded with USDC
-4. **Closing** once the seller transfers the listing ownership NFT, the buyer co-signs a Hedera Scheduled Transaction to release funds; every milestone is written to an immutable HCS audit topic
-5. **Settlement** USDC lands in the seller's wallet; the buyer holds the acquisition certificate NFT
-
----
-
-## Screenshots
-
-| | |
-|---|---|
-| ![Listings board](docs/screenshots/listings.png) | ![Listing detail](docs/screenshots/listing.png) |
-| **Listings board** | **Listing detail & data room** |
-
-| | |
-|---|---|
-| ![Offers](docs/screenshots/offers.png) | ![Closing room](docs/screenshots/closing.png) |
-| **Offers board** | **Closing / escrow room** |
-
-| | |
-|---|---|
-| ![NFT certificate](docs/screenshots/nft.svg) | ![HCS audit trail](docs/screenshots/hcs.png) |
-| **Acquisition certificate NFT** | **On-chain audit trail** |
+1. **Organizers** create sustainability projects with defined milestones and funding targets
+2. **Funders** browse the public marketplace and lock capital into project escrow accounts on Hedera
+3. **Organizers** submit proof of progress (text, images, documents) for each milestone
+4. **Verifiers** review the proof and approve — triggering an AWS KMS cryptographic signature
+5. **Hedera** transfers HBAR to the organizer on-chain; every event is written to an immutable HCS audit topic
 
 ---
 
@@ -43,28 +24,27 @@ Meridian Directory is a marketplace platform that handles the complete lifecycle
 
 ```
 meridian/
-├── api/          # Go REST API (Gin, PostgreSQL, Hedera SDK)
-│   ├── cmd/
-│   │   └── setup/    # One-time testnet initialisation script
+├── api/          # Go REST API (Gin, PostgreSQL, Hedera SDK, AWS KMS)
 │   ├── config/       # Environment-based configuration
 │   ├── db/           # Schema auto-migration on startup
 │   ├── handler/      # HTTP route handlers
+│   ├── kms/          # AWS KMS signing package
 │   ├── middleware/   # JWT auth
 │   ├── model/        # Domain types
 │   ├── router/       # Route registration
 │   └── service/      # Hedera service wrapper
-├── hedera/       # Hedera SDK package (escrow, HCS, NFT, mirror node)
-└── web/          # React frontend (Vite, React Router, HashPack wallet)
+├── hedera/       # Hedera SDK package (escrow accounts, HCS)
+└── web/          # React frontend (Vite, React Router)
 ```
 
 ### Tech stack
 
 | Layer | Technology |
 |---|---|
-| API | Go 1.26, Gin, pgx v5 |
-| Database | PostgreSQL 18.1 |
-| Blockchain | Hedera Hashgraph (HTS, HCS, Scheduled Transactions) |
-| Wallet | HashPack via WalletConnect |
+| API | Go 1.22+, Gin, pgx v5 |
+| Database | PostgreSQL 14+ |
+| Signing | AWS KMS (ECDSA_SHA_256) |
+| Blockchain | Hedera Hashgraph (HCS audit trail, HBAR escrow) |
 | Frontend | React 18, Vite, React Router v6 |
 | Auth | JWT (HS256) |
 
@@ -72,11 +52,24 @@ meridian/
 
 | Component | Purpose |
 |---|---|
-| **HTS USDC** | Fungible token used for escrow deposits and settlement |
-| **Escrow account** | Per-deal Hedera account with a 2-of-3 threshold key (buyer + seller + platform) |
-| **Scheduled Transaction** | Platform creates the release transfer; buyer co-signs to execute |
-| **HCS topic** | Immutable per-deal audit trail (`ESCROW_CREATED` → `DEAL_CLOSED`) |
-| **Listing NFT** | Non-fungible token (HIP-412) representing ownership; transferred to buyer at close |
+| **Escrow account** | Per-project Hedera account holding HBAR; operator key controlled |
+| **HCS topic** | Immutable per-project audit trail (`PROJECT_CREATED` → `FUNDS_RELEASED`) |
+| **HBAR transfer** | Released to organizer on-chain after KMS-signed approval |
+
+### AWS KMS
+
+Every milestone approval is signed by AWS KMS — the private key never leaves the HSM. The signature is stored alongside the approval and can be verified by anyone with the public key. AWS CloudTrail provides automatic audit logging of every KMS operation.
+
+---
+
+## Roles
+
+| Role | Capabilities |
+|---|---|
+| `organizer` | Create projects, define milestones, submit proof of progress |
+| `funder` | Browse marketplace, invest capital in projects |
+| `verifier` | Review submitted proof, approve or reject milestone releases |
+| `admin` | View all projects and system stats |
 
 ---
 
@@ -84,10 +77,9 @@ meridian/
 
 - **Go** 1.22+
 - **Node.js** 20+ and npm
-- **Docker** (for PostgreSQL)
-- A **Hedera testnet** operator account and private key — create one free at [portal.hedera.com](https://portal.hedera.com)
-- A **WalletConnect** project ID — create one free at [cloud.walletconnect.com](https://cloud.walletconnect.com)
-- **HashPack** wallet browser extension (for wallet interactions)
+- **PostgreSQL** 14+ (system service or Docker)
+- A **Hedera testnet** operator account — create one free at [portal.hedera.com](https://portal.hedera.com) *(optional for dev; app starts without it)*
+- **AWS credentials** with KMS access *(optional for dev; mock signing used when absent)*
 
 ---
 
@@ -106,65 +98,49 @@ cd meridian
 cp api/.env.example api/.env
 ```
 
-Edit `api/.env` and fill in your Hedera operator credentials at minimum:
+Edit `api/.env`:
 
 ```env
+# Required
+DATABASE_URL=postgres://sprout:sprout@localhost:5432/sprout?sslmode=disable
+JWT_SECRET=change-me-in-production
+
+# Optional — app starts without these (Hedera/KMS features disabled)
 HEDERA_OPERATOR_ACCOUNT_ID=0.0.XXXXX
 HEDERA_OPERATOR_PRIVATE_KEY=302e...
+AWS_REGION=us-east-1
+AWS_KMS_KEY_ID=arn:aws:kms:us-east-1:...
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
 ```
-
-See the [full API env reference](#api-environment-variables) below.
 
 ### 3. Start PostgreSQL
 
+**System PostgreSQL (Linux/macOS):**
+```bash
+# Create database and user
+psql -U postgres -c "CREATE USER sprout WITH PASSWORD 'sprout';"
+psql -U postgres -c "CREATE DATABASE sprout OWNER sprout;"
+```
+
+**Docker:**
+```bash
+cd api && make up
+```
+
+### 4. Start the API
+
 ```bash
 cd api
-make up
-```
-
-### 4. Run the one-time setup script
-
-This creates the test USDC token and NFT collection on testnet, generates buyer/seller Hedera accounts, and seeds the database with test users.
-
-```bash
-make setup
-```
-
-The script prints the generated token IDs and test credentials. Copy the two token IDs it outputs back into `api/.env`:
-
-```env
-HEDERA_USDC_TOKEN_ID=0.0.XXXXX
-HEDERA_NFT_COLLECTION_ID=0.0.XXXXX
-```
-
-### 5. Start the API
-
-```bash
 make run
 # API listening on :8080
+# Schema applied automatically on first start
 ```
 
-The schema is applied automatically on first start.
-
-### 6. Configure and start the frontend
+### 5. Start the frontend
 
 ```bash
-cd ../web
-cp .env.example .env
-```
-
-Edit `web/.env`:
-
-```env
-VITE_API_URL=http://localhost:8080
-VITE_WALLETCONNECT_PROJECT_ID=<your-walletconnect-project-id>
-VITE_HEDERA_USDC_TOKEN_ID=<same as HEDERA_USDC_TOKEN_ID above>
-VITE_HEDERA_NFT_COLLECTION_ID=<same as HEDERA_NFT_COLLECTION_ID above>
-VITE_HEDERA_NETWORK=testnet
-VITE_HEDERA_POF_ACCOUNT_ID=<your operator account ID>
-```
-
-```bash
+cd web
 npm install
 npm run dev
 # Frontend at http://localhost:5173
@@ -172,64 +148,17 @@ npm run dev
 
 ---
 
-## Test accounts
+## Demo flow
 
-After `make setup`, three accounts are seeded (password for all: **`Test1234!`**):
-
-| Email | Role | Notes |
-|---|---|---|
-| `buyer@meridian.test` | Buyer | Funded with 500,000 test USDC |
-| `seller@meridian.test` | Seller | Can create listings |
-| `operator@meridian.test` | Operator | Admin panel, can force-complete releases |
-
-To pair a test account with HashPack for wallet interactions, import the printed private key into HashPack when prompted to link a wallet.
-
----
-
-## Deal flow
-
-```
-Seller creates listing
-        │
-        ▼
-Buyer requests access  ──►  Seller approves / denies
-        │ (approved)
-        ▼
-Buyer submits offer  ──►  Seller accepts
-        │ (accepted)
-        ▼
-Escrow provisioned (2-of-3 threshold Hedera account)
-        │
-        ▼
-Buyer deposits USDC  ──►  escrow status: funded
-        │
-        ├──►  Seller associates USDC (one-time)
-        │
-        ▼
-Seller transfers listing NFT to buyer
-        │
-        ▼
-Buyer clicks "Release Funds"
-  Platform signs schedule (1/3)  ──►  Buyer co-signs via HashPack (2/3)
-        │                              (threshold met → USDC sent on-chain)
-        ▼
-completeRelease verifies execution  ──►  escrow status: completed
-```
-
-Every stage from escrow creation through deal close is written to the deal's HCS topic as an immutable audit record.
-
----
-
-## NFT certificates
-
-Each listing mints a unique **Acquisition Certificate NFT** (HIP-412) at listing creation time. The NFT metadata and a generated 600×600 SVG image are served by the API:
-
-```
-GET /api/v1/nft/metadata/:listingId   →  HIP-412 JSON
-GET /api/v1/nft/image/:listingId      →  image/svg+xml
-```
-
-Both endpoints are public (no auth) so wallets and explorers can fetch them. The image uses the Meridian brand palette and embeds the listing name, category, asking range, and a verified badge.
+1. Register three accounts: one as **organizer**, one as **funder**, one as **verifier**
+2. As organizer: create a project ("Community Solar Farm") with 3 milestones
+3. Verify a Hedera HCS topic was created and `PROJECT_CREATED` event logged
+4. As funder: browse the marketplace, click "Fund Project", enter an amount
+5. As organizer: submit proof for milestone 1 (text update + image URL)
+6. Verify `PROOF_SUBMITTED` HCS event
+7. As verifier: open the review queue, approve the milestone
+8. Verify AWS KMS signature stored + `MILESTONE_APPROVED` and `FUNDS_RELEASED` HCS events
+9. Check project page shows updated amount released and audit timeline
 
 ---
 
@@ -239,26 +168,14 @@ Both endpoints are public (no auth) so wallets and explorers can fetch them. The
 |---|---|---|---|
 | `DATABASE_URL` | Yes | — | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | — | Secret for signing JWTs |
-| `HEDERA_OPERATOR_ACCOUNT_ID` | Yes | — | Platform Hedera account (e.g. `0.0.12345`) |
-| `HEDERA_OPERATOR_PRIVATE_KEY` | Yes | — | Platform Ed25519 private key (DER hex) |
-| `HEDERA_USDC_TOKEN_ID` | Yes | — | HTS USDC token ID |
-| `HEDERA_NFT_COLLECTION_ID` | No | — | HTS NFT collection token ID |
+| `HEDERA_OPERATOR_ACCOUNT_ID` | No | — | Platform Hedera account (e.g. `0.0.12345`) |
+| `HEDERA_OPERATOR_PRIVATE_KEY` | No | — | Platform Ed25519 private key (DER hex or raw hex) |
 | `HEDERA_NETWORK` | No | `testnet` | `testnet` or `mainnet` |
-| `APP_BASE_URL` | No | `http://localhost:8080` | Public API URL used in NFT metadata image links |
+| `AWS_REGION` | No | — | AWS region for KMS (e.g. `us-east-1`) |
+| `AWS_KMS_KEY_ID` | No | — | KMS key ARN or alias |
+| `AWS_ACCESS_KEY_ID` | No | — | AWS access key (or use IAM role) |
+| `AWS_SECRET_ACCESS_KEY` | No | — | AWS secret key (or use IAM role) |
 | `APP_PORT` | No | `8080` | HTTP listen port |
-
----
-
-## Frontend environment variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `VITE_API_URL` | Yes | Base URL of the Go API |
-| `VITE_WALLETCONNECT_PROJECT_ID` | Yes | WalletConnect cloud project ID |
-| `VITE_HEDERA_USDC_TOKEN_ID` | Yes | HTS USDC token ID (same as API) |
-| `VITE_HEDERA_NETWORK` | Yes | `testnet` or `mainnet` |
-| `VITE_HEDERA_POF_ACCOUNT_ID` | Yes | Platform account for proof-of-funds deposits |
-| `VITE_HEDERA_NFT_COLLECTION_ID` | No | HTS NFT collection token ID |
 
 ---
 
@@ -268,7 +185,6 @@ Both endpoints are public (no auth) so wallets and explorers can fetch them. The
 make up        # Start PostgreSQL in Docker
 make down      # Stop and remove containers
 make db-reset  # Wipe and recreate the database
-make setup     # One-time testnet initialisation (creates tokens, seeds users)
 make run       # Start the API server
 make build     # Compile to bin/api
 ```
@@ -290,4 +206,11 @@ cd web
 npm run build
 # Output in web/dist/ — serve with any static file host
 ```
-# sprout
+
+---
+
+## Hackathon tracks
+
+- **Main track:** Sustainability — milestone-based proof of impact for environmental and social projects
+- **AWS bounty:** AWS KMS signs every approval; private key never exposed; CloudTrail provides automatic audit logging
+- **Hedera bounty:** HCS consensus timestamps on all events; HBAR transferred on-chain at fund release
