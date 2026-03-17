@@ -2,22 +2,18 @@ import { Link } from 'react-router-dom';
 
 const features = [
   {
-    icon: '🌿',
     title: 'Milestone-Based Funding',
     description: 'Funds are locked upfront but only released when each milestone is independently verified.',
   },
   {
-    icon: '🔐',
     title: 'AWS KMS Signing',
     description: 'Every approval is cryptographically signed by AWS KMS. Private keys never leave the HSM.',
   },
   {
-    icon: '⛓️',
     title: 'Hedera Audit Trail',
     description: 'All events are logged with consensus timestamps on Hedera HCS — tamper-proof by design.',
   },
   {
-    icon: '💸',
     title: 'Automatic Fund Release',
     description: 'HBAR transfers to the organizer happen on-chain immediately after a verified approval.',
   },
@@ -36,9 +32,9 @@ export default function LandingPage() {
 
       {/* Nav */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: '#0d2414', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 1.5rem', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 1.5rem', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/sidelogo.png" alt="Sprout" style={{ height: '56px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+            <img src="/sproutwithwhitetext.png" alt="Sprout" style={{ height: '120px', width: 'auto' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Link to="/login" style={{ color: 'rgba(226,240,228,0.65)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, padding: '0.4rem 0.75rem' }}>
@@ -54,7 +50,6 @@ export default function LandingPage() {
       {/* Hero */}
       <section style={{ maxWidth: '760px', margin: '0 auto', padding: '6rem 1.5rem 5rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.3)', color: '#4ade80', padding: '0.3rem 1rem', borderRadius: '999px', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '2rem', letterSpacing: '0.01em' }}>
-          <span>🌱</span>
           <span>Hedera Apex Hackathon 2026 · Sustainability Track</span>
         </div>
 
@@ -117,7 +112,6 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1.25rem' }}>
           {features.map((f) => (
             <div key={f.title} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(134,239,172,0.1)', borderRadius: '14px', padding: '1.75rem 1.5rem' }}>
-              <div style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>{f.icon}</div>
               <h3 style={{ margin: '0 0 0.625rem', fontWeight: 700, fontSize: '1rem', color: '#f0fdf4', letterSpacing: '-0.01em' }}>{f.title}</h3>
               <p style={{ margin: 0, color: 'rgba(226,240,228,0.55)', fontSize: '0.875rem', lineHeight: 1.65 }}>{f.description}</p>
             </div>

@@ -2,17 +2,17 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 const sharedRoutes = [
-  { to: '/marketplace', label: 'Marketplace' },
+  { to: '/app/marketplace', label: 'Marketplace' },
 ];
 
 const roleRoutes = {
   funder: [
     { to: '/app/funder', label: 'My Investments' },
+    { to: '/app/verifier', label: 'Review Queue' },
     ...sharedRoutes,
   ],
   organizer: [
     { to: '/app/organizer', label: 'My Projects' },
-    { to: '/app/projects/new', label: 'New Project' },
     ...sharedRoutes,
   ],
   verifier: [
@@ -42,7 +42,7 @@ export default function Layout() {
         <div className="header-inner">
           <div className="brand">
             <Link to="/app" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-              <img src="/sidelogo.png" alt="Sprout" style={{ height: '56px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+              <img src="/sproutwithwhitetext.png" alt="Sprout" style={{ height: '120px', width: 'auto' }} />
             </Link>
           </div>
 

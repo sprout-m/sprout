@@ -40,7 +40,6 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/marketplace" element={<MarketplacePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route
@@ -68,6 +67,9 @@ export default function App() {
           {/* Verifier */}
           <Route path="verifier" element={<VerifierDashboardPage />} />
           <Route path="milestones/:id/review" element={<ApprovalPanelPage />} />
+
+          {/* Marketplace */}
+          <Route path="marketplace" element={<MarketplacePage />} />
 
           {/* Admin */}
           <Route path="admin" element={<AdminDashboardPage />} />

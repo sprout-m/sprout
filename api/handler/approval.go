@@ -26,8 +26,8 @@ type rejectRequest struct {
 
 func (h *Handler) ApproveMilestone(c *gin.Context) {
 	claims := middleware.GetClaims(c)
-	if claims.Role != "verifier" && claims.Role != "admin" {
-		fail(c, http.StatusForbidden, "only verifiers can approve milestones")
+	if claims.Role != "verifier" && claims.Role != "funder" && claims.Role != "admin" {
+		fail(c, http.StatusForbidden, "only funders or verifiers can approve milestones")
 		return
 	}
 
@@ -190,8 +190,8 @@ func (h *Handler) ApproveMilestone(c *gin.Context) {
 
 func (h *Handler) RejectMilestone(c *gin.Context) {
 	claims := middleware.GetClaims(c)
-	if claims.Role != "verifier" && claims.Role != "admin" {
-		fail(c, http.StatusForbidden, "only verifiers can reject milestones")
+	if claims.Role != "verifier" && claims.Role != "funder" && claims.Role != "admin" {
+		fail(c, http.StatusForbidden, "only funders or verifiers can reject milestones")
 		return
 	}
 

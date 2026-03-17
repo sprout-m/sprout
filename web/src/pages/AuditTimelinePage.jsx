@@ -3,11 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import { projectsApi } from '../api/client';
 
 const eventColors = {
-  PROJECT_CREATED:    { color: '#818cf8', bg: 'rgba(99,102,241,0.12)', icon: '🌱' },
-  PROOF_SUBMITTED:    { color: '#fbbf24', bg: 'rgba(245,158,11,0.12)', icon: '📤' },
-  MILESTONE_APPROVED: { color: '#4ade80', bg: 'rgba(34,197,94,0.12)',  icon: '✅' },
-  MILESTONE_REJECTED: { color: '#f87171', bg: 'rgba(239,68,68,0.12)',  icon: '❌' },
-  FUNDS_RELEASED:     { color: '#34d399', bg: 'rgba(52,211,153,0.12)', icon: '💸' },
+  PROJECT_CREATED:    { color: '#818cf8', bg: 'rgba(99,102,241,0.12)', icon: '●' },
+  PROOF_SUBMITTED:    { color: '#fbbf24', bg: 'rgba(245,158,11,0.12)', icon: '●' },
+  MILESTONE_APPROVED: { color: '#4ade80', bg: 'rgba(34,197,94,0.12)',  icon: '●' },
+  MILESTONE_REJECTED: { color: '#f87171', bg: 'rgba(239,68,68,0.12)',  icon: '●' },
+  FUNDS_RELEASED:     { color: '#34d399', bg: 'rgba(52,211,153,0.12)', icon: '●' },
 };
 
 export default function AuditTimelinePage() {

@@ -39,7 +39,7 @@ export default function RegisterPage() {
       <header className="ob-header">
         <div className="ob-header-inner">
           <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            <img src="/sidelogo.png" alt="Sprout" style={{ height: '56px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+            <img src="/sproutwithwhitetext.png" alt="Sprout" style={{ height: '120px', width: 'auto' }} />
           </Link>
         </div>
       </header>
@@ -80,9 +80,8 @@ export default function RegisterPage() {
             <div className="ob-field">
               <label className="ob-field-label">Role</label>
               <select className="ob-field-input" value={role} onChange={(e) => setRole(e.target.value)}>
-                <option value="funder">Funder — browse projects and invest capital</option>
-                <option value="organizer">Organizer — create projects and submit proof</option>
-                <option value="verifier">Verifier — review proof and approve fund releases</option>
+                <option value="funder">Funder — invest in projects and approve milestone releases</option>
+                <option value="organizer">Organizer — create projects and submit proof of progress</option>
               </select>
             </div>
 

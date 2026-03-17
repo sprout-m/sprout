@@ -30,7 +30,7 @@ export default function LoginPage() {
       <header className="ob-header">
         <div className="ob-header-inner">
           <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            <img src="/sidelogo.png" alt="Sprout" style={{ height: '56px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+            <img src="/sproutwithwhitetext.png" alt="Sprout" style={{ height: '120px', width: 'auto' }} />
           </Link>
         </div>
       </header>

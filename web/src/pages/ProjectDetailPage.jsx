@@ -3,11 +3,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { investmentsApi, projectsApi } from '../api/client';
 import { useApp } from '../context/AppContext';
 
-const statusColor = {
-  pending:   { bg: 'rgba(99,102,241,0.15)',  text: '#818cf8' },
-  submitted: { bg: 'rgba(245,158,11,0.15)',  text: '#fbbf24' },
-  approved:  { bg: 'rgba(34,197,94,0.15)',   text: '#4ade80' },
-  rejected:  { bg: 'rgba(239,68,68,0.15)',   text: '#f87171' },
+const msStatus = {
+  pending:   { bg: 'rgba(107,114,128,0.1)', text: '#6b7280' },
+  submitted: { bg: 'rgba(245,158,11,0.1)',  text: '#d97706' },
+  approved:  { bg: 'rgba(22,163,74,0.1)',   text: '#15803d' },
+  rejected:  { bg: 'rgba(239,68,68,0.1)',   text: '#dc2626' },
 };
 
 export default function ProjectDetailPage() {
@@ -18,7 +18,6 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Funding form state
   const [fundAmount, setFundAmount] = useState('');
   const [fundTxId, setFundTxId] = useState('');
   const [fundLoading, setFundLoading] = useState(false);
@@ -36,10 +35,6 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     setFundError('');
     setFundResult(null);
-    if (!fundAmount || Number(fundAmount) <= 0) {
-      setFundError('Please enter a valid amount');
-      return;
-    }
     setFundLoading(true);
     try {
       const body = { amount: Number(fundAmount) };
@@ -48,7 +43,6 @@ export default function ProjectDetailPage() {
       setFundResult(result);
       setFundAmount('');
       setFundTxId('');
-      // Refresh project data to update amountFunded
       projectsApi.get(id).then(setData).catch(() => {});
     } catch (err) {
       setFundError(err.message || 'Investment failed');
@@ -58,175 +52,144 @@ export default function ProjectDetailPage() {
   }
 
   if (loading) return <p style={{ color: 'var(--muted)' }}>Loading…</p>;
-  if (error) return <p style={{ color: '#f87171' }}>{error}</p>;
+  if (error) return <p style={{ color: 'var(--danger, #dc2626)' }}>{error}</p>;
   if (!data) return null;
 
   const { project: p, milestones } = data;
-  const progress = p.totalAmount > 0 ? (p.amountReleased / p.totalAmount) * 100 : 0;
   const fundingPct = p.totalAmount > 0 ? Math.min(100, ((p.amountFunded || 0) / p.totalAmount) * 100) : 0;
+  const releasePct = p.totalAmount > 0 ? Math.min(100, ((p.amountReleased || 0) / p.totalAmount) * 100) : 0;
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+    <div style={{ maxWidth: '780px' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.75rem', gap: '1rem' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>{p.name}</h1>
-          <p style={{ margin: '0.25rem 0 0', color: 'var(--muted)', fontSize: '0.875rem' }}>{p.category}</p>
+          <div style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 500, marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</div>
+          <h1 style={{ margin: 0, fontSize: '1.625rem', fontWeight: 700, lineHeight: 1.2 }}>{p.name}</h1>
+          {p.description && <p style={{ margin: '0.5rem 0 0', color: 'var(--muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>{p.description}</p>}
         </div>
-        <Link to={`/app/projects/${id}/audit`}>
-          <button style={{ background: 'transparent', border: '1px solid var(--border, rgba(255,255,255,0.12))', color: 'var(--muted)', padding: '0.4rem 0.875rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem' }}>
-            Audit Trail
-          </button>
+        <Link to={`/app/projects/${id}/audit`} style={{ flexShrink: 0 }}>
+          <button className="ghost">Audit Trail</button>
         </Link>
       </div>
 
-      {/* Funding progress section */}
-      <div style={{ background: 'var(--surface, #1a2332)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.125rem' }}>Funding Goal</div>
-            <div style={{ fontWeight: 700, fontSize: '1.375rem' }}>${(p.totalAmount || 0).toLocaleString()}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.125rem' }}>Funded</div>
-            <div style={{ fontWeight: 700, fontSize: '1.375rem', color: '#4ade80' }}>${(p.amountFunded || 0).toLocaleString()}</div>
-          </div>
-        </div>
-        <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '999px', height: '8px', overflow: 'hidden', marginBottom: '0.375rem' }}>
-          <div style={{ width: `${fundingPct}%`, background: 'linear-gradient(90deg, #16a34a, #22c55e)', height: '100%', transition: 'width 0.3s' }} />
-        </div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--muted)', textAlign: 'right' }}>
-          {Math.round(fundingPct)}% of goal funded
-        </div>
-      </div>
-
-      {/* Summary cards */}
+      {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         {[
-          { label: 'Total Funding', value: `$${(p.totalAmount || 0).toLocaleString()}` },
-          { label: 'Released', value: `$${(p.amountReleased || 0).toLocaleString()}`, color: '#4ade80' },
-          { label: 'Milestones', value: milestones.length },
+          { label: 'Funding Goal',  value: `$${(p.totalAmount || 0).toLocaleString()}` },
+          { label: 'Raised',        value: `$${(p.amountFunded || 0).toLocaleString()}`, accent: true },
+          { label: 'Released',      value: `$${(p.amountReleased || 0).toLocaleString()}` },
         ].map((s) => (
-          <div key={s.label} style={{ background: 'var(--surface, #1a2332)', border: '1px solid var(--border, rgba(255,255,255,0.08))', borderRadius: '10px', padding: '1rem' }}>
+          <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1rem 1.125rem' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.25rem' }}>{s.label}</div>
-            <div style={{ fontWeight: 700, fontSize: '1.25rem', color: s.color || 'inherit' }}>{s.value}</div>
+            <div style={{ fontWeight: 700, fontSize: '1.25rem', color: s.accent ? 'var(--primary)' : 'var(--text)' }}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      {/* Milestone release progress bar */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--muted)', marginBottom: '0.375rem' }}>
-          <span>Milestone Releases</span>
-          <span>{Math.round(progress)}%</span>
+      {/* Funding progress bar with milestone ticks */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
+          <span style={{ fontWeight: 600 }}>Funding progress</span>
+          <span style={{ color: 'var(--muted)' }}>{Math.round(fundingPct)}%</span>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '999px', height: '6px', overflow: 'hidden' }}>
-          <div style={{ width: `${Math.min(100, progress)}%`, background: '#22c55e', height: '100%' }} />
+        <div style={{ position: 'relative', background: 'var(--line)', borderRadius: '999px', height: '8px', marginBottom: '0.375rem' }}>
+          <div style={{ width: `${fundingPct}%`, background: 'var(--primary)', height: '100%', borderRadius: '999px', transition: 'width 0.3s' }} />
+          {milestones.length > 1 && (() => {
+            let cum = 0;
+            return milestones.slice(0, -1).map((m, i) => {
+              cum += (m.amount || 0);
+              const tpct = p.totalAmount > 0 ? Math.min(100, (cum / p.totalAmount) * 100) : 0;
+              return (
+                <span key={i} style={{
+                  position: 'absolute', top: 0, left: `${tpct}%`,
+                  width: '2px', height: '8px',
+                  background: tpct <= fundingPct ? 'rgba(255,255,255,0.55)' : 'var(--line-strong)',
+                  transform: 'translateX(-50%)',
+                }} />
+              );
+            });
+          })()}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted)' }}>
+          <span style={{ color: 'var(--primary)', fontWeight: 600 }}>${(p.amountFunded || 0).toLocaleString()} raised</span>
+          <span>goal ${(p.totalAmount || 0).toLocaleString()}</span>
         </div>
       </div>
 
-      {/* Funder investment form */}
-      {user?.role === 'funder' && (
-        <div style={{ background: 'var(--surface, #1a2332)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-          <h2 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 600, color: '#4ade80' }}>Fund this project</h2>
+      {/* Goal statement */}
+      {p.goal && (
+        <div style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-border)', borderRadius: 'var(--radius-md)', padding: '0.875rem 1rem', marginBottom: '1.5rem', fontSize: '0.875rem', color: 'var(--primary)' }}>
+          <strong>Impact goal:</strong> {p.goal}
+        </div>
+      )}
+
+      {/* Fund this project */}
+      {user?.role === 'funder' && p.status === 'active' && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.25rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 600 }}>Fund this project</h2>
           {fundResult ? (
             <div>
-              <p style={{ color: '#4ade80', fontWeight: 600, marginBottom: '0.5rem' }}>Investment recorded!</p>
+              <p style={{ color: 'var(--primary)', fontWeight: 600, margin: '0 0 0.5rem' }}>Investment recorded.</p>
               {fundResult.escrow_account && (
-                <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '8px', padding: '0.875rem', fontSize: '0.875rem' }}>
+                <div style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-border)', borderRadius: 'var(--radius)', padding: '0.875rem', fontSize: '0.875rem', marginBottom: '0.875rem' }}>
                   <div style={{ color: 'var(--muted)', marginBottom: '0.25rem' }}>Send HBAR to escrow account:</div>
-                  <code style={{ color: '#4ade80', fontWeight: 700, wordBreak: 'break-all' }}>{fundResult.escrow_account}</code>
+                  <code style={{ color: 'var(--primary)', fontWeight: 700, wordBreak: 'break-all' }}>{fundResult.escrow_account}</code>
                 </div>
               )}
-              <button
-                onClick={() => setFundResult(null)}
-                style={{ marginTop: '0.875rem', background: 'transparent', border: '1px solid var(--border, rgba(255,255,255,0.12))', color: 'var(--muted)', padding: '0.375rem 0.875rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem' }}
-              >
-                Make another investment
-              </button>
+              <button className="ghost" onClick={() => setFundResult(null)}>Make another investment</button>
             </div>
           ) : (
             <form onSubmit={handleFund} style={{ display: 'grid', gap: '0.875rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', color: 'var(--muted)', marginBottom: '0.375rem' }}>Amount (USD) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  value={fundAmount}
-                  onChange={(e) => setFundAmount(e.target.value)}
-                  placeholder="500"
-                  required
-                  className="ob-field-input"
-                  style={{ width: '100%' }}
-                />
+              <div className="ob-field">
+                <label className="ob-field-label">Amount (USD)</label>
+                <input className="ob-field-input" type="number" min="1" step="0.01" value={fundAmount} onChange={(e) => setFundAmount(e.target.value)} placeholder="500" required />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', color: 'var(--muted)', marginBottom: '0.375rem' }}>Hedera Transaction ID (optional)</label>
-                <input
-                  type="text"
-                  value={fundTxId}
-                  onChange={(e) => setFundTxId(e.target.value)}
-                  placeholder="0.0.12345@1234567890.000000000"
-                  className="ob-field-input"
-                  style={{ width: '100%' }}
-                />
+              <div className="ob-field">
+                <label className="ob-field-label">Hedera Transaction ID (optional)</label>
+                <input className="ob-field-input" type="text" value={fundTxId} onChange={(e) => setFundTxId(e.target.value)} placeholder="0.0.12345@1234567890.000000000" />
               </div>
-              {fundError && <p style={{ color: '#f87171', fontSize: '0.8125rem', margin: 0 }}>{fundError}</p>}
-              <button
-                type="submit"
-                disabled={fundLoading}
-                style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, alignSelf: 'flex-start' }}
-              >
-                {fundLoading ? 'Processing…' : 'Invest Now'}
-              </button>
+              {fundError && <p style={{ color: 'var(--danger, #dc2626)', fontSize: '0.8125rem', margin: 0 }}>{fundError}</p>}
+              <div>
+                <button type="submit" disabled={fundLoading || !fundAmount}>
+                  {fundLoading ? 'Processing…' : 'Invest Now'}
+                </button>
+              </div>
             </form>
           )}
         </div>
       )}
 
-      {p.goal && (
-        <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '8px', padding: '0.875rem 1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-          <span style={{ color: '#4ade80', fontWeight: 600 }}>Goal: </span>{p.goal}
-        </div>
-      )}
-
       {/* Milestones */}
-      <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Milestones</h2>
-      <div style={{ display: 'grid', gap: '0.75rem' }}>
-        {milestones.map((ms) => {
-          const colors = statusColor[ms.status] || statusColor.pending;
-          const canSubmitProof = user?.role === 'organizer' && ms.status === 'pending';
-          const canReview = user?.role === 'verifier' && ms.status === 'submitted';
+      <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem' }}>Milestones</h2>
+      <div style={{ display: 'grid', gap: '0.625rem' }}>
+        {milestones.map((ms, idx) => {
+          const colors = msStatus[ms.status] || msStatus.pending;
+          const canSubmit = user?.role === 'organizer' && ms.status === 'pending';
+          const canReview = (user?.role === 'verifier' || user?.role === 'funder') && ms.status === 'submitted';
           return (
-            <div key={ms.id} style={{ background: 'var(--surface, #1a2332)', border: '1px solid var(--border, rgba(255,255,255,0.08))', borderRadius: '10px', padding: '1.125rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ width: '24px', height: '24px', background: colors.bg, color: colors.text, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>
-                    {ms.orderIndex}
+            <div key={ms.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1rem 1.125rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: colors.bg, color: colors.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                {idx + 1}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{ms.title}</div>
+                {ms.description && <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.125rem' }}>{ms.description}</div>}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>${(ms.amount || 0).toLocaleString()}</div>
+                  <span style={{ background: colors.bg, color: colors.text, padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'capitalize' }}>
+                    {ms.status}
                   </span>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{ms.title}</div>
-                    {ms.description && <div style={{ fontSize: '0.8125rem', color: 'var(--muted)', marginTop: '0.125rem' }}>{ms.description}</div>}
-                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9375rem' }}>${(ms.amount || 0).toLocaleString()}</div>
-                    <span style={{ background: colors.bg, color: colors.text, padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'capitalize' }}>
-                      {ms.status}
-                    </span>
-                  </div>
-                  {canSubmitProof && (
-                    <button onClick={() => navigate(`/app/milestones/${ms.id}/proof`)} style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '0.375rem 0.875rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      Submit Proof
-                    </button>
-                  )}
-                  {canReview && (
-                    <button onClick={() => navigate(`/app/milestones/${ms.id}/review`)} style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '0.375rem 0.875rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      Review
-                    </button>
-                  )}
-                </div>
+                {canSubmit && (
+                  <button onClick={() => navigate(`/app/milestones/${ms.id}/proof`)}>Submit Proof</button>
+                )}
+                {canReview && (
+                  <button onClick={() => navigate(`/app/milestones/${ms.id}/review`)}>Review</button>
+                )}
               </div>
             </div>
           );

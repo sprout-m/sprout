@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { investmentsApi } from '../api/client';
 
 export default function FunderDashboardPage() {
+  const navigate = useNavigate();
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,10 +16,10 @@ export default function FunderDashboardPage() {
   }, []);
 
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const projectCount = new Set(investments.map((i) => i.project_id || i.projectId)).size;
 
   return (
     <div>
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>My Investments</h1>
@@ -26,40 +27,32 @@ export default function FunderDashboardPage() {
             Track where your capital is creating impact.
           </p>
         </div>
-        <Link to="/marketplace">
-          <button style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
-            Browse Projects →
-          </button>
+        <Link to="/app/marketplace">
+          <button>Browse Projects →</button>
         </Link>
       </div>
 
-      {/* Total summary */}
       {!loading && investments.length > 0 && (
-        <div style={{ background: 'var(--surface, #1a2332)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '2rem' }}>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.2rem' }}>Total Invested</div>
-            <div style={{ fontWeight: 700, fontSize: '1.5rem', color: '#4ade80' }}>${totalInvested.toLocaleString()}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.1rem 1.25rem' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>${totalInvested.toLocaleString()}</div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginTop: '0.1rem' }}>Total Invested</div>
           </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.2rem' }}>Projects Funded</div>
-            <div style={{ fontWeight: 700, fontSize: '1.5rem' }}>
-              {new Set(investments.map((i) => i.project_id || i.projectId)).size}
-            </div>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.1rem 1.25rem' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>{projectCount}</div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginTop: '0.1rem' }}>Projects Funded</div>
           </div>
         </div>
       )}
 
       {loading && <p style={{ color: 'var(--muted)' }}>Loading…</p>}
-      {error && <p style={{ color: '#f87171' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--danger, #dc2626)' }}>{error}</p>}
 
       {!loading && investments.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--muted)' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌱</div>
-          <p>You haven't invested in any projects yet. Browse the marketplace.</p>
-          <Link to="/marketplace">
-            <button style={{ marginTop: '1rem', background: '#16a34a', color: '#fff', border: 'none', padding: '0.5rem 1.5rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
-              Browse Marketplace
-            </button>
+        <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--muted)', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)' }}>
+          <p style={{ margin: '0 0 1rem' }}>You haven't invested in any projects yet.</p>
+          <Link to="/app/marketplace">
+            <button>Browse Marketplace</button>
           </Link>
         </div>
       )}
@@ -70,7 +63,7 @@ export default function FunderDashboardPage() {
           const projectName = inv.project?.name || inv.projectName || `Project #${projectId}`;
           const date = inv.created_at || inv.createdAt;
           return (
-            <div key={inv.id} style={{ background: 'var(--surface, #1a2332)', border: '1px solid var(--border, rgba(255,255,255,0.08))', borderRadius: '10px', padding: '1.25rem' }}>
+            <div key={inv.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{projectName}</h3>
@@ -81,7 +74,7 @@ export default function FunderDashboardPage() {
                   )}
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, fontSize: '1.125rem', color: '#4ade80' }}>
+                  <div style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--primary)' }}>
                     ${(inv.amount || 0).toLocaleString()}
                   </div>
                   {inv.hedera_tx_id && (
@@ -93,11 +86,9 @@ export default function FunderDashboardPage() {
               </div>
               {projectId && (
                 <div style={{ marginTop: '0.875rem' }}>
-                  <Link to={`/app/projects/${projectId}`} style={{ textDecoration: 'none' }}>
-                    <button style={{ background: 'transparent', border: '1px solid var(--border, rgba(255,255,255,0.12))', color: 'var(--muted)', padding: '0.3rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8125rem' }}>
-                      View Project
-                    </button>
-                  </Link>
+                  <button className="ghost" onClick={() => navigate(`/app/projects/${projectId}`)}>
+                    View Project
+                  </button>
                 </div>
               )}
             </div>
