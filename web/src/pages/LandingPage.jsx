@@ -11,19 +11,19 @@ export default function LandingPage() {
     }}>
 
       {/* Nav */}
-      <nav style={{ borderBottom: '1px solid #e5e7eb', background: '#fff' }}>
+      <nav style={{ background: 'linear-gradient(135deg, #166534 0%, #14532d 60%, #0f3d20 100%)' }}>
         <div style={{
           maxWidth: '1100px', margin: '0 auto', padding: '0 2rem',
-          height: '88px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <img src="/sproutlogo-transparent.png" alt="Sprout" style={{ height: '76px', width: 'auto' }} />
+          <img src="/sproutwithwhitetext.png" alt="Sprout" style={{ height: '120px', width: 'auto' }} />
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Link to="/login" style={{ color: '#6b7280', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, padding: '0.5rem 0.875rem' }}>
+            <Link to="/login" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, padding: '0.5rem 0.875rem' }}>
               Sign in
             </Link>
             <Link to="/register" style={{
-              background: '#14532d', color: '#fff', textDecoration: 'none',
-              padding: '0.5rem 1.25rem', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 600,
+              background: '#fff', color: '#14532d', textDecoration: 'none',
+              padding: '0.5rem 1.25rem', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 700,
             }}>
               Get started
             </Link>
@@ -32,7 +32,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero — two column */}
-      <section style={{ borderBottom: '1px solid #e5e7eb' }}>
+      <section style={{ borderBottom: '1px solid #e5e7eb', background: '#f0fdf4' }}>
         <div style={{
           maxWidth: '1100px', margin: '0 auto', padding: '0 2rem',
           display: 'grid', gridTemplateColumns: '1fr 400px', gap: '4rem', alignItems: 'center',
@@ -71,32 +71,72 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right panel — what's at stake */}
-          <div style={{
-            borderLeft: '1px solid #e5e7eb',
-            padding: '5rem 0 5rem 3rem',
-            display: 'flex', flexDirection: 'column', gap: '2rem',
-          }}>
-            {[
-              { stat: 'Escrow-first', desc: 'Funds locked before organizers begin. No capital at risk of misuse.' },
-              { stat: 'KMS-signed', desc: 'Every approval is signed by AWS KMS. Tamper-proof by hardware.' },
-              { stat: 'On Hedera', desc: 'Consensus timestamps on every event. Permanent, auditable record.' },
-            ].map((item) => (
-              <div key={item.stat}>
-                <p style={{ margin: '0 0 0.375rem', fontWeight: 700, fontSize: '1rem', color: '#14532d', letterSpacing: '-0.01em' }}>
-                  {item.stat}
-                </p>
-                <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280', lineHeight: 1.65 }}>
-                  {item.desc}
-                </p>
-              </div>
-            ))}
+          {/* Right panel — graphic */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
+            <svg width="360" height="380" viewBox="0 0 360 380" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Backdrop glow circle */}
+              <circle cx="180" cy="180" r="155" fill="#dcfce7" opacity="0.6" />
+              <circle cx="180" cy="180" r="120" fill="#bbf7d0" opacity="0.35" />
+
+              {/* Stem */}
+              <line x1="180" y1="310" x2="180" y2="145" stroke="#14532d" strokeWidth="3.5" strokeLinecap="round" />
+
+              {/* Left big leaf */}
+              <path d="M180 200 C160 185 120 175 105 145 C100 130 108 110 125 108 C155 106 185 135 180 200Z"
+                fill="#16a34a" opacity="0.85" />
+              {/* Left leaf vein */}
+              <path d="M180 200 C160 178 130 158 115 138"
+                stroke="#14532d" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+
+              {/* Right big leaf */}
+              <path d="M180 165 C200 148 240 138 258 108 C265 93 258 72 240 70 C210 67 178 98 180 165Z"
+                fill="#22c55e" opacity="0.8" />
+              {/* Right leaf vein */}
+              <path d="M180 165 C205 145 232 118 248 92"
+                stroke="#14532d" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+
+              {/* Small left accent leaf */}
+              <path d="M180 240 C162 230 138 228 128 212 C124 204 130 194 140 193 C160 191 180 208 180 240Z"
+                fill="#4ade80" opacity="0.6" />
+
+              {/* Circuit roots */}
+              {/* Main root down */}
+              <line x1="180" y1="310" x2="180" y2="340" stroke="#14532d" strokeWidth="2.5" strokeLinecap="round" />
+              {/* Left root */}
+              <line x1="180" y1="328" x2="130" y2="328" stroke="#14532d" strokeWidth="2" strokeLinecap="round" />
+              <line x1="130" y1="328" x2="130" y2="348" stroke="#14532d" strokeWidth="2" strokeLinecap="round" />
+              {/* Right root */}
+              <line x1="180" y1="320" x2="230" y2="320" stroke="#14532d" strokeWidth="2" strokeLinecap="round" />
+              <line x1="230" y1="320" x2="230" y2="340" stroke="#14532d" strokeWidth="2" strokeLinecap="round" />
+              {/* Far left root */}
+              <line x1="130" y1="338" x2="105" y2="338" stroke="#14532d" strokeWidth="1.5" strokeLinecap="round" />
+              {/* Far right root */}
+              <line x1="230" y1="332" x2="258" y2="332" stroke="#14532d" strokeWidth="1.5" strokeLinecap="round" />
+
+              {/* Circuit nodes */}
+              <circle cx="130" cy="348" r="5" fill="#16a34a" />
+              <circle cx="230" cy="340" r="5" fill="#16a34a" />
+              <circle cx="105" cy="338" r="4" fill="#4ade80" opacity="0.7" />
+              <circle cx="258" cy="332" r="4" fill="#4ade80" opacity="0.7" />
+              <circle cx="180" cy="340" r="4" fill="#14532d" opacity="0.5" />
+
+              {/* Floating dots — growth particles */}
+              <circle cx="100" cy="160" r="4" fill="#4ade80" opacity="0.5" />
+              <circle cx="88" cy="200" r="3" fill="#16a34a" opacity="0.35" />
+              <circle cx="270" cy="185" r="5" fill="#4ade80" opacity="0.4" />
+              <circle cx="285" cy="155" r="3" fill="#22c55e" opacity="0.4" />
+              <circle cx="255" cy="230" r="3.5" fill="#16a34a" opacity="0.3" />
+              <circle cx="110" cy="125" r="2.5" fill="#4ade80" opacity="0.4" />
+
+              {/* Outer ring arc */}
+              <circle cx="180" cy="180" r="153" stroke="#86efac" strokeWidth="1" strokeDasharray="6 8" opacity="0.5" />
+            </svg>
           </div>
         </div>
       </section>
 
       {/* Flow — horizontal step strip */}
-      <section style={{ borderBottom: '1px solid #e5e7eb', background: '#f9fafb' }}>
+      <section style={{ borderBottom: '1px solid #e5e7eb', background: '#ffffff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '3.5rem 2rem' }}>
           <p style={{ margin: '0 0 2.5rem', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af' }}>
             The flow
@@ -113,7 +153,7 @@ export default function LandingPage() {
                 borderRight: i < 3 ? '1px solid #e5e7eb' : 'none',
                 marginRight: i < 3 ? '2rem' : 0,
               }}>
-                <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', display: 'block', marginBottom: '0.625rem' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', display: 'block', marginBottom: '0.625rem' }}>
                   {step.n}
                 </span>
                 <p style={{ margin: '0 0 0.5rem', fontWeight: 700, fontSize: '0.9375rem', color: '#111827' }}>
@@ -168,6 +208,27 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* CTA strip */}
+      <section style={{ background: 'linear-gradient(135deg, #166534 0%, #14532d 60%, #0f3d20 100%)', borderTop: '1px solid #e5e7eb' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '4rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
+          <div>
+            <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em', color: '#ffffff' }}>
+              Ready to fund with accountability?
+            </h2>
+            <p style={{ margin: 0, fontSize: '0.9375rem', color: 'rgba(255,255,255,0.65)' }}>
+              Create a project and lock funding in minutes.
+            </p>
+          </div>
+          <Link to="/register" style={{
+            flexShrink: 0,
+            background: '#ffffff', color: '#14532d', textDecoration: 'none',
+            padding: '0.75rem 1.75rem', borderRadius: '7px', fontSize: '0.9375rem', fontWeight: 700,
+          }}>
+            Get started
+          </Link>
         </div>
       </section>
 
