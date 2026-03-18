@@ -12,11 +12,11 @@
   --line-strong: #D1D5DB;
 
   --primary: #14532d;
-  --primary-hover: #0d3d20;
+  --primary-hover: #0f3d20;
   --primary-light: #f0fdf4;
   --primary-border: #86efac;
 
-  --accent: #16a34a;
+  --accent: #14532d;
 
   --ok: #065F46;
   --ok-bg: #ECFDF5;
@@ -79,19 +79,20 @@ button, input, select, textarea { font: inherit; }
    Topbar
 ───────────────────────────── */
 .topbar {
-  background: #0d2414;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, #166534 0%, #14532d 60%, #0f3d20 100%);
+  border-bottom: none;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .header-inner {
   max-width: 1380px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 2rem;
   height: 80px;
   display: flex;
   align-items: center;
   gap: 0;
+  overflow: visible;
 }
 
 .brand {
@@ -349,7 +350,7 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(20, 83, 45, 0.12);
 }
 
 input::placeholder,

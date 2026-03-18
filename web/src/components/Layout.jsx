@@ -41,7 +41,7 @@ export default function Layout() {
       <header className="topbar">
         <div className="header-inner">
           <div className="brand">
-            <Link to="/app" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <Link to="/app" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', lineHeight: 0 }}>
               <img src="/sproutwithwhitetext.png" alt="Sprout" style={{ height: '120px', width: 'auto' }} />
             </Link>
           </div>

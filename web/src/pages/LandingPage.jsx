@@ -11,10 +11,10 @@ export default function LandingPage() {
     }}>
 
       {/* Nav */}
-      <nav style={{ background: 'linear-gradient(135deg, #166534 0%, #14532d 60%, #0f3d20 100%)' }}>
+      <nav style={{ background: 'linear-gradient(135deg, #166534 0%, #14532d 60%, #0f3d20 100%)', height: '80px', display: 'flex', alignItems: 'center' }}>
         <div style={{
-          maxWidth: '1100px', margin: '0 auto', padding: '0 2rem',
-          height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          maxWidth: '1100px', width: '100%', margin: '0 auto', padding: '0 2rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <img src="/sproutwithwhitetext.png" alt="Sprout" style={{ height: '120px', width: 'auto' }} />
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
