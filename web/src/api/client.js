@@ -40,7 +40,7 @@ async function publicApiFetch(path, options = {}) {
 // ── Normalizers ──────────────────────────────────────────────────────────────
 
 export function normalizeUser(u) {
-  return { ...u, createdAt: u.created_at };
+  return { ...u, hederaAccountId: u.hedera_account_id || '', createdAt: u.created_at };
 }
 
 export function normalizeProject(p) {

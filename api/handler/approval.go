@@ -57,6 +57,19 @@ func (h *Handler) ApproveMilestone(c *gin.Context) {
 		fail(c, http.StatusConflict, "milestone is not in submitted state")
 		return
 	}
+	if claims.Role == "funder" {
+		var allowed bool
+		err = h.db.QueryRow(context.Background(), `
+			SELECT EXISTS(
+				SELECT 1 FROM investments
+				WHERE project_id = $1 AND funder_id = $2
+			)
+		`, ms.ProjectID, claims.UserID).Scan(&allowed)
+		if err != nil || !allowed {
+			fail(c, http.StatusForbidden, "you can only approve milestones for projects you funded")
+			return
+		}
+	}
 
 	// Load latest proof submission
 	var proofID string
@@ -160,9 +173,8 @@ func (h *Handler) ApproveMilestone(c *gin.Context) {
 			`, proofOrganizerID).Scan(&orgHederaAccount)
 
 			if orgHederaAccount != nil && *orgHederaAccount != "" {
-				// Convert amount (USD cents or units) to tinybars for demo
-				// 1 unit = 100_000 tinybars (0.001 HBAR) for demo purposes
-				amountTinybar := int64(ms.Amount * 100_000)
+				// Milestone amounts are denominated in HBAR. Convert directly to tinybars.
+				amountTinybar := int64(ms.Amount * 100_000_000)
 				txID, err := h.hedera.ReleaseToOrganizer(escrowAccount, *orgHederaAccount, amountTinybar)
 				if err != nil {
 					log.Printf("hedera: release failed for milestone %s: %v", milestoneID, err)
@@ -221,6 +233,19 @@ func (h *Handler) RejectMilestone(c *gin.Context) {
 		fail(c, http.StatusConflict, "milestone is not in submitted state")
 		return
 	}
+	if claims.Role == "funder" {
+		var allowed bool
+		err = h.db.QueryRow(context.Background(), `
+			SELECT EXISTS(
+				SELECT 1 FROM investments
+				WHERE project_id = $1 AND funder_id = $2
+			)
+		`, projectID, claims.UserID).Scan(&allowed)
+		if err != nil || !allowed {
+			fail(c, http.StatusForbidden, "you can only reject milestones for projects you funded")
+			return
+		}
+	}
 
 	var approval model.Approval
 	err = h.db.QueryRow(context.Background(), `
@@ -261,4 +286,3 @@ func (h *Handler) RejectMilestone(c *gin.Context) {
 
 	ok(c, approval)
 }
-

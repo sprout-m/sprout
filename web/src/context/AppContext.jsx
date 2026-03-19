@@ -60,8 +60,8 @@ export function AppProvider({ children }) {
     setUser(u);
   }
 
-  async function registerUser({ email, handle, password, role }) {
-    const { token, user: u } = await auth.register({ email, handle, password, role });
+  async function registerUser({ email, handle, password, role, hedera_account_id }) {
+    const { token, user: u } = await auth.register({ email, handle, password, role, hedera_account_id });
     setToken(token);
     setUser(u);
   }

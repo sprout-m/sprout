@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { projectsApi } from '../api/client';
+import { investmentsApi, projectsApi } from '../api/client';
 import { useApp } from '../context/AppContext';
+import { formatHbarWithUsd } from '../utils/currency';
 
 export default function VerifierDashboardPage() {
   const navigate = useNavigate();
@@ -10,6 +11,17 @@ export default function VerifierDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (user?.role === 'funder') {
+      Promise.all([projectsApi.list(), investmentsApi.myInvestments()])
+        .then(([allProjects, investments]) => {
+          const fundedProjectIds = new Set(investments.map((inv) => inv.project_id || inv.projectId));
+          setProjects(allProjects.filter((project) => fundedProjectIds.has(project.id)));
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+      return;
+    }
+
     projectsApi.list()
       .then(setProjects)
       .catch(() => {})
@@ -24,7 +36,7 @@ export default function VerifierDashboardPage() {
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Review Queue</h1>
         <p style={{ color: 'var(--muted)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
           {user?.role === 'funder'
-            ? 'Review submitted proof and approve or reject milestone payouts on your funded projects.'
+          ? 'Review submitted proof and approve or reject milestone payouts on your funded projects.'
             : 'Review submitted proof and approve or reject milestone payouts.'}
         </p>
       </div>
@@ -53,11 +65,11 @@ export default function VerifierDashboardPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexShrink: 0, fontSize: '0.8125rem' }}>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: 'var(--muted)' }}>Released</div>
-                <div style={{ fontWeight: 600, color: 'var(--primary)' }}>${(p.amountReleased || 0).toLocaleString()}</div>
+                <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatHbarWithUsd(p.amountReleased || 0)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: 'var(--muted)' }}>Goal</div>
-                <div style={{ fontWeight: 600 }}>${(p.totalAmount || 0).toLocaleString()}</div>
+                <div style={{ fontWeight: 600 }}>{formatHbarWithUsd(p.totalAmount || 0)}</div>
               </div>
               <button className="ghost" onClick={(e) => { e.stopPropagation(); navigate(`/app/projects/${p.id}`); }}>
                 Review →

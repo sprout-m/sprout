@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { projectsApi } from '../api/client';
+import { formatHbarWithUsd } from '../utils/currency';
 
 const statusColor = {
   active:    { bg: 'rgba(22,163,74,0.1)',   text: '#15803d' },
@@ -28,7 +29,7 @@ export default function OrganizerDashboardPage() {
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>My Projects</h1>
           <p style={{ color: 'var(--muted)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
-            Manage your projects and submit proof to unlock milestone payments.
+            Manage your projects and submit proof to unlock milestone releases in HBAR.
           </p>
         </div>
         <Link to="/app/projects/new">
@@ -72,15 +73,15 @@ export default function OrganizerDashboardPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', fontSize: '0.8125rem', marginBottom: '0.875rem' }}>
                 <div>
                   <div style={{ color: 'var(--muted)', marginBottom: '0.1rem' }}>Funding Goal</div>
-                  <strong>${goal.toLocaleString()}</strong>
+                  <strong>{formatHbarWithUsd(goal)}</strong>
                 </div>
                 <div>
                   <div style={{ color: 'var(--muted)', marginBottom: '0.1rem' }}>Funded</div>
-                  <strong style={{ color: '#15803d' }}>${funded.toLocaleString()}</strong>
+                  <strong style={{ color: '#15803d' }}>{formatHbarWithUsd(funded)}</strong>
                 </div>
                 <div>
                   <div style={{ color: 'var(--muted)', marginBottom: '0.1rem' }}>Released</div>
-                  <strong style={{ color: '#15803d' }}>${(p.amountReleased || 0).toLocaleString()}</strong>
+                  <strong style={{ color: '#15803d' }}>{formatHbarWithUsd(p.amountReleased || 0)}</strong>
                 </div>
               </div>
 

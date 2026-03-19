@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { investmentsApi } from '../api/client';
+import { formatHbarWithUsd } from '../utils/currency';
 
 export default function FunderDashboardPage() {
   const navigate = useNavigate();
@@ -16,7 +17,44 @@ export default function FunderDashboardPage() {
   }, []);
 
   const totalInvested = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-  const projectCount = new Set(investments.map((i) => i.project_id || i.projectId)).size;
+  const groupedInvestments = Object.values(
+    investments.reduce((groups, inv) => {
+      const projectId = inv.project_id || inv.projectId;
+      if (!projectId) return groups;
+
+      const projectName =
+        inv.project?.name ||
+        inv.project_name ||
+        inv.projectName ||
+        `Project #${projectId}`;
+      const date = inv.created_at || inv.createdAt;
+      const txId = inv.hedera_tx_id || inv.hederaTxId;
+      const existing = groups[projectId];
+
+      if (!existing) {
+        groups[projectId] = {
+          projectId,
+          projectName,
+          amount: inv.amount || 0,
+          latestDate: date || null,
+          transactionCount: 1,
+          txId,
+        };
+        return groups;
+      }
+
+      existing.amount += inv.amount || 0;
+      existing.transactionCount += 1;
+      if (date && (!existing.latestDate || new Date(date) > new Date(existing.latestDate))) {
+        existing.latestDate = date;
+      }
+      if (!existing.txId && txId) {
+        existing.txId = txId;
+      }
+      return groups;
+    }, {})
+  );
+  const projectCount = groupedInvestments.length;
 
   return (
     <div>
@@ -35,7 +73,7 @@ export default function FunderDashboardPage() {
       {!loading && investments.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.1rem 1.25rem' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>${totalInvested.toLocaleString()}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>{formatHbarWithUsd(totalInvested)}</div>
             <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginTop: '0.1rem' }}>Total Invested</div>
           </div>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.1rem 1.25rem' }}>
@@ -58,28 +96,29 @@ export default function FunderDashboardPage() {
       )}
 
       <div style={{ display: 'grid', gap: '1rem' }}>
-        {investments.map((inv) => {
-          const projectId = inv.project_id || inv.projectId;
-          const projectName = inv.project?.name || inv.projectName || `Project #${projectId}`;
-          const date = inv.created_at || inv.createdAt;
+        {groupedInvestments.map((investment) => {
+          const { projectId, projectName, latestDate, amount, transactionCount, txId } = investment;
           return (
-            <div key={inv.id} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.25rem' }}>
+            <div key={projectId} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{projectName}</h3>
-                  {date && (
+                  {latestDate && (
                     <p style={{ margin: '0.25rem 0 0', color: 'var(--muted)', fontSize: '0.8125rem' }}>
-                      {new Date(date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                      Latest funding {new Date(latestDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </p>
                   )}
+                  <p style={{ margin: '0.25rem 0 0', color: 'var(--muted)', fontSize: '0.8125rem' }}>
+                    {transactionCount} {transactionCount === 1 ? 'investment' : 'investments'}
+                  </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--primary)' }}>
-                    ${(inv.amount || 0).toLocaleString()}
+                    {formatHbarWithUsd(amount)}
                   </div>
-                  {inv.hedera_tx_id && (
+                  {txId && (
                     <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.2rem' }}>
-                      TX: {inv.hedera_tx_id.slice(0, 20)}…
+                      TX: {txId.slice(0, 20)}…
                     </div>
                   )}
                 </div>

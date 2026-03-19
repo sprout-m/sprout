@@ -12,10 +12,11 @@ import (
 )
 
 type registerRequest struct {
-	Email    string `json:"email"    binding:"required,email"`
-	Handle   string `json:"handle"   binding:"required,min=2"`
-	Password string `json:"password" binding:"required,min=8"`
-	Role     string `json:"role"     binding:"required,oneof=funder organizer verifier admin"`
+	Email           string `json:"email"             binding:"required,email"`
+	Handle          string `json:"handle"            binding:"required,min=2"`
+	Password        string `json:"password"          binding:"required,min=8"`
+	Role            string `json:"role"              binding:"required,oneof=funder organizer verifier admin"`
+	HederaAccountID string `json:"hedera_account_id"`
 }
 
 type loginRequest struct {
@@ -34,6 +35,10 @@ func (h *Handler) Register(c *gin.Context) {
 		fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	if (req.Role == "funder" || req.Role == "organizer") && req.HederaAccountID == "" {
+		fail(c, http.StatusBadRequest, "hedera_account_id is required for funders and organizers")
+		return
+	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -43,11 +48,11 @@ func (h *Handler) Register(c *gin.Context) {
 
 	var user model.User
 	err = h.db.QueryRow(context.Background(), `
-		INSERT INTO users (email, handle, role, password_hash)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, email, handle, role, created_at
-	`, req.Email, req.Handle, req.Role, string(hash)).
-		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.CreatedAt)
+		INSERT INTO users (email, handle, role, hedera_account_id, password_hash)
+		VALUES ($1, $2, $3, NULLIF($4, ''), $5)
+		RETURNING id, email, handle, role, COALESCE(hedera_account_id,''), created_at
+	`, req.Email, req.Handle, req.Role, req.HederaAccountID, string(hash)).
+		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.HederaAccountID, &user.CreatedAt)
 	if err != nil {
 		fail(c, http.StatusConflict, "email already registered")
 		return
@@ -72,10 +77,10 @@ func (h *Handler) Login(c *gin.Context) {
 	var user model.User
 	var passwordHash string
 	err := h.db.QueryRow(context.Background(), `
-		SELECT id, email, handle, role, password_hash, created_at
+		SELECT id, email, handle, role, COALESCE(hedera_account_id,''), password_hash, created_at
 		FROM users WHERE email = $1
 	`, req.Email).
-		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &passwordHash, &user.CreatedAt)
+		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.HederaAccountID, &passwordHash, &user.CreatedAt)
 	if err != nil {
 		fail(c, http.StatusUnauthorized, "invalid credentials")
 		return
@@ -100,10 +105,10 @@ func (h *Handler) Me(c *gin.Context) {
 
 	var user model.User
 	err := h.db.QueryRow(context.Background(), `
-		SELECT id, email, handle, role, created_at
+		SELECT id, email, handle, role, COALESCE(hedera_account_id,''), created_at
 		FROM users WHERE id = $1
 	`, claims.UserID).
-		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.CreatedAt)
+		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.HederaAccountID, &user.CreatedAt)
 	if err != nil {
 		fail(c, http.StatusNotFound, "user not found")
 		return
@@ -129,9 +134,9 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 	err := h.db.QueryRow(context.Background(), `
 		UPDATE users SET handle = $1
 		WHERE id = $2
-		RETURNING id, email, handle, role, created_at
+		RETURNING id, email, handle, role, COALESCE(hedera_account_id,''), created_at
 	`, req.Handle, claims.UserID).
-		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.CreatedAt)
+		Scan(&user.ID, &user.Email, &user.Handle, &user.Role, &user.HederaAccountID, &user.CreatedAt)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "update failed")
 		return

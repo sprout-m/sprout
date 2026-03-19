@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useWallet } from '../context/WalletContext';
 
 const sharedRoutes = [
   { to: '/app/marketplace', label: 'Marketplace' },
@@ -27,6 +28,7 @@ const roleRoutes = {
 
 export default function Layout() {
   const { user, logoutUser } = useApp();
+  const { accountId, isConnected, connecting, connect } = useWallet();
   const navigate = useNavigate();
   const role = user?.role || 'funder';
   const routes = roleRoutes[role] || [];
@@ -62,6 +64,19 @@ export default function Layout() {
           </nav>
 
           <div className="topbar-actions">
+            <div className="topbar-wallet">
+              {isConnected ? (
+                <div className="topbar-wallet-chip">
+                  <span className="topbar-wallet-dot" />
+                  <span>Hedera</span>
+                  <code>{accountId.slice(0, 8)}...{accountId.slice(-4)}</code>
+                </div>
+              ) : (
+                <button className="ghost" onClick={connect} disabled={connecting}>
+                  {connecting ? 'Opening HashPack…' : 'Connect Hedera'}
+                </button>
+              )}
+            </div>
             <div className="topbar-user-menu">
               <div className="topbar-user">
                 <span className="topbar-user-avatar">

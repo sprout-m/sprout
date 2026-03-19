@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { investmentsApi, projectsApi } from '../api/client';
 import { useApp } from '../context/AppContext';
+import { useWallet } from '../context/WalletContext';
+import { formatHbarWithUsd, formatUsdEstimateFromHbar } from '../utils/currency';
 
 const msStatusLabel = {
   pending:   { text: 'Pending',   color: '#9ca3af' },
@@ -19,16 +21,17 @@ const inputStyle = {
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const { user } = useApp();
+  const { isConnected, accountId, connecting, connect, transferHBAR } = useWallet();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [fundAmount, setFundAmount] = useState('');
-  const [fundTxId, setFundTxId] = useState('');
   const [fundLoading, setFundLoading] = useState(false);
   const [fundError, setFundError] = useState('');
   const [fundResult, setFundResult] = useState(null);
+  const [canFunderReview, setCanFunderReview] = useState(false);
 
   useEffect(() => {
     projectsApi.get(id)
@@ -37,18 +40,40 @@ export default function ProjectDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (user?.role !== 'funder') {
+      setCanFunderReview(false);
+      return;
+    }
+    investmentsApi.myInvestments()
+      .then((items) => {
+        setCanFunderReview(items.some((inv) => (inv.project_id || inv.projectId) === id));
+      })
+      .catch(() => setCanFunderReview(false));
+  }, [id, user?.role]);
+
   async function handleFund(e) {
     e.preventDefault();
     setFundError('');
     setFundResult(null);
     setFundLoading(true);
     try {
-      const body = { amount: Number(fundAmount) };
-      if (fundTxId.trim()) body.hedera_tx_id = fundTxId.trim();
-      const result = await investmentsApi.fund(id, body);
+      if (!p.hederaEscrowAccount) {
+        throw new Error('Project escrow account is still provisioning. Refresh in a moment and try again.');
+      }
+
+      let fromAccount = accountId;
+      if (!isConnected) {
+        fromAccount = await connect();
+      }
+      if (!fromAccount) {
+        throw new Error('No wallet connected. Pair HashPack and try again.');
+      }
+
+      const txId = await transferHBAR(fromAccount, p.hederaEscrowAccount, Number(fundAmount));
+      const result = await investmentsApi.fund(id, { amount: Number(fundAmount), hedera_tx_id: txId });
       setFundResult(result);
       setFundAmount('');
-      setFundTxId('');
       projectsApi.get(id).then(setData).catch(() => {});
     } catch (err) {
       setFundError(err.message || 'Investment failed');
@@ -97,9 +122,9 @@ export default function ProjectDetailPage() {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0', marginBottom: '1.75rem', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
         {[
-          { label: 'Funding Goal', value: `$${goal.toLocaleString()}` },
-          { label: 'Raised',       value: `$${funded.toLocaleString()}`, green: true },
-          { label: 'Released',     value: `$${released.toLocaleString()}` },
+          { label: 'Funding Goal', value: formatHbarWithUsd(goal) },
+          { label: 'Raised',       value: formatHbarWithUsd(funded), green: true },
+          { label: 'Released',     value: formatHbarWithUsd(released) },
         ].map((s, i) => (
           <div key={s.label} style={{
             padding: '1.125rem 1.25rem',
@@ -134,31 +159,37 @@ export default function ProjectDetailPage() {
           <h2 style={{ margin: '0 0 1.25rem', fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Fund this project</h2>
           {fundResult ? (
             <div>
-              <p style={{ margin: '0 0 0.75rem', fontWeight: 600, color: '#14532d' }}>Investment recorded.</p>
-              {fundResult.escrow_account && (
-                <div style={{ padding: '0.875rem 1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                  <div style={{ color: '#6b7280', marginBottom: '0.375rem' }}>Send HBAR to escrow account:</div>
-                  <code style={{ color: '#14532d', fontWeight: 700, wordBreak: 'break-all' }}>{fundResult.escrow_account}</code>
-                </div>
-              )}
+              <p style={{ margin: '0 0 0.75rem', fontWeight: 600, color: '#14532d' }}>Investment recorded on Hedera.</p>
+              <div style={{ padding: '0.875rem 1rem', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                <div style={{ color: '#6b7280', marginBottom: '0.375rem' }}>Escrow account</div>
+                <code style={{ color: '#14532d', fontWeight: 700, wordBreak: 'break-all' }}>{p.hederaEscrowAccount || fundResult.escrow_account}</code>
+                {fundResult.investment?.hedera_tx_id && (
+                  <div style={{ color: '#6b7280', marginTop: '0.5rem' }}>Transaction: {fundResult.investment.hedera_tx_id}</div>
+                )}
+              </div>
               <button className="ghost" onClick={() => setFundResult(null)}>Make another investment</button>
             </div>
           ) : (
             <form onSubmit={handleFund} style={{ display: 'grid', gap: '0.875rem' }}>
               <div style={{ display: 'grid', gap: '0.375rem' }}>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#374151' }}>Amount (USD)</label>
+                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#374151' }}>Amount (HBAR)</label>
                 <input type="number" min="1" step="0.01" placeholder="500" required style={inputStyle}
                   value={fundAmount} onChange={(e) => setFundAmount(e.target.value)} />
+                {fundAmount && (
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                    {formatUsdEstimateFromHbar(fundAmount)}
+                  </div>
+                )}
               </div>
-              <div style={{ display: 'grid', gap: '0.375rem' }}>
-                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#374151' }}>Hedera Transaction ID <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span></label>
-                <input type="text" placeholder="0.0.12345@1234567890.000000000" style={inputStyle}
-                  value={fundTxId} onChange={(e) => setFundTxId(e.target.value)} />
+              <div style={{ padding: '0.875rem 1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.875rem', color: '#475569' }}>
+                {!p.hederaEscrowAccount
+                  ? 'Hedera escrow account is still provisioning for this project. Wait a moment, then refresh before funding.'
+                  : `HashPack will send HBAR from your connected wallet to escrow account ${p.hederaEscrowAccount}.`}
               </div>
               {fundError && <p style={{ margin: 0, fontSize: '0.875rem', color: '#dc2626' }}>{fundError}</p>}
               <div>
-                <button type="submit" disabled={fundLoading || !fundAmount}>
-                  {fundLoading ? 'Processing…' : 'Invest Now'}
+                <button type="submit" disabled={fundLoading || connecting || !fundAmount || !p.hederaEscrowAccount}>
+                  {fundLoading ? 'Waiting for HashPack…' : !isConnected ? 'Connect HashPack & Invest' : 'Invest with HashPack'}
                 </button>
               </div>
             </form>
@@ -172,8 +203,10 @@ export default function ProjectDetailPage() {
         <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
           {milestones.map((ms, idx) => {
             const meta = msStatusLabel[ms.status] || msStatusLabel.pending;
-            const canSubmit = user?.role === 'organizer' && ms.status === 'pending';
-            const canReview = (user?.role === 'verifier' || user?.role === 'funder') && ms.status === 'submitted';
+            const canSubmit = user?.role === 'organizer' && user?.id === p.organizerId && ms.status === 'pending';
+            const canReview =
+              ((user?.role === 'verifier') || (user?.role === 'funder' && canFunderReview)) &&
+              ms.status === 'submitted';
             return (
               <div key={ms.id} style={{
                 display: 'grid',
@@ -197,7 +230,7 @@ export default function ProjectDetailPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111827' }}>${(ms.amount || 0).toLocaleString()}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111827' }}>{formatHbarWithUsd(ms.amount || 0)}</div>
                     <div style={{ fontSize: '0.75rem', color: meta.color, fontWeight: 500, marginTop: '0.125rem' }}>{meta.text}</div>
                   </div>
                   {canSubmit && (

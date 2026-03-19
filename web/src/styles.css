@@ -189,6 +189,39 @@ button, input, select, textarea { font: inherit; }
   padding-left: 0.875rem;
 }
 
+.topbar-wallet {
+  display: flex;
+  align-items: center;
+  margin-right: 0.875rem;
+  flex-shrink: 0;
+}
+
+.topbar-wallet-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.topbar-wallet-chip code {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+}
+
+.topbar-wallet-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #4ade80;
+  box-shadow: 0 0 0 0.18rem rgba(74, 222, 128, 0.18);
+}
+
 .topbar-actions label {
   font-size: 0.75rem;
   font-weight: 500;

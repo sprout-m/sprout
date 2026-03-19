@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/meridian-mkt/api/middleware"
 	"github.com/meridian-mkt/api/model"
 )
 
@@ -38,20 +39,42 @@ func (h *Handler) ListMilestones(c *gin.Context) {
 }
 
 func (h *Handler) GetMilestone(c *gin.Context) {
+	claims := middleware.GetClaims(c)
 	id, ok2 := parseUUID(c, "id")
 	if !ok2 {
 		return
 	}
 
 	var ms model.Milestone
+	var organizerID string
 	err := h.db.QueryRow(context.Background(), `
-		SELECT id, project_id, title, description, amount, order_index, status, created_at
+		SELECT m.id, m.project_id, m.title, m.description, m.amount, m.order_index, m.status, m.created_at,
+		       p.organizer_id::text
 		FROM milestones WHERE id = $1
+		JOIN projects p ON p.id = m.project_id
 	`, id).Scan(&ms.ID, &ms.ProjectID, &ms.Title, &ms.Description,
-		&ms.Amount, &ms.OrderIndex, &ms.Status, &ms.CreatedAt)
+		&ms.Amount, &ms.OrderIndex, &ms.Status, &ms.CreatedAt, &organizerID)
 	if err != nil {
 		fail(c, http.StatusNotFound, "milestone not found")
 		return
+	}
+
+	if claims.Role == "organizer" && organizerID != claims.UserID.String() {
+		fail(c, http.StatusForbidden, "you can only view milestones for your own projects")
+		return
+	}
+	if claims.Role == "funder" {
+		var allowed bool
+		err = h.db.QueryRow(context.Background(), `
+			SELECT EXISTS(
+				SELECT 1 FROM investments
+				WHERE project_id = $1 AND funder_id = $2
+			)
+		`, ms.ProjectID, claims.UserID).Scan(&allowed)
+		if err != nil || !allowed {
+			fail(c, http.StatusForbidden, "you can only review milestones for projects you funded")
+			return
+		}
 	}
 
 	// Fetch proof submission if any

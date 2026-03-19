@@ -37,7 +37,13 @@ func NewClient(cfg *Config) (*hedera.Client, error) {
 		return nil, fmt.Errorf("invalid operator account ID %q: %w", cfg.OperatorAccountID, err)
 	}
 
-	operatorPrivateKey, err := hedera.PrivateKeyFromString(cfg.OperatorPrivateKey)
+	operatorPrivateKey, err := hedera.PrivateKeyFromStringECDSA(cfg.OperatorPrivateKey)
+	if err != nil {
+		operatorPrivateKey, err = hedera.PrivateKeyFromStringDer(cfg.OperatorPrivateKey)
+	}
+	if err != nil {
+		operatorPrivateKey, err = hedera.PrivateKeyFromStringEd25519(cfg.OperatorPrivateKey)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("invalid operator private key: %w", err)
 	}

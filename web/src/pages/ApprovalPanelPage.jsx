@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { milestonesApi } from '../api/client';
+import { formatHbarWithUsd } from '../utils/currency';
 
 export default function ApprovalPanelPage() {
   const { id } = useParams();
@@ -99,7 +100,7 @@ export default function ApprovalPanelPage() {
     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Review Milestone</h1>
       <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-        {ms.title} — ${(ms.amount || 0).toLocaleString()} payout
+        {ms.title} — {formatHbarWithUsd(ms.amount || 0)} payout
       </p>
 
       {/* Proof */}

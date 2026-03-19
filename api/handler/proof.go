@@ -30,16 +30,22 @@ func (h *Handler) SubmitProof(c *gin.Context) {
 		return
 	}
 
-	// Verify milestone exists and is in pending state
+	// Verify milestone exists, belongs to the caller, and is in a submittable state
 	var milestoneStatus string
 	var projectID string
+	var organizerID string
 	err := h.db.QueryRow(context.Background(), `
-		SELECT m.status, m.project_id
+		SELECT m.status, m.project_id, p.organizer_id::text
 		FROM milestones m
+		JOIN projects p ON p.id = m.project_id
 		WHERE m.id = $1
-	`, milestoneID).Scan(&milestoneStatus, &projectID)
+	`, milestoneID).Scan(&milestoneStatus, &projectID, &organizerID)
 	if err != nil {
 		fail(c, http.StatusNotFound, "milestone not found")
+		return
+	}
+	if organizerID != claims.UserID.String() {
+		fail(c, http.StatusForbidden, "you can only submit proof for your own projects")
 		return
 	}
 	if milestoneStatus != "pending" && milestoneStatus != "rejected" {

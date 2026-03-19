@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { formatUsdEstimateFromHbar } from '../utils/currency';
 
 export default function CreateProjectPage() {
   const { createProject } = useApp();
@@ -67,8 +68,8 @@ export default function CreateProjectPage() {
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Create a Project</h1>
-      <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '2rem' }}>
-        Define your project and milestones. Funders invest in your project; funds are released only when proof is verified.
+          <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '2rem' }}>
+        Define your project and milestones. Funders invest in HBAR; funds are released only when proof is verified.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.5rem' }}>
@@ -93,8 +94,13 @@ export default function CreateProjectPage() {
               <input className="ob-field-input" value={form.goal} onChange={(e) => setField('goal', e.target.value)} placeholder="Plant 500 trees by Q3 2026" />
             </div>
             <div className="ob-field">
-              <label className="ob-field-label">Total Funding (USD) *</label>
+              <label className="ob-field-label">Total Funding (HBAR) *</label>
               <input className="ob-field-input" type="number" min="1" step="0.01" value={form.total_amount} onChange={(e) => setField('total_amount', e.target.value)} required placeholder="10000" />
+              {form.total_amount && (
+                <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: 'var(--muted)' }}>
+                  {formatUsdEstimateFromHbar(form.total_amount)}
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -128,8 +134,13 @@ export default function CreateProjectPage() {
                   <input className="ob-field-input" value={m.description} onChange={(e) => setMilestone(i, 'description', e.target.value)} placeholder="What must be done?" />
                 </div>
                 <div className="ob-field">
-                  <label className="ob-field-label">Payout (USD) *</label>
+                  <label className="ob-field-label">Payout (HBAR) *</label>
                   <input className="ob-field-input" type="number" min="0.01" step="0.01" value={m.amount} onChange={(e) => setMilestone(i, 'amount', e.target.value)} required placeholder="2500" />
+                  {m.amount && (
+                    <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: 'var(--muted)' }}>
+                      {formatUsdEstimateFromHbar(m.amount)}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -65,6 +65,7 @@ const WalletContext = createContext({
   connecting:             false,
   connect:                async () => {},
   disconnect:             async () => {},
+  transferHBAR:           async () => { throw new Error('Wallet not ready'); },
   transferUSDC:           async () => { throw new Error('Wallet not ready'); },
   ensureTokenAssociated:  async () => { throw new Error('Wallet not ready'); },
   signSchedule:           async () => { throw new Error('Wallet not ready'); },
@@ -103,6 +104,28 @@ export function WalletProvider({ children }) {
   async function disconnect() {
     await getConnector().disconnectAll();
     sync();
+  }
+
+  async function transferHBAR(fromAccountIdStr, toAccountIdStr, amountHBAR) {
+    const c      = getConnector();
+    const fromId = AccountId.fromString(fromAccountIdStr);
+    const signer = c.getSigner(fromId);
+    const amount = Number(amountHBAR);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('Enter a valid HBAR amount');
+    }
+
+    const tx = await new TransferTransaction()
+      .setNodeAccountIds([new AccountId(3)])
+      .addHbarTransfer(fromId, -amount)
+      .addHbarTransfer(AccountId.fromString(toAccountIdStr), amount)
+      .freezeWithSigner(signer);
+
+    const response = await tx.executeWithSigner(signer);
+    await response.getReceipt(receiptClient);
+
+    return response.transactionId.toString();
   }
 
   /**
@@ -198,7 +221,7 @@ export function WalletProvider({ children }) {
   }
 
   return (
-    <WalletContext.Provider value={{ accountId, isConnected, connecting, connect, disconnect, transferUSDC, ensureTokenAssociated, signSchedule }}>
+    <WalletContext.Provider value={{ accountId, isConnected, connecting, connect, disconnect, transferHBAR, transferUSDC, ensureTokenAssociated, signSchedule }}>
       {children}
     </WalletContext.Provider>
   );

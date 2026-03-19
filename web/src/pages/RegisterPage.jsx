@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useWallet } from '../context/WalletContext';
 
 const inputStyle = {
   width: '100%', padding: '0.625rem 0.875rem', fontSize: '0.9375rem',
@@ -12,6 +13,7 @@ const labelStyle = { fontSize: '0.875rem', fontWeight: 600, color: '#374151' };
 
 export default function RegisterPage() {
   const { registerUser } = useApp();
+  const { accountId, isConnected, connecting, connect, disconnect } = useWallet();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -22,6 +24,8 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const walletRequired = role === 'funder' || role === 'organizer';
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -29,9 +33,13 @@ export default function RegisterPage() {
       setError('Passwords do not match');
       return;
     }
+    if (walletRequired && !accountId) {
+      setError('Connect HashPack to continue as a funder or organizer');
+      return;
+    }
     setLoading(true);
     try {
-      await registerUser({ email, handle, password, role });
+      await registerUser({ email, handle, password, role, hedera_account_id: walletRequired ? accountId : '' });
       navigate('/app', { replace: true });
     } catch (err) {
       setError(err.message || 'Registration failed');
@@ -40,7 +48,7 @@ export default function RegisterPage() {
     }
   }
 
-  const disabled = loading || !email || !handle || !password || !confirmPassword;
+  const disabled = loading || connecting || !email || !handle || !password || !confirmPassword || (walletRequired && !accountId);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb', fontFamily: "'Inter', system-ui, sans-serif", WebkitFontSmoothing: 'antialiased' }}>
@@ -81,6 +89,30 @@ export default function RegisterPage() {
                 <option value="funder">Funder — invest in projects and approve milestone releases</option>
                 <option value="organizer">Organizer — create projects and submit proof of progress</option>
               </select>
+            </div>
+
+            <div style={{ display: 'grid', gap: '0.5rem' }}>
+              <label style={labelStyle}>Hedera wallet</label>
+              <div style={{ padding: '0.875rem 1rem', border: '1px solid #d1d5db', borderRadius: '7px', background: '#fff', fontSize: '0.875rem', color: '#374151' }}>
+                {walletRequired
+                  ? (accountId
+                    ? `Connected HashPack account: ${accountId}`
+                    : 'HashPack not connected')
+                  : 'Wallet connection is optional for this role.'}
+              </div>
+              {walletRequired ? (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {!isConnected ? (
+                    <button type="button" className="ghost" onClick={connect} disabled={connecting} style={{ flex: 1 }}>
+                      {connecting ? 'Opening HashPack…' : 'Connect HashPack'}
+                    </button>
+                  ) : (
+                    <button type="button" className="ghost" onClick={disconnect} style={{ flex: 1 }}>
+                      Disconnect Wallet
+                    </button>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             <div style={{ display: 'grid', gap: '0.375rem' }}>
