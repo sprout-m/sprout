@@ -50,8 +50,9 @@ func (h *Handler) GetMilestone(c *gin.Context) {
 	err := h.db.QueryRow(context.Background(), `
 		SELECT m.id, m.project_id, m.title, m.description, m.amount, m.order_index, m.status, m.created_at,
 		       p.organizer_id::text
-		FROM milestones WHERE id = $1
+		FROM milestones m
 		JOIN projects p ON p.id = m.project_id
+		WHERE m.id = $1
 	`, id).Scan(&ms.ID, &ms.ProjectID, &ms.Title, &ms.Description,
 		&ms.Amount, &ms.OrderIndex, &ms.Status, &ms.CreatedAt, &organizerID)
 	if err != nil {

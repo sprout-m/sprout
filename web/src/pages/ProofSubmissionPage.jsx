@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { milestonesApi } from '../api/client';
+import { formatHbarFromAmount, formatUsdEstimateFromHbar } from '../utils/currency';
 
 export default function ProofSubmissionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [milestone, setMilestone] = useState(null);
-  const [form, setForm] = useState({ text_update: '', image_urls: '', doc_urls: '', file_hashes: '' });
+  const [form, setForm] = useState({ text_update: '', doc_urls: '', file_hashes: '' });
+  const [imageFiles, setImageFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,15 +20,25 @@ export default function ProofSubmissionPage() {
       .finally(() => setFetchLoading(false));
   }, [id]);
 
+  async function filesToDataUrls(files) {
+    return Promise.all(files.map((file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+      reader.readAsDataURL(file);
+    })));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
       const parseList = (s) => s.split('\n').map((x) => x.trim()).filter(Boolean);
+      const imageUrls = await filesToDataUrls(imageFiles);
       await milestonesApi.submitProof(id, {
         text_update: form.text_update,
-        image_urls: parseList(form.image_urls),
+        image_urls: imageUrls,
         doc_urls: parseList(form.doc_urls),
         file_hashes: parseList(form.file_hashes),
       });
@@ -46,7 +58,8 @@ export default function ProofSubmissionPage() {
       <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Submit Proof</h1>
       {milestone && (
         <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-          Milestone: <strong style={{ color: 'inherit' }}>{milestone.title}</strong> — ${(milestone.amount || 0).toLocaleString()} payout on approval
+          Milestone: <strong style={{ color: 'inherit' }}>{milestone.title}</strong> — {formatUsdEstimateFromHbar(milestone.amount || 0)} payout on approval
+          <span style={{ display: 'block', marginTop: '0.2rem', fontSize: '0.75rem' }}>{formatHbarFromAmount(milestone.amount || 0)}</span>
         </p>
       )}
 
@@ -67,15 +80,21 @@ export default function ProofSubmissionPage() {
             </div>
 
             <div className="ob-field">
-              <label className="ob-field-label">Image URLs (one per line)</label>
-              <textarea
+              <label className="ob-field-label">Attach Images</label>
+              <input
                 className="ob-field-input"
-                rows={3}
-                value={form.image_urls}
-                onChange={(e) => setForm((p) => ({ ...p, image_urls: e.target.value }))}
-                placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg"
-                style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8125rem' }}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
               />
+              {imageFiles.length > 0 && (
+                <div style={{ display: 'grid', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--muted)' }}>
+                  {imageFiles.map((file) => (
+                    <div key={`${file.name}-${file.size}`}>{file.name}</div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="ob-field">

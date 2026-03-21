@@ -32,11 +32,48 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero — two column */}
-      <section style={{ borderBottom: '1px solid #e5e7eb', background: '#f0fdf4' }}>
+      <section style={{ borderBottom: '1px solid #e5e7eb', background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 52%, #f7fee7 100%)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'radial-gradient(rgba(20, 83, 45, 0.16) 1.2px, transparent 1.2px)',
+          backgroundSize: '16px 16px',
+          opacity: 0.65,
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: '8%',
+          right: '10%',
+          width: '340px',
+          height: '340px',
+          borderRadius: '999px',
+          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.55) 14%, rgba(255, 255, 255, 0.18) 34%, rgba(187, 247, 208, 0.12) 48%, rgba(255, 255, 255, 0) 72%)',
+          filter: 'blur(3px)',
+          mixBlendMode: 'screen',
+          opacity: 0.95,
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute',
+          top: '16%',
+          right: '16%',
+          width: '240px',
+          height: '22px',
+          borderRadius: '999px',
+          background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.72) 35%, rgba(255,255,255,0.28) 62%, rgba(255,255,255,0) 100%)',
+          transform: 'rotate(-18deg)',
+          filter: 'blur(3px)',
+          mixBlendMode: 'screen',
+          opacity: 0.9,
+          pointerEvents: 'none',
+        }} />
         <div style={{
           maxWidth: '1100px', margin: '0 auto', padding: '0 2rem',
           display: 'grid', gridTemplateColumns: '1fr 400px', gap: '4rem', alignItems: 'center',
           minHeight: '480px',
+          position: 'relative',
+          zIndex: 1,
         }}>
           <div style={{ padding: '5rem 0' }}>
             <h1 style={{
@@ -71,66 +108,96 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right panel — graphic */}
+          {/* Right panel — product preview */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem 0' }}>
-            <svg width="360" height="380" viewBox="0 0 360 380" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Backdrop glow circle */}
-              <circle cx="180" cy="180" r="155" fill="#dcfce7" opacity="0.6" />
-              <circle cx="180" cy="180" r="120" fill="#bbf7d0" opacity="0.35" />
+            <div style={{
+              width: '100%',
+              maxWidth: '390px',
+              padding: '1rem',
+              border: '1px solid #c7d2df',
+              borderRadius: '14px',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f8fbf9 100%)',
+              boxShadow: '0 18px 36px rgba(15, 23, 42, 0.10)',
+              display: 'grid',
+              gap: '0.9rem',
+            }}>
+              <div style={{
+                border: '1px solid #d6e0d9',
+                borderRadius: '10px',
+                background: '#ffffff',
+                padding: '0.95rem',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.7rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.3rem' }}>
+                      Project
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+                      Ocean Plastic Recovery
+                    </div>
+                  </div>
+                  <div style={{
+                    alignSelf: 'start',
+                    padding: '0.25rem 0.55rem',
+                    borderRadius: '999px',
+                    background: '#ecfdf5',
+                    border: '1px solid #86efac',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    color: '#166534',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                  }}>
+                    Active
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
+                  {[
+                    ['Goal', '$1,200'],
+                    ['Raised', '$850'],
+                    ['Released', '$300'],
+                  ].map(([label, value]) => (
+                    <div key={label} style={{
+                      border: '1px solid #dbe4ee',
+                      borderRadius: '8px',
+                      background: '#f8fafc',
+                      padding: '0.65rem 0.7rem',
+                    }}>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#64748b', marginBottom: '0.2rem' }}>
+                        {label}
+                      </div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#111827' }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-              {/* Stem */}
-              <line x1="180" y1="310" x2="180" y2="145" stroke="#14532d" strokeWidth="3.5" strokeLinecap="round" />
-
-              {/* Left big leaf */}
-              <path d="M180 200 C160 185 120 175 105 145 C100 130 108 110 125 108 C155 106 185 135 180 200Z"
-                fill="#16a34a" opacity="0.85" />
-              {/* Left leaf vein */}
-              <path d="M180 200 C160 178 130 158 115 138"
-                stroke="#14532d" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-
-              {/* Right big leaf */}
-              <path d="M180 165 C200 148 240 138 258 108 C265 93 258 72 240 70 C210 67 178 98 180 165Z"
-                fill="#22c55e" opacity="0.8" />
-              {/* Right leaf vein */}
-              <path d="M180 165 C205 145 232 118 248 92"
-                stroke="#14532d" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-
-              {/* Small left accent leaf */}
-              <path d="M180 240 C162 230 138 228 128 212 C124 204 130 194 140 193 C160 191 180 208 180 240Z"
-                fill="#4ade80" opacity="0.6" />
-
-              {/* Circuit roots */}
-              {/* Main root down */}
-              <line x1="180" y1="310" x2="180" y2="340" stroke="#14532d" strokeWidth="2.5" strokeLinecap="round" />
-              {/* Left root */}
-              <line x1="180" y1="328" x2="130" y2="328" stroke="#14532d" strokeWidth="2" strokeLinecap="round" />
-              <line x1="130" y1="328" x2="130" y2="348" stroke="#14532d" strokeWidth="2" strokeLinecap="round" />
-              {/* Right root */}
-              <line x1="180" y1="320" x2="230" y2="320" stroke="#14532d" strokeWidth="2" strokeLinecap="round" />
-              <line x1="230" y1="320" x2="230" y2="340" stroke="#14532d" strokeWidth="2" strokeLinecap="round" />
-              {/* Far left root */}
-              <line x1="130" y1="338" x2="105" y2="338" stroke="#14532d" strokeWidth="1.5" strokeLinecap="round" />
-              {/* Far right root */}
-              <line x1="230" y1="332" x2="258" y2="332" stroke="#14532d" strokeWidth="1.5" strokeLinecap="round" />
-
-              {/* Circuit nodes */}
-              <circle cx="130" cy="348" r="5" fill="#16a34a" />
-              <circle cx="230" cy="340" r="5" fill="#16a34a" />
-              <circle cx="105" cy="338" r="4" fill="#4ade80" opacity="0.7" />
-              <circle cx="258" cy="332" r="4" fill="#4ade80" opacity="0.7" />
-              <circle cx="180" cy="340" r="4" fill="#14532d" opacity="0.5" />
-
-              {/* Floating dots — growth particles */}
-              <circle cx="100" cy="160" r="4" fill="#4ade80" opacity="0.5" />
-              <circle cx="88" cy="200" r="3" fill="#16a34a" opacity="0.35" />
-              <circle cx="270" cy="185" r="5" fill="#4ade80" opacity="0.4" />
-              <circle cx="285" cy="155" r="3" fill="#22c55e" opacity="0.4" />
-              <circle cx="255" cy="230" r="3.5" fill="#16a34a" opacity="0.3" />
-              <circle cx="110" cy="125" r="2.5" fill="#4ade80" opacity="0.4" />
-
-              {/* Outer ring arc */}
-              <circle cx="180" cy="180" r="153" stroke="#86efac" strokeWidth="1" strokeDasharray="6 8" opacity="0.5" />
-            </svg>
+              <div style={{
+                border: '1px solid #d6e0d9',
+                borderRadius: '10px',
+                background: '#ffffff',
+                padding: '0.95rem',
+              }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.55rem' }}>
+                  Audit Trail
+                </div>
+                <div style={{ display: 'grid', gap: '0.55rem' }}>
+                  {[
+                    ['Project created', 'Escrow: 0.0.8316001'],
+                    ['Proof submitted', 'Milestone 02'],
+                    ['Approval signed', 'AWS KMS + Hedera HCS'],
+                  ].map(([title, meta]) => (
+                    <div key={title} style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start' }}>
+                      <div style={{ width: '0.55rem', height: '0.55rem', borderRadius: '999px', background: '#16a34a', marginTop: '0.32rem', flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827' }}>{title}</div>
+                        <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '0.1rem' }}>{meta}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -143,10 +210,10 @@ export default function LandingPage() {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', position: 'relative' }}>
             {[
-              { n: '01', who: 'Funder', what: 'Creates a project, defines milestones, and locks HBAR escrow on-chain.' },
-              { n: '02', who: 'Organizer', what: 'Executes the work. Submits documents, images, or text as proof.' },
-              { n: '03', who: 'Verifier', what: 'Reviews evidence. Approves or rejects. Decision signed via AWS KMS.' },
-              { n: '04', who: 'Hedera', what: 'HBAR releases to organizer. HCS logs the event permanently.' },
+              { n: '01', who: 'Organizer', what: 'Creates a project, defines milestones, and sets the impact goal and funding target.' },
+              { n: '02', who: 'Funder', what: 'Funds the project through HashPack and sends HBAR into the project escrow account.' },
+              { n: '03', who: 'Organizer', what: 'Executes the work and submits proof with updates, files, and image attachments.' },
+              { n: '04', who: 'Sprout + Hedera', what: 'Funders review proof, AWS KMS signs approvals, and Hedera logs and settles releases.' },
             ].map((step, i) => (
               <div key={step.n} style={{
                 padding: '0 2rem 0 0',
@@ -168,31 +235,76 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section style={{ borderBottom: '1px solid #e5e7eb', background: '#f8fafc' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '3.5rem 2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '4rem', alignItems: 'start' }}>
+            <div>
+              <p style={{ margin: '0 0 0.75rem', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af' }}>
+                Technical flow
+              </p>
+              <p style={{ margin: 0, fontSize: '0.9375rem', color: '#374151', lineHeight: 1.7 }}>
+                Sprout combines wallet settlement, secure signing, and consensus logging into one milestone release flow.
+              </p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+              {[
+                {
+                  title: 'HashPack Funding',
+                  desc: 'Funders connect a Hedera wallet and send converted HBAR into a project-specific escrow account.',
+                },
+                {
+                  title: 'AWS KMS Approval',
+                  desc: 'When a funded milestone is approved, Sprout signs the approval payload through AWS KMS.',
+                },
+                {
+                  title: 'Hedera Audit Trail',
+                  desc: 'Project creation, proof submission, and approvals are written to Hedera HCS for tamper-evident history.',
+                },
+              ].map((item) => (
+                <div key={item.title} style={{
+                  background: '#ffffff',
+                  border: '1px solid #d8e1ea',
+                  borderRadius: '10px',
+                  padding: '1.15rem',
+                }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.45rem' }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: '#6b7280', lineHeight: 1.65 }}>
+                    {item.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Roles detail — asymmetric */}
       <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '5rem 2rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '5rem', alignItems: 'start' }}>
           <div>
             <p style={{ margin: '0 0 0.75rem', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af' }}>
-              Three roles
+              Product roles
             </p>
             <p style={{ margin: 0, fontSize: '0.9375rem', color: '#374151', lineHeight: 1.7 }}>
-              Each party has a distinct, bounded role. No one actor can both claim
-              and approve. The structure enforces accountability by design.
+              Sprout is built around organizers and funders. Organizers define and execute projects.
+              Funders provide capital, review submitted proof, and approve milestone releases.
             </p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
             {[
               {
-                role: 'Funder',
-                desc: 'Sets the project scope, milestone targets, and funding amount. Locks HBAR into escrow before work begins. Receives a full audit trail.',
-              },
-              {
                 role: 'Organizer',
-                desc: 'Carries out the project work. Submits proof for each milestone — text, files, images. Receives HBAR directly after verifier approval.',
+                desc: 'Defines the project, sets the milestone budget, executes the work, and submits proof for each milestone with updates, files, and images.',
               },
               {
-                role: 'Verifier',
-                desc: 'An independent party who reviews submitted evidence. Approves or rejects each milestone. Every decision is signed by AWS KMS and logged on Hedera HCS.',
+                role: 'Funder',
+                desc: 'Backs projects through HashPack, sends HBAR into escrow, reviews proof on projects they funded, and approves or rejects milestone releases.',
+              },
+              {
+                role: 'Infrastructure',
+                desc: 'AWS KMS signs approval payloads, Hedera escrows and settles project funds, and HCS creates a tamper-evident audit trail for the full project lifecycle.',
               },
             ].map((r, i) => (
               <div key={r.role} style={{

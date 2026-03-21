@@ -15,7 +15,7 @@ Sprout is a trust-minimised funding platform built for the **Hedera Apex Hackath
 1. **Organizers** create sustainability projects with defined milestones and funding targets
 2. **Funders** browse the public marketplace and lock capital into project escrow accounts on Hedera
 3. **Organizers** submit proof of progress (text, images, documents) for each milestone
-4. **Verifiers** review the proof and approve — triggering an AWS KMS cryptographic signature
+4. **Funders** review proof for projects they funded and approve milestone releases — triggering an AWS KMS cryptographic signature
 5. **Hedera** transfers HBAR to the organizer on-chain; every event is written to an immutable HCS audit topic
 
 ---
@@ -67,8 +67,7 @@ Every milestone approval is signed by AWS KMS — the private key never leaves t
 | Role | Capabilities |
 |---|---|
 | `organizer` | Create projects, define milestones, submit proof of progress |
-| `funder` | Browse marketplace, invest capital in projects |
-| `verifier` | Review submitted proof, approve or reject milestone releases |
+| `funder` | Browse marketplace, invest capital in projects, review submitted proof for funded projects |
 | `admin` | View all projects and system stats |
 
 ---
@@ -150,13 +149,13 @@ npm run dev
 
 ## Demo flow
 
-1. Register three accounts: one as **organizer**, one as **funder**, one as **verifier**
+1. Register two accounts through the web app: one as **organizer** and one as **funder**
 2. As organizer: create a project ("Community Solar Farm") with 3 milestones
 3. Verify a Hedera HCS topic was created and `PROJECT_CREATED` event logged
 4. As funder: browse the marketplace, click "Fund Project", enter an amount
 5. As organizer: submit proof for milestone 1 (text update + image URL)
 6. Verify `PROOF_SUBMITTED` HCS event
-7. As verifier: open the review queue, approve the milestone
+7. As funder: open the review queue for funded projects and approve the milestone
 8. Verify AWS KMS signature stored + `MILESTONE_APPROVED` and `FUNDS_RELEASED` HCS events
 9. Check project page shows updated amount released and audit timeline
 

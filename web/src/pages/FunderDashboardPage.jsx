@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { investmentsApi } from '../api/client';
-import { formatHbarWithUsd } from '../utils/currency';
+import { formatHbarFromAmount, formatUsdEstimateFromHbar } from '../utils/currency';
 
 export default function FunderDashboardPage() {
   const navigate = useNavigate();
@@ -73,7 +73,8 @@ export default function FunderDashboardPage() {
       {!loading && investments.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.1rem 1.25rem' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>{formatHbarWithUsd(totalInvested)}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>{formatUsdEstimateFromHbar(totalInvested)}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.2rem' }}>{formatHbarFromAmount(totalInvested)}</div>
             <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginTop: '0.1rem' }}>Total Invested</div>
           </div>
           <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', padding: '1.1rem 1.25rem' }}>
@@ -114,7 +115,8 @@ export default function FunderDashboardPage() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--primary)' }}>
-                    {formatHbarWithUsd(amount)}
+                    {formatUsdEstimateFromHbar(amount)}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.125rem' }}>{formatHbarFromAmount(amount)}</div>
                   </div>
                   {txId && (
                     <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.2rem' }}>

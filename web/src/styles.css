@@ -4163,3 +4163,362 @@ tr:last-child td {
   padding-top: 1.25rem;
   border-top: 1px solid var(--line);
 }
+
+/* ─────────────────────────────
+   Project Detail
+───────────────────────────── */
+.project-detail-page {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.project-detail-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.75rem 1.875rem;
+  border: 1px solid #c7d0dc;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 18px rgba(15, 23, 42, 0.05);
+}
+
+.project-detail-hero-copy {
+  max-width: 720px;
+}
+
+.project-detail-eyebrow,
+.project-detail-section-kicker,
+.project-detail-status-label,
+.project-detail-stat-label,
+.project-detail-note-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5b6b82;
+}
+
+.project-detail-title {
+  margin: 0 0 0.75rem;
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  color: #0f172a;
+}
+
+.project-detail-description {
+  max-width: 650px;
+  color: #334155;
+  font-size: 0.96rem;
+  line-height: 1.72;
+}
+
+.project-detail-hero-actions {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: end;
+  min-width: 240px;
+}
+
+.project-detail-status-card {
+  width: 100%;
+  padding: 1rem 1.05rem;
+  border: 1px solid #c8d2de;
+  border-radius: 8px;
+  background: #f6f8fb;
+  text-align: left;
+}
+
+.project-detail-status-value {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: capitalize;
+}
+
+.project-detail-status-meta {
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  color: #5f6f85;
+  word-break: break-word;
+}
+
+.project-detail-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+  gap: 1.5rem;
+  align-items: stretch;
+  margin-bottom: 1.5rem;
+}
+
+.project-detail-summary-grid.is-single {
+  grid-template-columns: 1fr;
+}
+
+.project-detail-card {
+  border: 1px solid #c8d2de;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 20px rgba(15, 23, 42, 0.05);
+  padding: 1.4rem;
+}
+
+.project-detail-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.project-detail-section-head h2 {
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+.project-detail-progress-card {
+  padding: 1rem 1.05rem;
+  border: 1px solid #cfd9e6;
+  border-radius: 8px;
+  background: #f6f9fc;
+}
+
+.project-detail-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+  color: #334155;
+}
+
+.project-detail-progress-head span {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5b6b82;
+}
+
+.project-detail-progress-head strong {
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.project-detail-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #d5deea;
+  overflow: hidden;
+}
+
+.project-detail-progress-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #14532d 0%, #166534 100%);
+  transition: width 0.3s ease;
+}
+
+.project-detail-goal-copy {
+  margin-top: 0.9rem;
+  color: #334155;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.project-detail-goal-copy span {
+  font-weight: 700;
+  color: #334155;
+}
+
+.project-detail-stats {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.project-detail-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.project-detail-stat-card {
+  padding: 1rem 1.05rem;
+  border: 1px solid #c7d2df;
+  border-radius: 8px;
+  background: #f7f9fc;
+  box-shadow: none;
+}
+
+.project-detail-stat-value {
+  font-size: 1.32rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: #111827;
+}
+
+.project-detail-stat-value.is-green {
+  color: #14532d;
+}
+
+.project-detail-stat-hbar {
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  color: #5f6f85;
+}
+
+.project-detail-note {
+  padding: 0.9rem 1rem;
+  border: 1px solid #cfd9e6;
+  border-radius: 8px;
+  background: #f3f7fb;
+  color: #334155;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.project-detail-funding-card {
+  display: grid;
+  align-content: start;
+}
+
+.project-detail-funding-copy {
+  margin: 0 0 0.9rem;
+  font-size: 0.86rem;
+  line-height: 1.65;
+  color: #445468;
+}
+
+.project-detail-milestones {
+  display: grid;
+}
+
+.project-detail-milestone-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.1rem 0;
+  border-top: 1px solid #d9e1eb;
+}
+
+.project-detail-milestone-row:first-child {
+  padding-top: 0.15rem;
+  border-top: none;
+}
+
+.project-detail-milestone-index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 8px;
+  background: #e8eef5;
+  color: #526276;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+}
+
+.project-detail-milestone-title {
+  font-weight: 700;
+  font-size: 0.96rem;
+  color: #0f172a;
+  margin-bottom: 0.2rem;
+}
+
+.project-detail-milestone-description {
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.project-detail-milestone-side {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.project-detail-milestone-amounts {
+  min-width: 112px;
+  text-align: right;
+}
+
+.project-detail-milestone-usd {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.project-detail-milestone-hbar,
+.project-detail-milestone-status {
+  margin-top: 0.12rem;
+  font-size: 0.75rem;
+}
+
+.project-detail-milestone-hbar {
+  color: #5f6f85;
+}
+
+.project-detail-milestone-status {
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .project-detail-hero {
+    display: grid;
+  }
+
+  .project-detail-hero-actions {
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .project-detail-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-detail-stats-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .project-detail-hero {
+    padding: 1.3rem;
+  }
+
+  .project-detail-title {
+    font-size: 1.6rem;
+  }
+
+  .project-detail-card,
+  .project-detail-stat-card {
+    padding: 1rem;
+  }
+
+  .project-detail-milestone-row {
+    grid-template-columns: 40px 1fr;
+  }
+
+  .project-detail-milestone-side {
+    grid-column: 2;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .project-detail-milestone-amounts {
+    text-align: left;
+    min-width: 0;
+  }
+}

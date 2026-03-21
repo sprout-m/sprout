@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { investmentsApi, projectsApi } from '../api/client';
 import { useApp } from '../context/AppContext';
-import { formatHbarWithUsd } from '../utils/currency';
+import { formatHbarFromAmount, formatUsdEstimateFromHbar } from '../utils/currency';
 
 export default function VerifierDashboardPage() {
   const navigate = useNavigate();
@@ -65,11 +65,13 @@ export default function VerifierDashboardPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexShrink: 0, fontSize: '0.8125rem' }}>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: 'var(--muted)' }}>Released</div>
-                <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatHbarWithUsd(p.amountReleased || 0)}</div>
+                <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatUsdEstimateFromHbar(p.amountReleased || 0)}</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.1rem' }}>{formatHbarFromAmount(p.amountReleased || 0)}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: 'var(--muted)' }}>Goal</div>
-                <div style={{ fontWeight: 600 }}>{formatHbarWithUsd(p.totalAmount || 0)}</div>
+                <div style={{ fontWeight: 600 }}>{formatUsdEstimateFromHbar(p.totalAmount || 0)}</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.1rem' }}>{formatHbarFromAmount(p.totalAmount || 0)}</div>
               </div>
               <button className="ghost" onClick={(e) => { e.stopPropagation(); navigate(`/app/projects/${p.id}`); }}>
                 Review →

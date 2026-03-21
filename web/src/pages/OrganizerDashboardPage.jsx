@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { projectsApi } from '../api/client';
-import { formatHbarWithUsd } from '../utils/currency';
+import { formatHbarFromAmount, formatUsdEstimateFromHbar } from '../utils/currency';
 
 const statusColor = {
   active:    { bg: 'rgba(22,163,74,0.1)',   text: '#15803d' },
@@ -73,15 +73,18 @@ export default function OrganizerDashboardPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', fontSize: '0.8125rem', marginBottom: '0.875rem' }}>
                 <div>
                   <div style={{ color: 'var(--muted)', marginBottom: '0.1rem' }}>Funding Goal</div>
-                  <strong>{formatHbarWithUsd(goal)}</strong>
+                  <strong>{formatUsdEstimateFromHbar(goal)}</strong>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.1rem' }}>{formatHbarFromAmount(goal)}</div>
                 </div>
                 <div>
                   <div style={{ color: 'var(--muted)', marginBottom: '0.1rem' }}>Funded</div>
-                  <strong style={{ color: '#15803d' }}>{formatHbarWithUsd(funded)}</strong>
+                  <strong style={{ color: '#15803d' }}>{formatUsdEstimateFromHbar(funded)}</strong>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.1rem' }}>{formatHbarFromAmount(funded)}</div>
                 </div>
                 <div>
                   <div style={{ color: 'var(--muted)', marginBottom: '0.1rem' }}>Released</div>
-                  <strong style={{ color: '#15803d' }}>{formatHbarWithUsd(p.amountReleased || 0)}</strong>
+                  <strong style={{ color: '#15803d' }}>{formatUsdEstimateFromHbar(p.amountReleased || 0)}</strong>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.1rem' }}>{formatHbarFromAmount(p.amountReleased || 0)}</div>
                 </div>
               </div>
 
