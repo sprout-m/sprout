@@ -34,8 +34,8 @@ function getConnector() {
   if (!_connector) {
     _connector = new DAppConnector(
       {
-        name:        'Meridian',
-        description: 'Business acquisition marketplace with USDC escrow on Hedera',
+        name:        'Sprout',
+        description: 'Milestone-based sustainability funding with escrow on Hedera',
         url:         window.location.origin,
         icons:       [`${window.location.origin}/LOGO.png`],
       },

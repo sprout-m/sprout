@@ -104,7 +104,7 @@ export default function ProfilePage() {
           {walletRequired && (
             <p style={{ fontSize: '0.8125rem', color: 'var(--danger, #e55)', marginBottom: '0.75rem' }}>
               {cameFromWalletGate
-                ? 'Link your wallet to continue using Meridian.'
+                ? 'Link your wallet to continue using Sprout.'
                 : 'Wallet link required for escrow and settlement actions.'}
             </p>
           )}

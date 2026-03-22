@@ -78,14 +78,14 @@ export default function RequestAccessModal({ onClose, onSubmit }) {
               <p><strong>Mutual NDA Summary</strong></p>
               <p>
                 By requesting access, both parties agree that all non-public business, financial, legal,
-                technical, and customer information shared in Meridian is Confidential Information.
+                technical, and customer information shared in Sprout is Confidential Information.
               </p>
               <ul style={{ margin: 0, paddingLeft: '1.1rem', display: 'grid', gap: '0.25rem' }}>
                 <li>Use is limited to evaluating a potential acquisition of this listing.</li>
                 <li>No disclosure to third parties except advisors under equivalent confidentiality duties.</li>
                 <li>No contacting employees, contractors, customers, or vendors without written seller consent.</li>
                 <li>No reverse engineering, scraping, or republishing data-room materials.</li>
-                <li>No circumvention of Meridian to negotiate directly with protected counterparties.</li>
+                <li>No circumvention of Sprout to negotiate directly with protected counterparties.</li>
                 <li>Reasonable safeguards must be used to prevent unauthorized access or sharing.</li>
                 <li>On request or termination of discussions, confidential materials must be returned or destroyed.</li>
                 <li>Breach may result in access revocation, account restrictions, and injunctive/equitable relief.</li>

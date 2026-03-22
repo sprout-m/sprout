@@ -23,7 +23,7 @@ Sprout is a trust-minimised funding platform built for the **Hedera Apex Hackath
 ## Architecture
 
 ```
-meridian/
+sprout/
 ├── api/          # Go REST API (Gin, PostgreSQL, Hedera SDK, AWS KMS)
 │   ├── config/       # Environment-based configuration
 │   ├── db/           # Schema auto-migration on startup
@@ -88,7 +88,7 @@ Every milestone approval is signed by AWS KMS — the private key never leaves t
 
 ```bash
 git clone <repo-url>
-cd meridian
+cd sprout
 ```
 
 ### 2. Configure the API

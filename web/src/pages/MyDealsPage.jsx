@@ -70,7 +70,7 @@ export default function MyDealsPage() {
           <p>
             {activeUser.role === 'seller'
               ? 'Monitor request approvals, offer quality, and escrow readiness.'
-              : 'Audit all requests, offers, and escrow activity across Meridian.'}
+              : 'Audit all requests, offers, and escrow activity across Sprout.'}
           </p>
         </div>
 
