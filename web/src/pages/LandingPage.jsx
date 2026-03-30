@@ -351,7 +351,7 @@ export default function LandingPage() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <p style={{ margin: 0, color: '#6b7280', fontSize: '0.8125rem' }}>
-            Sprout · Hedera Apex Hackathon 2026
+            Sprout
           </p>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
             <Link to="/login" style={{ color: '#6b7280', fontSize: '0.8125rem', textDecoration: 'none' }}>Sign in</Link>
